@@ -1,0 +1,22 @@
+name: pybioinfo
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python
+  - pyranges=0.0.127
+  - pyfaidx
+  - biopython
+  - pysam
+  - pybigwig
+  - pip
+  - jupyter
+  - nb_conda
+  - snakemake-minimal
+  - plotnine
+  
+  - pip:
+    - bionumpy
+    - ray
