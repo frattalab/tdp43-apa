@@ -2,6 +2,7 @@ library(tidyverse)
 library(glue)
 library(zoo)
 
+#' convert peka _distribution table to long format with one row per position and kmer
 peka_wide_to_long <- function(df, kmers, first_posn_idx = 14) {
   
   # all remaining columns after first are the position cols
@@ -51,10 +52,11 @@ df_plot_kmer_dbrn <- function(peka_df, count_df, join_cols = c("experiment_name"
   ) 
 }
 
-plot_kmer_dbrn <- function(plot_df, facet_w = "~ label", title = "", n_row = 2, n_col = 1) {
+#' Construct a general kmer occurrence plot relative to PAS (with optional smoothing by rolling mean)
+plot_kmer_dbrn <- function(plot_df, rolling_mean = F, rolling_k = 5, facet_w = "~ label", title = "", subtitle = "", n_row = 2, n_col = 1, base_size = 14) {
   
 
-  plot_df %>%
+  plot_base <- plot_df %>%
   ggplot(aes(x = rel_posn,
              y = rel_occur,
              colour = direction,
@@ -62,16 +64,24 @@ plot_kmer_dbrn <- function(plot_df, facet_w = "~ label", title = "", n_row = 2, 
   facet_wrap(facet_w,
              scales = "free_y",
              nrow = n_row,
-             ncol = n_col) +
-  geom_line() +
+             ncol = n_col) 
+  
+  if (rolling_mean) {
+    plot_base <- plot_base + geom_line(aes(y = zoo::rollmean(rel_occur, k = rolling_k, na.pad = T)))
+    
+  } else {
+    
+    plot_base <- plot_base + geom_line()
+    
+  }
+  
+  plot_base +
   geom_vline(xintercept = 0, linetype = "dashed") +
   scale_x_continuous(breaks = seq(-150, 150, 20)) +
-  scale_y_continuous(labels = abs(seq(-8, 8, 1)),
-                     breaks = seq(-8, 8, 1)
-  ) +
   scale_colour_manual(values = c("#1b9e77", "#7570b3")) +
-  theme_classic(base_size = 14) +
+  theme_classic(base_size = base_size) +
   labs(title = title,
+       subtitle = subtitle,
        x = "Distance from polyA site (nt)",
        y = "Relative kmer occurrence")
 
@@ -119,42 +129,50 @@ shsy5y_eg_long_plot_df <- df_plot_kmer_dbrn(shsy5y_eg_long, filter(shsy5y_plot_l
 plot_kmer_dbrn(shsy5y_eg_long_plot_df, facet_w = "experiment_name ~ label", n_row = 4, n_col = 1) +
   labs(title = "kmers = GUGUGU & UGUGUG")
 
-plot_kmer_dbrn(shsy5y_eg_long_plot_df, facet_w = "experiment_name ~ label", n_row = 2, n_col = 2) +
-  labs(title = "kmers = GUGUGU & UGUGUG")
+plot_kmer_dbrn(shsy5y_eg_long_plot_df,rolling_mean = T, rolling_k = 5, facet_w = "experiment_name ~ label",
+               title = "kmers = GUGUGU & UGUGUG",
+               subtitle = "smoothed with rolling mean (k = 5)",
+               n_row = 4, n_col = 1)
+
+
+plot_kmer_dbrn(shsy5y_eg_long_plot_df, facet_w = "experiment_name ~ label",
+               title = "kmers = GUGUGU & UGUGUG", n_row = 2, n_col = 2)
+
+plot_kmer_dbrn(shsy5y_eg_long_plot_df, rolling_mean = T, rolling_k = 5, facet_w = "experiment_name ~ label",               
+               title = "kmers = GUGUGU & UGUGUG",
+               subtitle = "smoothed with rolling mean (k = 5)",n_row = 2, n_col = 2)
 
 all_eg_long <- peka_wide_to_long(dbrn_tbl, c("GUGUGU", "UGUGUG"))
 all_plot_labs <- npas_plot_label(npas_150_tbl)
 all_eg_long_plot_df <- df_plot_kmer_dbrn(all_eg_long, filter(all_plot_labs, group == "regulated"))
 
+# no smoothing all datasets
 plot_kmer_dbrn(all_eg_long_plot_df, facet_w = "experiment_name ~ label", n_row = 5, n_col = 2) +
   labs(title = "kmers = GUGUGU & UGUGUG")
 
-all_cgc_long <- peka_wide_to_long(dbrn_tbl, c("CGCGGA", "CGCGUG"))
-all_cgc_long_plot_df <- df_plot_kmer_dbrn(all_cgc_long, filter(all_plot_labs, group == "regulated"))
+# with smoothing all datasets
+all_canon_plot <- plot_kmer_dbrn(all_eg_long_plot_df,
+               rolling_mean = T,
+               rolling_k = 5,
+               facet_w = "experiment_name ~ label",
+               title = "kmers = GUGUGU & UGUGUG",
+               subtitle = "smoothed with rolling mean (k = 5)",
+               n_row = 5,
+               n_col = 2) +
+  scale_y_continuous(labels = abs(seq(-4, 4, 1)),
+                     breaks = seq(-4, 4, 1)
+  )
 
-plot_kmer_dbrn(all_cgc_long_plot_df, facet_w = "experiment_name ~ label", n_row = 5, n_col = 2) +
-  labs(title = "kmers = CGCGGA & CGCGUG")
+all_canon_plot
 
+if (!dir.exists("processed")) {dir.create("processed")}
 
-all_eg_long_plot_df %>%
-  ggplot(aes(x = rel_posn,
-             y = rel_occur,
-             colour = direction,
-  )) +
-  facet_wrap("experiment_name ~ label",
-             scales = "free_y",
-             nrow = 5,
-             ncol = 2) +
-  geom_line(aes(y = zoo::rollmean(rel_occur, 5, na.pad = T))) +
-  geom_vline(xintercept = 0, linetype = "dashed")+
-  scale_x_continuous(breaks = seq(-150, 150, 20)) +
-  scale_y_continuous(labels = abs(seq(-8, 8, 1)),
-                     breaks = seq(-8, 8, 1)
-  ) +
-  scale_colour_manual(values = c("#1b9e77", "#7570b3")) +
-  theme_classic(base_size = 14) +
-  labs(title = "kmers = GUGUGU & UGUGUG",
-       subtitle = "smoothed will rolling mean (k = 3)",
-       x = "Distance from polyA site (nt)",
-       y = "Relative kmer occurrence")
+ggsave(plot = all_canon_plot,
+       filename = "2023-06-06_qapa_sig_peka_6mer_gu_ug_dibrn_line_plot.png",
+       path = "processed",
+       device = "png",
+       height = 8,
+       width = 12,
+       units = "in",
+       dpi = "retina")
 
