@@ -106,3 +106,19 @@ ggsave(plot = median_top20_bar,
        dpi = "retina")
 
 
+### Scatter plots of kmer enrichment for different comparison pairs
+
+# try proximal up, distal down
+
+simp_dbrn_tbl %>%
+  filter((pas == "proximal" & direction == "up") | (pas == "distal" & direction == "down")) %>%
+  group_by(experiment_comparison_name, kmer) %>%
+  filter(any(pvalue < 0.1)) %>%
+  ungroup() %>%
+  pivot_wider(id_cols = all_of(c("kmer", "experiment_name")),
+              names_from = pas, values_from = PEKA_score) %>%
+  ggplot(aes(x = proximal, y = distal)) +
+  facet_wrap("~ experiment_name") +
+  geom_point(alpha = 0.25) +
+  labs(x = "Proximal up in KD",
+       y = "Distal down in KD")
