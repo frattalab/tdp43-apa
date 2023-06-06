@@ -52,6 +52,29 @@ df_plot_kmer_dbrn <- function(peka_df, count_df, join_cols = c("experiment_name"
   ) 
 }
 
+df_plot_pair_kmer_dbrn <- function(peka_df, count_df, join_cols = c("experiment_name", "contrast", "pas")) {
+  
+  joined <- left_join(peka_df, count_df, by = join_cols )
+  
+  joined %>%
+    group_by(experiment_name) %>%
+    mutate(pair = if_else((pas == "proximal" & direction == "up") | (pas == "distal" & direction == "down"),
+                          "proximal_up_distal_down",
+                          "proximal_down_distal_up"),
+           pair = factor(pair, levels = c("proximal_up_distal_down", "proximal_down_distal_up"))
+           ) %>%
+    # sort now so can create a factor for plotting with proximal sites first in legend
+    arrange(experiment_name, contrast, desc(pas)) %>%
+    # want to plot up and down on the same graph, so need to artificially make down negative so can plot on same axes
+    mutate(rel_occur = if_else(direction == "down",
+                               -1 * rel_occur,
+                               rel_occur),
+           pas = factor(pas, levels = c("proximal", "distal")),
+           label = fct_inorder(label),
+           direction = factor(direction, levels = c("up", "down"))
+    ) 
+}
+
 #' Construct a general kmer occurrence plot relative to PAS (with optional smoothing by rolling mean)
 plot_kmer_dbrn <- function(plot_df, rolling_mean = F, rolling_k = 5, facet_w = "~ label", title = "", subtitle = "", n_row = 2, n_col = 1, base_size = 14) {
   
@@ -176,3 +199,22 @@ ggsave(plot = all_canon_plot,
        units = "in",
        dpi = "retina")
 
+
+## Plot pairs of events side by side for GUGUGU & UGUGUG
+all_eg_long_plot_df %>%
+  mutate(plot_dirn = paste(pas, direction, sep = "_"),
+         plot_dirn = factor(plot_dirn, levels = c("proximal_up", "distal_down", "proximal_down", "distal_up")),
+         rel_occur = if_else(direction == "down", -1 * rel_occur, rel_occur) 
+         ) %>%
+  plot_kmer_dbrn(rolling_mean = T, facet_w = "experiment_name ~ plot_dirn", n_col = 2, n_row = 10)
+
+ggsave(filename = "tmp_pair_up_down.png",
+       height = 14, width = 22, units = "in", dpi = "retina"
+       )
+
+df_plot_pair_kmer_dbrn(all_eg_long,filter(all_plot_labs, group == "regulated")) %>%
+  plot_kmer_dbrn(rolling_mean = T, facet_w = "experiment_name ~ pair", title = "kmers = GUGUGU & UGUGUG",
+                 subtitle = "smoothed with rolling mean (k = 5)",n_col = 2, n_row = 10) +
+  scale_y_continuous(labels = abs(seq(-4, 4, 1)),
+                     breaks = seq(-4, 4, 1)
+  )
