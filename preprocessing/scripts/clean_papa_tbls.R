@@ -88,7 +88,7 @@ collapse_names <- function(col, split=",") {
 
 
 # find dexseq results tables recursively
-dapa_paths <- list.files(path = "data/gencode_v40_reruns/i3_cortical_upf1_zanovello_novel",
+dapa_paths <- list.files(path = "data/PAPA/i3_cortical_upf1_zanovello_novel",
                          pattern = "dexseq_apa.results.processed.tsv",
                          full.names = T,
                          recursive = T,
