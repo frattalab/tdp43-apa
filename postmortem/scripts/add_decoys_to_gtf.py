@@ -156,7 +156,7 @@ def annotate_le_ids_ext(combined, id_col="gene_id", event_type_col="event_type",
     # eprint(combined.as_df().loc[et_mask[et_mask.isna()].index, ["gene_id", "gene_name", "transcript_id", "event_type","annot_status","event_type_temp"]])
     # eprint(combined.as_df().loc[et_mask[et_mask.isna().index], :])
 
-    d_ext_gene_ids = combined.apply(lambda df: set(df[df[event_type_col].str.contains(ext_key, regex=False)]["gene_id"]) # should be ref gene ID in novel events (found)
+    d_ext_gene_ids = combined.apply(lambda df: set(df[df[event_type_col].str.contains(ext_key, regex=False)][id_col]) # should be ref gene ID in novel events (found)
                                     ,
                                     as_pyranges=False)
 
@@ -165,8 +165,8 @@ def annotate_le_ids_ext(combined, id_col="gene_id", event_type_col="event_type",
     ext_gene_ids = set().union(*d_ext_gene_ids.values())
 
     # Separate objects for extension-containing & non-extension containing genes
-    combined_ext = combined.subset(lambda df: df["gene_id"].isin(ext_gene_ids))
-    combined_n_ext = combined.subset(lambda df: ~df["gene_id"].isin(ext_gene_ids))
+    combined_ext = combined.subset(lambda df: df[id_col].isin(ext_gene_ids))
+    combined_n_ext = combined.subset(lambda df: ~df[id_col].isin(ext_gene_ids))
 
     if len(combined_ext) > 0:
         # Are extensions, need to update as separate le numbers
@@ -795,16 +795,24 @@ def main(in_gtf,
 
 
     # Annotate ref & input last exons to last exon IDs, can generate tx2le, le2gene tables
+
+    # before joining, need a common gene_id column containing the reference gene ID (if a nvoel transcript, StringTie's gene_id attribute is a self-constructed one)
+    # so that last exons (ref & novel) can be considered under same group (and le_ids be assigned appropriately)
+
+    ref_le.gene_id_common = ref_le.gene_id
+    le.gene_id_common = le.ref_gene_id
+
     le_comb = pr.concat([ref_le, le])
     le_comb = check_concat(le_comb)
     
-    # assign a common event type col (annotating le_ids requires special consideration for distal 3'UTR extensions (consider as unique isoform), reference last exons don't contain this annotation
+    # assign a common event type col (annotating le_ids requires special consideration for distal 3'UTR extensions (consider as unique isoform), reference last exons don't contain this annotation so just need to assign a dummy value)
     le_comb = le_comb.assign("event_type_common",
                             lambda df: pd.Series(np.where(df["event_type_simple"].isna(),"NULL", df["event_type_simple"]))
                             )
+     
 
     eprint("Annotating le_ids for downstream quantification...")
-    le_comb = annotate_le_ids_ext(le_comb, event_type_col="event_type_common", ext_key="distal_3utr_extension").drop("event_type_common")
+    le_comb = annotate_le_ids_ext(le_comb, id_col="gene_id_common", event_type_col="event_type_common", ext_key="distal_3utr_extension").drop("event_type_common")
 
 
     # To line up with PAPA GTF, need to remove last exons completely contained w/in annotated internal exons
