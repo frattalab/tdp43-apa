@@ -802,6 +802,9 @@ def main(in_gtf,
     ref_le.gene_id_common = ref_le.gene_id
     le.gene_id_common = le.ref_gene_id
 
+    ref_le.gene_name_common = ref_le.gene_name
+    le.gene_name_common = le.ref_gene_name
+
     le_comb = pr.concat([ref_le, le])
     le_comb = check_concat(le_comb)
     
@@ -835,9 +838,10 @@ def main(in_gtf,
 
     eprint(f"Writing 'tx2gene' (transcript_id | gene_id) to TSV... - {output_prefix + '.tx2gene.tsv'}")
 
-    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id"], keep=False)) # remove single isoform genes (keep='False' marks all duplicates as True (so keep these))
+    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id_common"], keep=False)) # remove single isoform genes (keep='False' marks all duplicates as True (so keep these))
      .as_df()
-     [["transcript_id", "gene_id"]]
+     [["transcript_id", "gene_id_common"]]
+     .rename(columns={"gene_id_common": "gene_id"})
      .drop_duplicates()
      .to_csv(output_prefix + ".tx2gene.tsv",
              sep="\t",
@@ -847,7 +851,7 @@ def main(in_gtf,
 
     eprint(f"Writing 'tx2le' (transcript_id | le_id) to TSV... - {output_prefix + '.tx2le.tsv'}")
 
-    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id"], keep=False))
+    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id_common"], keep=False))
      .as_df()
      [["transcript_id", "le_id"]]
      .drop_duplicates()
@@ -859,9 +863,10 @@ def main(in_gtf,
      )
 
     eprint(f"Writing 'le2gene' (le_id | gene_id) to TSV... - {output_prefix + '.le2gene.tsv'}")
-    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id"], keep=False))
+    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id_common"], keep=False))
      .as_df()
-     [["le_id", "gene_id"]]
+     [["le_id", "gene_id_common"]]
+     .rename(columns={"gene_id_common": "gene_id"})
      .drop_duplicates()
      .sort_values(by="le_id")
      .to_csv(output_prefix + ".le2gene.tsv",
@@ -871,9 +876,10 @@ def main(in_gtf,
      )
 
     eprint(f"Writing 'le2name' (le_id | gene_name) to TSV... - {output_prefix + '.le2name.tsv'}")
-    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id"], keep=False))
+    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id_common"], keep=False))
      .as_df()
-     [["le_id", "gene_name"]]
+     [["le_id", "gene_name_common"]]
+     .rename(columns={"gene_name_common": "gene_name"})
      .drop_duplicates()
      .dropna()
      .sort_values(by="le_id")
@@ -885,7 +891,7 @@ def main(in_gtf,
 
     eprint(f"Writing 'input tx2le' (transcript-id | le_id)  to TSV... - {output_prefix + '.input_tx2le.tsv'}")
 
-    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id"], keep=False))
+    (le_comb.subset(lambda df: df.duplicated(subset=["gene_id_common"], keep=False))
      .subset(lambda df: df["transcript_id"].isin(le_tx_ids))
      .as_df()
      [["transcript_id", "le_id"]]
