@@ -210,13 +210,65 @@ ppau_delta_paired_cryp %>%
 
 
 
-ppau_order_cryp %>%
+# at least 5 % median delta
+
+ppau_order_cryp_median_gn_5 <- ppau_order_cryp %>%
   filter(median_paired_delta_ppau > 0.05) %>%
   pull(plot_le_id)
 
 
-ppau_order_cryp %>%
-  filter(mean_paired_delta_ppau > 0.05)
+ppau_delta_paired_cryp %>%
+  filter(plot_le_id %in% ppau_order_cryp_median_gn_5) %>%
+  mutate(
+         plot_le_id = factor(plot_le_id, levels = rev(ppau_order_cryp_median_gn_5))
+  ) %>%
+  ggplot(aes(x = patient_id,
+             y = plot_le_id,
+             fill = paired_delta_ppau_neg_pos)) +
+  geom_tile() +
+  scale_fill_gradientn(name = "Sample-wise dPPAU (TDPneg - TDPpos)",
+                       colours = c("#998ec3", "#f7f7f7", "#f1a340"),
+                       limits = c(-1, 1)) +
+  theme_bw() +
+  labs(title = "Cell line cryptic last exons - relative usage change in FACS nuclei",
+       x = "Sample ID",
+       y = "Gene name") +
+  theme(axis.text.x = element_text(angle = 45,hjust = 1),
+        axis.text.y = element_text(size=rel(0.82)))
+
+
+ppau_delta_paired_cryp %>%
+  filter(plot_le_id %in% ppau_order_cryp_median_gn_5) %>%
+  mutate(
+    plot_le_id = factor(plot_le_id, levels = rev(ppau_order_cryp_median_gn_5)),
+    simple_event_type = factor(simple_event_type, levels = c("spliced", "bleedthrough", "distal_3utr_extension",
+                                                             "bleedthrough,spliced",
+                                                             "bleedthrough,distal_3utr_extension",
+                                                             NA
+                                                             )
+                               )
+  ) %>%
+  ggplot(aes(x = patient_id,
+             y = plot_le_id,
+             fill = paired_delta_ppau_neg_pos)) +
+  facet_wrap("~ simple_event_type", scales = "free_y") +
+  geom_tile() +
+  scale_fill_gradientn(name = "Sample-wise dPPAU (TDPneg - TDPpos)",
+                       colours = c("#998ec3", "#f7f7f7", "#f1a340"),
+                       limits = c(-1, 1)) +
+  theme_bw() +
+  labs(title = "Cell line cryptic last exons - relative usage change in FACS nuclei",
+       x = "Sample ID",
+       y = "Gene name") +
+  theme(axis.text.x = element_text(angle = 45,hjust = 1),
+        axis.text.y = element_text(size=rel(0.82)))
+
+
+ggsave("example_liu_facs_split_by_event_type.png",
+       height = 8,
+       width = 12,
+       units = "in",
+       dpi = "retina")
 
 
 # use ggside to add gender (& possibly gene expression) as side tiles to heatmap, event type
