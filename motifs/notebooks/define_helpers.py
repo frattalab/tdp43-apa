@@ -194,4 +194,76 @@ def select_rep_site(gr: pr.PyRanges, id_col: str = "le_id") -> tuple[pr.PyRanges
 
     return out_gr, sel_dict
           
+
+def _define_cryptic_status(df, cryptic_ids: iter, ns_ids: iter, id_col: str) -> pd.Series:
+    '''annotate entries as cryptic or background based on input ID lists
+
+    Parameters
+    ----------
+    df : _type_
+        _description_
+    cryptic_ids : iter
+        _description_
+    ns_ids : iter
+        _description_
+    id_col : str
+        _description_
+
+    Returns
+    -------
+    pd.Series
+        _description_
+    '''
+
+    assert id_col in df.columns
+
+    choices = ["cryptic", "background"]
+    conds = [df[id_col].isin(cryptic_ids), # in cryptic list
+             ~df[id_col].isin(cryptic_ids) & df[id_col].isin(ns_ids) # not in cryptic list & in ns list
+             ]
     
+    return pd.Series(np.select(conds, choices, default="NULL"), index=df.index)
+
+def _df_select_rep_prox_site(df: pd.DataFrame):
+    '''Select the most distal 3'end as representative interval for a group of intervals
+
+    internal function intended to applied to a dataframe stored in pr.PyRanges object (e.g. in gr.apply)
+    Parameters
+    ----------
+    df : _type_
+        _description_
+    '''
+
+    if (df.Strand == "+").all():
+        # select the row with most distal 3'end (largest End coordinate)
+        return df[df["End"] == df["End"].max()]
+    
+    elif (df.Strand == "-").all():
+        # select the row with most distal 3'end (smallest Start coordinate)
+        return df[df["Start"] == df["Start"].min()]
+    
+    else:
+        raise ValueError("Strand column values must be all '+' or '-'")
+
+
+def select_rep_prox_site(gr: pr.PyRanges, id_col="le_id") -> pr.PyRanges:
+    '''Select the most distal 3'end as representative interval for a group of intervals
+
+    Parameters
+    ----------
+    gr : pr.PyRanges
+        _description_
+    id_col : str, optional
+        _description_, by default "le_id"
+
+    Returns
+    -------
+    pr.PyRanges
+        _description_
+    '''
+
+    assert id_col in gr.columns
+
+    return gr.apply(lambda df: df.groupby(id_col).apply(_df_select_rep_prox_site).reset_index(drop=True))
+
+
