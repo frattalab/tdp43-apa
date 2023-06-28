@@ -47,6 +47,22 @@ cryptics_summ_c %>%
 # 3 distal_3utr_extension   104
 # 4 spliced                 119
 
+cryptics_summ_c %>%
+  count(simple_event_type, annot_status) %>%
+  arrange(simple_event_type)
+# A tibble: 9 × 3
+# simple_event_type     annot_status        n
+# <chr>                 <chr>           <int>
+#   1 bleedthrough          annotated          18
+# 2 bleedthrough          novel              37
+# 3 complex               annotated           4
+# 4 complex               annotated,novel     6
+# 5 complex               novel               5
+# 6 distal_3utr_extension novel             104
+# 7 spliced               annotated          48
+# 8 spliced               annotated,novel    13
+# 9 spliced               novel              58
+
 # write full tsv with complex event type annotation
 write_tsv(cryptics_summ_c, "processed/cryptics_summary_all_events_complex.tsv",col_names = T)
 
@@ -59,6 +75,10 @@ for (event_type in unique(cryptics_summ_c$simple_event_type)) {
             )
   
 }
+
+# write cryptic filtered PAPA TSV
+write_tsv(cryptics,
+          "processed/PAPA/2023-05-24_cryptics.i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
 
 
 
