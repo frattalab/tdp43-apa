@@ -88,6 +88,48 @@ plot_df_elk1_volc %>%
        y = "-log10(padj)")
 
 
+# Same plot but with distal 3'UTR extensions highlighted
+plot_df_d3utr_volc <- deseq_res_df %>%
+  drop_na(padj) %>%
+  # mutate(padj = replace_na(padj, 1)) %>%
+  mutate(plot_label = if_else(gene_name %in% c("ELK1","SIX3", "TLX1"),
+                              gene_name,
+                              ""),
+         plot_padj = if_else(-log10(padj) > 10, 10, -log10(padj)),
+         plot_alpha = case_when(plot_label %in% c("ELK1","SIX3", "TLX1") ~ 1,
+                                plot_padj > -log10(0.05) ~ 0.8,
+                                TRUE ~ 0.1
+         ),
+         plot_colour = if_else(plot_label %in% c("ELK1","SIX3", "TLX1"), "Cryptic_3'UTR-ALE", "other")
+  )
+
+
+plot_df_d3utr_volc %>%
+  ggplot(aes(x = log2FoldChangeShrink,
+             y = plot_padj,
+             colour = plot_colour,
+             label=plot_label,
+             alpha=plot_alpha)) + 
+  geom_point() + 
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", "alpha" = 0.5) +
+  geom_text_repel(max.overlaps = 50,
+                  force = 55,size = rel(8),seed = 123
+  ) +
+  scale_colour_manual(values = c("#d95f02", "#bdbdbd")) +
+  theme_bw(base_size = 16) +
+  scale_x_continuous(limits = c(-4,4),
+                     breaks = seq(-4,4,1)) +
+  guides(alpha = "none", colour = "none") +
+  labs(title = "i3 Cortical Neuron Ribo-seq Differential expression",
+       x = "Log2FoldChange (KD / WT)",
+       y = "-log10(padj)")
+
+ggsave("processed/2023-06-29_riboseq_de_volcano_elk1_six3_tlx1.png", device = "png", height = 8, width = 12, units = "in",dpi = "retina")
+
+
+
+### volcnaos with cryptic event types
+
 papa_cryp_et_i3 <- papa_cryp_et %>%
   filter(str_detect(experiment_name, "i3_cortical"))
 
