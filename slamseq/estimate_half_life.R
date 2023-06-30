@@ -3,6 +3,7 @@ library(dplyr)
 library(tidyr)
 library(purrr)
 library(ggplot2)
+library(grandR)
 
 give.n <- function(x){
     return(c(y = median(x)*1.05, label = length(x)))
@@ -44,9 +45,6 @@ corticali3_kinetic = corticali3_kinetic|>
     tibble::rownames_to_column('gene_name') |> 
     as.data.table()
 
-# exp2_kinetic = exp2_kinetic |> as.data.frame() |> 
-#     tibble::rownames_to_column('gene_name') |> 
-#     as.data.table()
 
 corticali3_kinetic = corticali3_kinetic |> 
     mutate(log2FoldHalfLife = log2(`kinetics.TDPKD.Half-life` /`kinetics.Ctrl.Half-life` ))
@@ -72,7 +70,7 @@ corticali3_kinetic |>
     ylim(0,24)
 
 
-exp1_kinetic |> 
+corticali3_kinetic |> 
     filter(`kinetics.Ctrl.Half-life` < 40 & `kinetics.Ctrl.Half-life` > 2) |> 
     mutate(binned_control_half = cut_number(`kinetics.Ctrl.Half-life`,n = 5)) |> 
     ggplot(aes(x =binned_control_half,y =  log2FoldHalfLife)) + 
@@ -82,15 +80,16 @@ exp1_kinetic |>
 
 # Generate the half-life plots ----------------------------------------------
 
-exp1_norm = ComputeNtrCI(exp1_norm)
+corticali3_norm = ComputeNtrCI(corticali3_norm)
 
 all_old_rna_long_real = data.table()
 all_old_rna_long_fitted = data.table()
 
 this_bois = c("ELK1","SIX3","TLX1")    
+
 for(g in this_bois){
     
-    e = PlotGeneProgressiveTimecourse(exp1_norm,g,show.CI = TRUE,return.tables = TRUE)
+    e = PlotGeneProgressiveTimecourse(corticali3_norm,g,show.CI = TRUE,return.tables = TRUE)
     old_rna_fit = e$fitted |> 
         filter(Type == 'Old') |> 
         mutate(gene = g)
@@ -105,24 +104,18 @@ for(g in this_bois){
 
 
 
-go_of_interest = 'ELK1'
-
-half_life_control_estimate  = exp1_kinetic |> filter(gene_name == go_of_interest) |> 
-    pull(`kinetics.Ctrl.Half-life`)
-
-half_life_tdpkd_estimate = exp1_kinetic |> filter(gene_name == go_of_interest) |> 
-    pull(`kinetics.TDPKD.Half-life`)
+go_of_interest = 'TLX1'
 
 ggplot() + 
-    geom_line(aes(x = time,y = Value,color = Condition),data = all_old_rna_long_fitted,size = 2) + 
-    geom_point(aes(x = time,y = Value,color = Condition),data = all_old_rna_long_real,show_guide = FALSE) + 
-    geom_pointrange(aes(x = time,color = Condition,ymin=lower, ymax=upper,y = Value),data = all_old_rna_long_real,show_guide = FALSE) + 
+    geom_line(aes(x = time,y = Value,color = Condition),data = all_old_rna_long_fitted[gene == go_of_interest],size = 2) + 
+    geom_point(aes(x = time,y = Value,color = Condition),data = all_old_rna_long_real[gene == go_of_interest],show_guide = FALSE) + 
+    geom_pointrange(aes(x = time,color = Condition,ymin=lower, ymax=upper,y = Value),data = all_old_rna_long_real[gene == go_of_interest],show_guide = FALSE) + 
     ggpubr::theme_pubr() + 
     ylab("Unlabelled RNA") + 
     xlab("4SU labelling time") + 
     scale_color_manual(values=c('#999999','#E69F00')) + 
-    annotate("text",  x=10, y = 1000, label = glue::glue("Control Half-Life  {round(half_life_control_estimate,1)} h"),vjust=1, hjust=0) +
-    annotate("text",  x=10, y = 900, label = glue::glue("TDP-43 KD Half-Life {round(half_life_tdpkd_estimate,1)} h"),vjust=1, hjust=0) +
+    # annotate("text",  x=10, y = 1000, label = glue::glue("Control Half-Life  {round(half_life_control_estimate,1)} h"),vjust=1, hjust=0) +
+    # annotate("text",  x=10, y = 900, label = glue::glue("TDP-43 KD Half-Life {round(half_life_tdpkd_estimate,1)} h"),vjust=1, hjust=0) +
     ggpubr::theme_pubr() +
     ggpubr::labs_pubr() +
     theme(legend.title = element_blank()) +
