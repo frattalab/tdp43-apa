@@ -94,7 +94,7 @@ def _df_select_rep_site(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
 
         else:
             # only single atlas site predicted - just select a single row
-            end3_coord = out_df["Name"].drop_duplicates().index[0]
+            end3_coord = out_df["Name"].drop_duplicates().values[0]
             # Select a single row for le_id corresponding to selected PAS
             out_df = out_df[out_df["Name"] == end3_coord].sort_values(by="experiment_id").drop_duplicates(subset=["Start", "End", "Strand"])
 
