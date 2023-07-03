@@ -142,7 +142,11 @@ def _df_select_rep_site(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
                     end3_coord = end3_c.index[0]
 
                     # Select a single row for le_id corresponding to selected PAS
-                    out_df = out_df[out_df["Name"] == end3_coord].sort_values(by="experiment_id").drop_duplicates(subset=["Start", "End", "Strand"])
+                    #1. in case of multiple predicted 3'ends overlapping PolyASite cluster, select the 3'end that is closest to representative coordinate of cluster
+                    out_df = _df_select_rep_atlas_site(out_df[out_df["Name"] == end3_coord])
+                    
+                    #2. arbitrarily pick a single row of duplicates in alphabetical order of experiment id
+                    out_df = out_df.sort_values(by="experiment_id").drop_duplicates(subset=["Start", "End", "Strand"])
 
                     decision_str = "atlas_max_datasets"
 
@@ -150,8 +154,13 @@ def _df_select_rep_site(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
         else:
             # only single atlas site predicted - just select a single row
             end3_coord = out_df["Name"].drop_duplicates().values[0]
+            
             # Select a single row for le_id corresponding to selected PAS
-            out_df = out_df[out_df["Name"] == end3_coord].sort_values(by="experiment_id").drop_duplicates(subset=["Start", "End", "Strand"])
+            #1. in case of multiple predicted 3'ends overlapping PolyASite cluster, select the 3'end that is closest to representative coordinate of cluster
+            out_df = _df_select_rep_atlas_site(out_df[out_df["Name"] == end3_coord])
+                    
+            #2. arbitrarily pick a single row of duplicates in alphabetical order of experiment id
+            out_df = out_df.sort_values(by="experiment_id").drop_duplicates(subset=["Start", "End", "Strand"])
 
             decision_str = "atlas_1_pred"
         
