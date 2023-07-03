@@ -33,6 +33,61 @@ def n_uniq_coords(df: pd.DataFrame) -> int:
     return n_coords
 
 
+
+
+def _df_select_rep_atlas_site(df: pd.DataFrame, name_col: str ="Name") -> pd.DataFrame:
+    '''select representative row that minimises the distance to representative site reported by atlas ID
+
+    Assumes you have already selected the representative atlas site for a given isoform. But given matching strateby can leave multiple predicted 3'ends in cases where PolyAsite interval is a cluster (i.e. window instead of single nucleotide)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        _description_
+    name_col : str, optional
+        _description_, by default "Name"
+
+    Returns
+    -------
+    pd.DataFrame
+        _description_
+    '''
+
+    assert name_col in df.columns
+
+    atlas_ids = df[name_col].drop_duplicates()
+    assert len(atlas_ids) == 1, "df must contain only a single unique atlas ID"
+
+    
+    # e.g. 8:79617071:+
+    # convert from polyAsite id's 1- to BED's 0-based coordinates
+    atlas_id = atlas_ids.iloc[0]
+
+    # extract end coord 
+    atlas_end = int(atlas_id.split(":")[1])
+    atlas_start = atlas_end - 1
+
+    if (df["Strand"] == "+").all():
+        # determine absolute distances to representative coordinate of cluster
+        # 3'coord = End coord
+        abs_diff_atlas = (df["End"] - atlas_end).abs()
+
+
+    elif (df["Strand"] == "-").all():
+        # determine absolute distances to representative coordinate of cluster
+        # 3'coord = Start coord
+        abs_diff_atlas = (df["Start"] - atlas_start).abs()
+
+    else:
+        raise Exception("Strand values must be all + or -")
+    
+    # determine interval(s) with minimum absolute distance to representative coordinate of cluster
+    # in case of ties all values are returned
+    abs_diff_atlas_min = abs_diff_atlas[abs_diff_atlas == abs_diff_atlas.min()]
+
+    return df.loc[abs_diff_atlas_min.index, :]
+
+
 def _df_select_rep_site(df: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     '''Select a representative polyA site for a given last exon isoform
 
