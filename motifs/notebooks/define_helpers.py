@@ -288,6 +288,7 @@ def _define_cryptic_status(df, cryptic_ids: iter, ns_ids: iter, id_col: str) -> 
     
     return pd.Series(np.select(conds, choices, default="NULL"), index=df.index)
 
+
 def _df_select_rep_prox_site(df: pd.DataFrame):
     '''Select the most distal 3'end as representative interval for a group of intervals
 
@@ -331,3 +332,50 @@ def select_rep_prox_site(gr: pr.PyRanges, id_col="le_id") -> pr.PyRanges:
     return gr.apply(lambda df: df.groupby(id_col).apply(_df_select_rep_prox_site).reset_index(drop=True))
 
 
+
+def _df_select_rep_five_end(df: pd.DataFrame) -> pd.DataFrame:
+    '''Select most proxial 5'end (i.e. shortest) as representative interval for a group of intervals (with a common 3'end coordinate)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        _description_
+
+    Returns
+    -------
+    pd.DataFrame
+        _description_
+    '''
+
+    if (df.Strand == "+").all():
+        # select the row with the most proximal 5'end (largest Start coordinate)
+        return df[df["Start"] == df["Start"].max()]
+    
+    elif (df.Strand == "-").all():
+        # select the row with most proximal 5'end (smallest End coordinate)
+        return df[df["End"] == df["End"].min()]
+    
+    else:
+        raise ValueError("Strand column values must be all '+' or '-'")
+
+
+def select_rep_five_end(gr: pr.PyRanges, id_col: str="le_id") -> pr.PyRanges:
+    '''_summary_
+
+    Parameters
+    ----------
+    gr : pr.PyRanges
+        _description_
+    id_col : str, optional
+        _description_, by default "le_id"
+
+    Returns
+    -------
+    pr.PyRanges
+        _description_
+    '''
+
+
+    assert id_col in gr.columns
+
+    return gr.apply(lambda df: df.groupby(id_col).apply(_df_select_rep_five_end).reset_index(drop=True))
