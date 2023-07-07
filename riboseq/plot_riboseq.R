@@ -163,7 +163,7 @@ plot_df_cryp_volc <- deseq_res_df %>%
 
 # volcabno plot with cryptic ALE genes annotated
 # add background and cryptic ALE points in layers so different event types are plotted on top of background
-ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
+base_volcano <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
        aes(x = log2FoldChangeShrink,
            y = plot_padj,
            colour = simple_event_type,
@@ -176,7 +176,10 @@ ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
                      breaks = seq(-4,4,1)) +
   scale_y_continuous(limits = c(0,10.5),
                      breaks = seq(0,10,1)) +
-  scale_colour_manual(values = c("#d95f02", "#a6cee3", "#33a02c", "#bdbdbd", "#1f78b4")) +
+  scale_colour_manual(values = c("#d95f02", "#a6cee3", "#33a02c", "#bdbdbd", "#1f78b4"))
+
+# volcano with text labels
+base_volcano +
   geom_text_repel(data = filter(plot_df_cryp_volc, simple_event_type != "other"),
                   max.overlaps = 10000,
                   force = 30,
@@ -195,6 +198,80 @@ ggsave("processed/2023-06-28_riboseq_ale_events_volcano_clean.png",
        dpi = "retina"
 )
 
+
+# volcano with no text labels, but larger points 
+base_volcano +
+  geom_point(data = filter(plot_df_cryp_volc, simple_event_type != "other"), size = 2.5) +
+  theme_bw(base_size = 16) +
+  guides(alpha = "none") +
+  labs(x = "Log2FoldChange (KD / WT)",
+       y = "-log10(padj)",
+       colour = "Event type")
+
+ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
+       aes(x = log2FoldChange,
+           y = plot_padj,
+           colour = simple_event_type,
+           label=plot_label,
+           alpha=plot_alpha)) + 
+  geom_point() +
+  geom_point(data = filter(plot_df_cryp_volc, simple_event_type != "other"), size = 2.5) +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", "alpha" = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", "alpha" = 0.5) +
+  scale_x_continuous(limits = c(-4,4),
+                     breaks = seq(-4,4,1)) +
+  scale_y_continuous(limits = c(0,10.5),
+                     breaks = seq(0,10,1)) +
+  scale_colour_manual(values = c("#d95f02", "#a6cee3", "#33a02c", "#bdbdbd", "#1f78b4")) +
+  theme_bw(base_size = 16) +
+  guides(alpha = "none") +
+  labs(x = "Log2FoldChange (KD / WT)",
+       y = "-log10(padj)",
+       colour = "Event type")
+
+
+ggsave("processed/2023-07-07_riboseq_no_gene_name_labels_larger_points.png",
+       height = 8,
+       width = 12,
+       units = "in",
+       dpi = "retina"
+)
+
+
+ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
+       aes(x = log2FoldChange,
+           y = plot_padj,
+           colour = simple_event_type,
+           label=plot_label,
+           alpha=plot_alpha)) + 
+  geom_point() +
+  geom_point(data = filter(plot_df_cryp_volc, simple_event_type != "other"), size = 2.5) +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", "alpha" = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", "alpha" = 0.5) +
+  scale_x_continuous(limits = c(-4,4),
+                     breaks = seq(-4,4,1)) +
+  scale_y_continuous(limits = c(0,10.5),
+                     breaks = seq(0,10,1)) +
+  scale_colour_manual(values = c("#d95f02", "#a6cee3", "#33a02c", "#bdbdbd", "#1f78b4")) +
+  geom_text_repel(data = filter(plot_df_cryp_volc, gene_name %in% c("ELK1", "SIX3", "TLX1")),
+                  max.overlaps = 10000,
+                  force = 30,
+                  size = rel(5),
+                  min.segment.length = 0
+  ) +
+  theme_bw(base_size = 16) +
+  guides(alpha = "none") +
+  labs(x = "Log2FoldChange (KD / WT)",
+       y = "-log10(padj)",
+       colour = "Event type")
+
+
+ggsave("processed/2023-07-07_riboseq_elk1_six3_tlx1_labels_larger_points.png",
+       height = 8,
+       width = 12,
+       units = "in",
+       dpi = "retina"
+)
 
 ### GSEA on FC of different event types
 # i.e. are the subset of ALE event type genes that show consistent directionality significant with respect to random gene sets of the same size?
