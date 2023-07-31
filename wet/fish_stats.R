@@ -33,3 +33,26 @@ comb_df <- comb_df %>%
 
 
 write_csv(comb_df, "fish_ttest_results.csv", col_names = T)
+
+
+n_green_ttest_log <- t.test(log(n_df$Green), mu = log(1)) %>%
+  broom::tidy()
+
+n_red_ttest_log <- t.test(log(n_df$Red), mu = log(1)) %>%
+  broom::tidy()
+
+ratio_green_ttest_log <- t.test(log(ratio_df$Green), mu = log(1)) %>%
+  broom::tidy()
+
+# combine dfs
+comb_df_log <- bind_rows(count_green = n_green_ttest_log,
+                     count_red = n_red_ttest_log,
+                     ratio_green = ratio_green_ttest_log,
+                     .id = "test_type") 
+
+# adjust p-values for multiple testing
+comb_df_log <- comb_df_log %>%
+  adjust_pvalue(p.col = "p.value", output.col = "p.adj", method = "BH") 
+
+
+write_csv(comb_df_log, "fish_ttest_log_transform_results.csv", col_names = T)
