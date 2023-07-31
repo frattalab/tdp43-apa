@@ -52,7 +52,8 @@ comb_df_log <- bind_rows(count_green = n_green_ttest_log,
 
 # adjust p-values for multiple testing
 comb_df_log <- comb_df_log %>%
-  adjust_pvalue(p.col = "p.value", output.col = "p.adj", method = "BH") 
+  adjust_pvalue(p.col = "p.value", output.col = "p.adj", method = "BH") %>%
+  add_significance(p.col = "p.adj", output.col = "p.adj.signif")
 
 
 write_csv(comb_df_log, "fish_ttest_log_transform_results.csv", col_names = T)
