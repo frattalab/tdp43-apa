@@ -1,0 +1,224 @@
+---
+title: "APA x iCLIP"
+output: html_notebook
+---
+
+```{r}
+library(ggsci)
+library(ggplot2)
+theme_Publication <- function(base_size=14, base_family="Helvetica") {
+      library(grid)
+      library(ggthemes)
+      (theme_foundation(base_size=base_size, base_family=base_family)
+       + theme(plot.title = element_text(face = "bold",
+                                         size = rel(1.2), hjust = 0.5),
+               text = element_text(),
+               panel.background = element_rect(colour = NA),
+               plot.background = element_rect(colour = NA),
+               panel.border = element_rect(colour = NA),
+               axis.title = element_text(face = "bold",size = rel(1)),
+               axis.title.y = element_text(angle=90,vjust =2),
+               axis.title.x = element_text(vjust = -0.2),
+               axis.text = element_text(), 
+               axis.line = element_line(colour="black"),
+               axis.ticks = element_line(),
+               panel.grid.major = element_line(colour="#f0f0f0"),
+               panel.grid.minor = element_blank(),
+               legend.key = element_rect(colour = NA),
+               legend.position = "bottom",
+               legend.direction = "horizontal",
+               legend.key.size= unit(0.2, "cm"),
+               legend.spacing = unit(1.5, "cm"),
+               legend.title = element_text(face="italic"),
+               plot.margin=unit(c(0,5,5,5),"mm"),
+               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+               strip.text = element_text(face="bold")
+          ))
+}
+
+scale_fill_Publication <- function(...){
+      library(scales)
+      discrete_scale("fill","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+}
+
+scale_colour_Publication <- function(...){
+      library(scales)
+      discrete_scale("colour","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+
+}
+```
+
+# Path to files
+```{r}
+work_dir <- "/Users/alla/Documents/pas/" # path to directory with bed files
+
+iclip1 <- paste0(work_dir, "tardbp-shsy5y-1-20210701-mh_mapped_to_genome_single_peaks.sort.bed")
+iclip2 <- paste0(work_dir, "tardbp-shsy5y-2-20210701-mh_mapped_to_genome_single_peaks.sort.bed")
+pooled_iclip <- paste0(work_dir, "tardbp-shsy5y.concat.sort.chr.bed")
+```
+
+# UTR (distal & proximal)
+```{r}
+name <- "d3utr"
+flank_interval <- 500
+bed_file <- paste0(work_dir, "2023-07-04_papa_cryptic_", name, ".pas.bed" )
+bed_extend_file <- paste0(work_dir, "2023-07-04_papa_cryptic_", name, ".pas.flank.bed" )
+
+bed_dir <- paste0(work_dir, name)
+coverage_file <- paste0(bed_dir, "/coverage.txt")
+
+system(paste("mkdir", bed_dir), intern = T)
+system(paste("bedtools slop -b", flank_interval, "-i", bed_file, "-g ~/Documents/rna_references/GRCh38.primary_assembly.genome.fa.fai >", bed_extend_file), intern = T)
+system(paste("bedtools coverage -d -a", bed_extend_file, "-b", iclip1, ">", coverage_file),intern = T)
+
+prox_bg_file <- paste0(bed_dir, "/coverage_output.prox.bg.txt")
+prox_cr_file <- paste0(bed_dir, "/coverage_output.prox.cr.txt")
+dist_bg_file <- paste0(bed_dir, "/coverage_output.dist.bg.txt")
+dist_cr_file <- paste0(bed_dir, "/coverage_output.dist.cr.txt")
+
+system(paste("grep background", coverage_file, "| grep prox >", prox_bg_file), intern = T)
+system(paste("grep background", coverage_file, "| grep dist >", dist_bg_file), intern = T)
+system(paste("grep crypt", coverage_file, "| grep prox >", prox_cr_file), intern = T)
+system(paste("grep crypt", coverage_file, "| grep dist >", dist_cr_file), intern = T)
+
+parse_coverage <- function(file) {
+    f <- read.delim(file, header = F)
+    colnames(f) <- c("chr", "start", "end", "ID", ".", "strand", "position", "coverage")
+    f$position[f$strand == "-"] <- 1002 - f$position[f$strand == "-"]
+
+    average_coverage <- f %>%
+      group_by(position) %>%
+      summarize(avg_coverage = mean(coverage),
+                se = sd(coverage) / sqrt(n()),
+                lwr = mean(coverage) - 1.96*(sd(coverage) / sqrt(n())), 
+                upr = mean(coverage) + 1.96*(sd(coverage) / sqrt(n())))
+    average_coverage
+    
+}
+
+average_coverage_prox_bg <- parse_coverage(prox_bg_file)
+average_coverage_dist_bg <- parse_coverage(dist_bg_file)
+average_coverage_prox_cr <- parse_coverage(prox_cr_file)
+average_coverage_dist_cr <- parse_coverage(dist_cr_file)
+
+average_coverage_prox_cr$cryptic <- "cryptic"
+average_coverage_dist_cr$cryptic <- "cryptic"
+average_coverage_prox_bg$cryptic <- "background"
+average_coverage_dist_bg$cryptic <- "background"
+
+average_coverage_prox_cr$type <- "proximal"
+average_coverage_dist_cr$type <- "distal"
+average_coverage_prox_bg$type <- "proximal"
+average_coverage_dist_bg$type <- "distal"
+
+```
+
+```{r}
+options(repr.plot.width=12, repr.plot.height=6)
+
+average_coverage <- rbind(average_coverage_dist_bg, average_coverage_dist_cr)
+ggplot(average_coverage, 
+       aes(x = position, y = avg_coverage, color=cryptic, fill=cryptic)) +
+  geom_smooth(method = "loess", span=0.2, se = F) +
+  geom_ribbon(data = average_coverage  %>% group_by(cryptic) %>%
+                mutate(ymin_smooth = stats::predict(loess(lwr~position,span=0.1)),
+                       ymax_smooth = stats::predict(loess(upr~position,span=0.1))),
+              aes(ymin = ymin_smooth,  ymax = ymax_smooth, fill = cryptic),
+              alpha = 0.31) +
+  scale_color_aaas() + scale_fill_aaas() +
+  xlab("Position") +
+  ylab("Average Coverage") +
+  facet_grid(~type)+
+  scale_x_continuous(
+    limits = c(0, 1001),
+    breaks = c(0, 500, 1000),
+    labels = c("-500", "0", "500")
+  ) +
+  theme_Publication()
+
+average_coverage <- rbind(average_coverage_prox_bg, average_coverage_prox_cr)
+ggplot(average_coverage, 
+       aes(x = position, y = avg_coverage, color=cryptic, fill=cryptic)) +
+  geom_smooth(method = "loess", span=0.2, se = F) +
+  geom_ribbon(data = average_coverage %>% group_by(cryptic) %>%
+                mutate(ymin_smooth = stats::predict(loess(lwr~position,span=0.1)),
+                       ymax_smooth = stats::predict(loess(upr~position,span=0.1))),
+              aes(ymin = ymin_smooth,  ymax = ymax_smooth, fill = cryptic),
+              alpha = 0.31) +
+  scale_color_aaas() + scale_fill_aaas() +
+  xlab("Position") +
+  ylab("Average Coverage") +
+  facet_grid(~type)+
+  scale_x_continuous(
+    limits = c(0, 1001),
+    breaks = c(0, 500, 1000),
+    labels = c("-500", "0", "500")
+  ) +
+  theme_Publication()
+```
+# Spliced & bleedthrough
+```{r}
+name <- "spliced"
+flank_interval <- 500
+coord <- "pas"
+coord <- "le_start"
+bed_file <- paste0(work_dir, "2023-07-04_papa_cryptic_", name, ".", coord, ".bed" )
+bed_extend_file <- paste0(work_dir, "2023-07-04_papa_cryptic_", name, ".", coord, ".flank.bed" )
+
+bed_dir <- paste0(work_dir, name)
+coverage_file <- paste0(bed_dir, "/coverage.txt")
+system(paste("mkdir", bed_dir), intern = T)
+system(paste("bedtools slop -b", flank_interval, "-i", bed_file, "-g ~/Documents/rna_references/GRCh38.primary_assembly.genome.fa.fai >", bed_extend_file), intern = T)
+system(paste("bedtools coverage -d -a", bed_extend_file, "-b", pooled_iclip, ">", coverage_file),intern = T)
+
+bg_file <- paste0(bed_dir, "/coverage_output.bg.txt")
+cr_file <- paste0(bed_dir, "/coverage_output.cr.txt")
+
+system(paste("grep background", coverage_file, ">", bg_file), intern = T)
+system(paste("grep crypt", coverage_file, ">", cr_file), intern = T)
+
+parse_coverage <- function(file) {
+    f <- read.delim(file, header = F)
+    colnames(f) <- c("chr", "start", "end", "ID", ".", "strand", "position", "coverage")
+    f$position[f$strand == "-"] <- 1002 - f$position[f$strand == "-"]
+
+    average_coverage <- f %>%
+      group_by(position) %>%
+      summarize(avg_coverage = mean(coverage),
+                se = sd(coverage) / sqrt(n()),
+                lwr = mean(coverage) - 1.96*(sd(coverage) / sqrt(n())), 
+                upr = mean(coverage) + 1.96*(sd(coverage) / sqrt(n())))
+    average_coverage
+}
+
+
+average_coverage_bg <- parse_coverage(bg_file)
+average_coverage_cr <- parse_coverage(cr_file)
+
+average_coverage_cr$cryptic <- "cryptic"
+average_coverage_bg$cryptic <- "background"
+
+average_coverage <- rbind(average_coverage_bg,average_coverage_cr)
+```
+
+```{r}
+options(repr.plot.width=12, repr.plot.height=6)
+
+ggplot(average_coverage , aes(x = position, y = avg_coverage, color=cryptic, fill=cryptic)) +
+  geom_smooth(method = "loess", span=0.1, se = F) +
+  geom_ribbon(data = average_coverage  %>% group_by(cryptic) %>%
+                mutate(ymin_smooth = stats::predict(loess(lwr~position,span=0.1)),
+                       ymax_smooth = stats::predict(loess(upr~position,span=0.1))),
+              aes(ymin = ymin_smooth,  ymax = ymax_smooth, fill = cryptic),
+              alpha = 0.31) +
+  scale_color_aaas() + scale_fill_aaas() +
+  xlab("Position") +
+  ylab("Average Coverage") +
+  scale_x_continuous(
+    limits = c(0, 1001),
+    breaks = c(0, 500, 1000),
+    labels = c("-500", "0", "500")
+  ) +
+  theme_Publication()
+```
+
