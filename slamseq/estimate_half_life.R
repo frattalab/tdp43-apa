@@ -4,12 +4,13 @@ library(tidyr)
 library(purrr)
 library(ggplot2)
 library(grandR)
+library(ggrastr)
 
 give.n <- function(x){
     return(c(y = median(x)*1.05, label = length(x)))
 }
 
-corticali3_gran = ReadGRAND('exp1_grandslam_grandR.tsv',
+corticali3_gran = ReadGRAND('data/grandslam_exp1_grandR.tsv',
                       design=c(Design$Condition,
                                Design$Replicate,
                                Design$dur.4sU))
@@ -48,6 +49,10 @@ corticali3_kinetic = corticali3_kinetic|>
 
 corticali3_kinetic = corticali3_kinetic |> 
     mutate(log2FoldHalfLife = log2(`kinetics.TDPKD.Half-life` /`kinetics.Ctrl.Half-life` ))
+
+# Also calculate change in synthesis rate
+corticali3_kinetic = corticali3_kinetic |>
+  mutate(log2FoldSynthesis = log2(kinetics.TDPKD.Synthesis / kinetics.Ctrl.Synthesis))
 
 # exp2_kinetic = exp2_kinetic |> mutate(log2FoldHalfLife = log2(`kinetics.TDP43kd.Half-life` /`kinetics.control.Half-life` ))
 
@@ -121,3 +126,8 @@ ggplot() +
     theme(legend.title = element_blank()) +
     scale_x_continuous(breaks = c(0, 1, 4, 8, 12, 24)) + 
     facet_wrap(~gene)
+
+
+if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
+
+fwrite(corticali3_kinetic, "processed/2023-08-22_i3cortical_slamseq_grandr_kinetics.tsv",sep = "\t",col.names = T)
