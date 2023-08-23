@@ -4,6 +4,8 @@ Commands used:
 
 `python scripts/add_decoys_to_gtf.py -i data/PAPA/2023-06-20_cryptic_last_exons.gtf -r data/reference_filtered.gtf -d full -o processed/2023-06-21_cryptics_plus_decoys.decoys_full`
 
+`python scripts/add_decoys_to_gtf.py -i processed/2023-06-20_cryptic_last_exons.gtf -r data/reference_filtered.gtf -d full -o processed/2023-06-22_cryptics_plus_decoys.decoys_full_fix_tx2le`
+
 add_decoys_to_gtf requirements:
 
 - `event_type_simple` attribute, which is generated using `preproccesing/scripts/clean_papa_tbls.R`:
