@@ -45,3 +45,30 @@ mv_summary <- joined_mv_clean %>%
 write_tsv(joined_mv_clean, "processed/bleedthrough_manual_validation.tsv", col_names = T)
 write_tsv(mv_summary, "processed/bleedthrough_summary_counts_manual_validation.tsv", col_names = T)
 
+
+## Filter cryptics summary table for events not failing manual validation
+
+cryp_summ <- read_tsv("processed/cryptics_summary_all_events.tsv")
+
+fail_ids <- joined_mv_clean %>% filter(event_manual_validation != "yes") %>% pull(le_id)
+
+cryp_summ_f <- filter(cryp_summ, !(le_id %in% fail_ids))
+
+# number of cryptic events
+n_distinct(cryp_summ_f$le_id)
+# [1] 259
+
+# number for each category
+cryp_summ_f %>%
+  count(simple_event_type, sort = T) %>%
+  mutate(frac = n / sum(n))
+
+#
+# # A tibble: 5 × 3
+# simple_event_type                      n   frac
+# <chr>                              <int>  <dbl>
+#   1 spliced                              119 0.459 
+# 2 distal_3utr_extension                104 0.402 
+# 3 bleedthrough                          21 0.0811
+# 4 bleedthrough,spliced                  12 0.0463
+# 5 bleedthrough,distal_3utr_extension     3 0.0116
