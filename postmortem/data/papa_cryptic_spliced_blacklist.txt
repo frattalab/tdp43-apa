@@ -1,0 +1,3 @@
+ENSG00000197530.13_1|MIB2|spliced|cryptic
+ENSG00000127483.19_1|HP1BP3|spliced|cryptic
+ENSG00000111665.12_4|CDCA3|spliced|cryptic
