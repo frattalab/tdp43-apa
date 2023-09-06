@@ -4,6 +4,7 @@ import pyranges as pr
 import pandas as pd
 import numpy as np
 from typing import Literal, Optional
+import sys
 
 '''
 Extract splice junctions for AS-ALE (/ last exon spliced) events.
@@ -35,6 +36,53 @@ Strategy for annotated last exons:
 - Create a TXT file with masked IDs (4 for now)
 - For last exons not within gene bodies ('gene' entry), select the terminal introns for these transcripts, then do .nearest() to attach to last exon. Then can reconstruct SJ with existing function. 
 '''
+
+
+def _df_add_region_number(df,id_col,sort_col="Start"):
+    '''
+    Return a Series of strand-aware region numbers (5'-3' in 1..n)
+    Function to be used internally in a pr.assign (mainly by add_region_number)
+    '''
+    if id_col not in df.columns.tolist():
+        raise KeyError(f"id_col - {id_col} - is not present in df for chr/strand pair {','.join([df.Chromosome.iloc[0], df.Strand.iloc[0]])}")
+
+    elif (df.Strand == "+").all():
+        # Start position smallest to largest = 5'-3'
+
+        return df.groupby(id_col)[sort_col].rank(method="min", ascending=True)
+
+    elif (df.Strand == "-").all():
+        # Start position largest to smallest = 5'-3'
+
+        return df.groupby(id_col)[sort_col].rank(method="min", ascending=False)
+
+    elif df.empty:
+        print("df is empty - returning empty pd.Series")
+        return pd.Series()
+
+
+def add_region_number(gr,
+                      id_col="transcript_id",
+                      feature_key="intron",
+                      out_col="intron_number",
+                      feature_col="Feature",
+                      nb_cpu=1):
+    '''
+    Adds column to gr containing a strand aware region number column,
+    ordered 5'-3' 1..n by a group of features (e.g. transcript)
+    '''
+
+    # Make sure only 'feature_key' rows are in the gr
+    assert gr.as_df()[feature_col].drop_duplicates().tolist() == [feature_key], "only {} entries should be present in gr".format(feature_key)
+
+    # Make sure sorted by position first.
+    gr = gr.sort()
+
+    # Add in region number column in strand aware manner, so 1 = most 5', n = most 3'
+
+    gr = gr.assign(out_col, lambda df: _df_add_region_number(df, id_col), nb_cpu=nb_cpu)
+
+    return gr
 
 
 def get_terminal_regions(gr,
@@ -349,7 +397,8 @@ def le_to_sj(gr: pr.PyRanges,
 
 
 def main(le_bed_path,
-         ref_gtf_path):
+         ref_gtf_path,
+         output_prefix):
     
     ref_gtf = pr.read_gtf(ref_gtf_path)
     le = pr.read_bed(le_bed_path)
@@ -370,6 +419,10 @@ def main(le_bed_path,
 
     # extract introns (SJs) for each transcript
     ref_introns = ref_gtf.features.introns(by="transcript")
+
+    # assign a strand-aware order of introns within transcripts (1 = first, n = last)
+    ref_introns = add_region_number(ref_introns)
+
     # store a df noting which transcript IDs share the same intron coordinates (useful if collapse later and want to track/retain)
     # intron2tx = ref_introns.as_df()[["Chromosome", "Start", "End", "Strand", "transcript_id"]]
 
@@ -425,9 +478,32 @@ def main(le_bed_path,
 
     # output to file
     print("Writing output files...")
-    sj_bed.to_bed("")
-    missing_df.to_csv("", sep="\t", index=False, header=True)
+    sj_bed.to_bed(output_prefix + ".le.unmodified.junctions.bed")
+    sj_bed.assign("End", lambda df: df.End.add(1)).to_bed(output_prefix + ".le.end_shift.junctions.bed")
+    missing_df.to_csv(output_prefix + ".le.missing.tsv", sep="\t", index=False, header=True)
 
+
+if __name__ == '__main__':
+
+    descrpn = """usage: python last_exons_to_sj.py LAST_EXON_BED REFERENCE_GTF OUTPUT_PREFIX [-h/--help]
+
+Positional arguments:
+LAST_EXON_BED - BED file containing last exon coordinates produced by PAPA for which to infer splice junctions
+REFERENCE_GTF - path to GTF file with reference/annotated transcripts
+OUTPUT_PREFIX - prefix for output files. BED file of splice junctions suffixed with '.le.unmodified.junctions.bed', '.le.end_shift.junctions.bed' for SJs to use with bedops_parse_star_junctions pipeline (see details). TSV file suffixed with '.le.missing.tsv' storing input intervals for which splice junctions could not be inferred/extracted.
+-h/--help - print usage message
+    
+Details:
+
+what is 'end_shift.junctions.bed'? STAR's junction.tab fiels represents SJs in 1-based manner, and not necessarily representing only the intron coordinates (according to AL). To make SJs compatible with the pipeline I have to add 1 to the end coordinate. 
+
+"""
+
+    if len(sys.argv) == 1 or "-h" in sys.argv or "--help" in sys.argv:
+        print(descrpn)
+        sys.exit()
+
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
 
 
 
