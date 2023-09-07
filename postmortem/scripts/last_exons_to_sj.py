@@ -325,7 +325,7 @@ def distal_le_to_sj(gr: pr.PyRanges,
     '''
     
     # extract terminal introns for each transcript/group of intervals
-    last_introns = get_terminal_regions(introns_gr, id_col=id_col, region_number_col=region_num_col)
+    last_introns = get_terminal_regions(introns_gr, id_col=id_col, region_number_col=region_num_col, feature_key="intron")
 
     # find .nearest() fownstream last exon for each terminal intron 
     ref_introns_le = gr.nearest(last_introns, strandedness="same", overlap=False, how="upstream", suffix="_int")
@@ -383,7 +383,7 @@ def le_to_sj(gr: pr.PyRanges,
         le_sj = intron_le_to_sj(gr, introns_gr)
 
     elif le_type == "distal":
-        le_sj = annot_le_to_sj(gr, introns_gr, id_col, region_num_col)
+        le_sj = distal_le_to_sj(gr, introns_gr, id_col, region_num_col)
 
     # finally generate a cleaned BED-ready file of novel, annotated intron contained SJs
     le_sj_clean = le_sj[["Name"]]
@@ -400,7 +400,9 @@ def main(le_bed_path,
          ref_gtf_path,
          output_prefix):
     
+    print("reading in GTF...")
     ref_gtf = pr.read_gtf(ref_gtf_path)
+    print("reading in BED file of last exons...")
     le = pr.read_bed(le_bed_path)
 
     # ref gtf has lots of attributes don't need, subset to minimal cols for analysis
@@ -417,6 +419,14 @@ def main(le_bed_path,
     # Extract gene entries from GTF
     ref_genes = ref_gtf.subset(lambda df: df.Feature == "gene")
 
+    if len(ref_genes) == 0:
+        # construct by merging transcripts instead
+        ref_genes = ref_gtf.subset(lambda df: df.Feature == "transcript").merge(by=["gene_id", "gene_name"])
+
+        if len(ref_genes) == 0:
+            raise Exception("ref gtf must contain either 'gene' or 'transcript' entries in 'feature' field")
+
+
     # extract introns (SJs) for each transcript
     ref_introns = ref_gtf.features.introns(by="transcript")
 
@@ -428,14 +438,21 @@ def main(le_bed_path,
 
     # get IDs that don't overlap with known genes
     le_distal = le.overlap(ref_genes, strandedness="same", invert=True)
+
     le_distal_ids = set(le_distal.Name)
     print(f"Putative number of LEs distal/downstream to annotated gene - {len(le_distal_ids)}")
 
+
     le_n_distal = le.subset(lambda df: ~df.Name.isin(le_distal_ids))
     
+    # print(len(le_distal_ids))
+    # print(le_n_distal.columns)
+
     # get LEs completely contained within introns
     le_cont = le_n_distal.overlap(ref_introns, strandedness="same", how="containment")
     le_cont_ids = set(le_cont.Name)
+
+    # print(le_cont.columns)
 
     print(f"Putative number of novel ALEs completely contained within annotated introns - {len(le_cont_ids)}")
 
@@ -445,14 +462,14 @@ def main(le_bed_path,
     print(f"Putative number of annotated ALEs- {len(le_annot_ids)}")
 
     # missing IDs due to categorisation
-    le_ids_cat = le_annot_ids.union(le_cont_ids).union(le_distal)
+    le_ids_cat = le_annot_ids.union(le_cont_ids).union(le_distal_ids)
     le_ids_missing = le_ids.difference(le_ids_cat)
     print(f"Number of missing IDs due to not fitting any category - {len(le_ids_missing)}")
 
     # generate SJs
     le_distal_sj, le_distal_ids_missing = le_to_sj(le_distal, ref_introns, le_type="distal")
     le_cont_sj, le_cont_ids_missing = le_to_sj(le_cont, ref_introns, le_type="contained")
-    le_annot_sj, le_annot_ids_missing = le_to_sj(le_cont, ref_introns, le_type="annotated")
+    le_annot_sj, le_annot_ids_missing = le_to_sj(le_annot, ref_introns, le_type="annotated")
 
     print(f"Number of gene-distal IDs that lack a SJ - {len(le_distal_ids_missing)}")
     print(f"Number of intron-contained IDs that lack a SJ - {len(le_cont_ids_missing)}")
@@ -495,7 +512,7 @@ OUTPUT_PREFIX - prefix for output files. BED file of splice junctions suffixed w
     
 Details:
 
-what is 'end_shift.junctions.bed'? STAR's junction.tab fiels represents SJs in 1-based manner, and not necessarily representing only the intron coordinates (according to AL). To make SJs compatible with the pipeline I have to add 1 to the end coordinate. 
+what is 'end_shift.junctions.bed'? STAR's junction.tab fields represents SJs in 1-based manner, and not necessarily representing only the intron coordinates (according to AL). To make SJs compatible with the pipeline I have to add 1 to the end coordinate. 
 
 """
 
