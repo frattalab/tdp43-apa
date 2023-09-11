@@ -1,4 +1,5 @@
 library(tidyverse)
+library(ggrepel)
 
 
 calc_means <- function(df, sample_cols, out_col) {
@@ -8,6 +9,8 @@ calc_means <- function(df, sample_cols, out_col) {
 
 }
 
+# decoy tx quantification
+ppau_delta_paired_median_all_cryp <- read_tsv("processed/2023-09-11_liu_facs_decoys_delta_ppau.all_samples.cryptics.tsv")
 
 # gene expression matrices
 liu_abundance <- read_tsv("processed/gene_exprn/2023-09-07_liu_facs_salmon_summarised_abundance.tsv")
@@ -109,4 +112,72 @@ liu_all_means %>%
 # Random thoughts:
 # - Are 'enriched' genes over-represented in highly expressed genes? See where they pop up in curve, possibly histograms of expression
 # - could make similar cumulative distribution plot (maybe just individual dots) coloured by event type as well
+cryp_enriched_gn <- ppau_delta_paired_median_all_cryp %>%
+  filter(median_paired_delta_ppau > 0.05) %>%
+  pull(gene_name)
 
+liu_all_means %>%
+  filter(abundance_type == "counts_norm") %>%
+  mutate(gene_name = fct_reorder(gene_name, mean_all),
+         enr_cryp = if_else(gene_name %in% cryp_enriched_gn, T, F)) %>%
+  ggplot(aes(x = log2(mean_all + 1), y = gene_name, colour = enr_cryp)) +
+  geom_point(size = rel(0.1)) +
+  geom_vline(xintercept = log2(11), linetype = "dashed") +
+  geom_vline(xintercept = log2(26), linetype = "dashed") +
+  geom_vline(xintercept = log2(51), linetype = "dashed") +
+  theme_bw(base_size = 14) +
+  labs(title = "Cryptic-containing gene expression") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+
+liu_all_means %>%
+  filter(abundance_type == "counts_norm") %>%
+  mutate(gene_name = fct_reorder(gene_name, mean_all),
+         enr_cryp = if_else(gene_name %in% cryp_enriched_gn, T, F)) %>%
+  ggplot(aes(x = log2(mean_all + 1), fill = enr_cryp, colour = enr_cryp)) +
+  geom_density(alpha = 0.5)
+
+liu_all_means %>%
+  filter(abundance_type == "counts_norm") %>%
+  mutate(gene_name = fct_reorder(gene_name, mean_all),
+         enr_cryp = if_else(gene_name %in% cryp_enriched_gn, T, F)) %>%
+  ggplot(aes(y = log2(mean_all + 1), x = enr_cryp, colour = enr_cryp)) +
+  geom_boxplot(outlier.shape = NA) + 
+  geom_jitter(alpha = 0.5) +
+  ggpubr::stat_compare_means()
+
+# atte,pt to plot gene name alongside cryptics
+liu_all_means %>%
+  filter(abundance_type == "counts_norm") %>%
+  mutate(gene_name = fct_reorder(gene_name, mean_all),
+         enr_cryp = if_else(gene_name %in% cryp_enriched_gn, T, F),
+         plot_gn = if_else(enr_cryp, gene_name, "")) %>%
+  ggplot(aes(x = log2(mean_all + 1), y = gene_name, colour = enr_cryp, label = plot_gn)) +
+  geom_point(size = rel(0.1)) +
+  geom_text(size = rel(2), nudge_x = 5)
+  geom_vline(xintercept = log2(11), linetype = "dashed") +
+  geom_vline(xintercept = log2(26), linetype = "dashed") +
+  geom_vline(xintercept = log2(51), linetype = "dashed") +
+  theme_bw(base_size = 14) +
+  labs(title = "Cryptic-containing gene expression") +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+  
+# plot gene name with ggrepel
+  liu_all_means %>%
+    filter(abundance_type == "counts_norm") %>%
+    mutate(gene_name = fct_reorder(gene_name, mean_all),
+           enr_cryp = if_else(gene_name %in% cryp_enriched_gn, T, F),
+           plot_gn = if_else(enr_cryp, gene_name, "")) %>%
+    ggplot(aes(x = log2(mean_all + 1), y = gene_name, colour = enr_cryp, label = plot_gn)) +
+    geom_point(size = rel(0.1)) +
+    geom_text_repel(size = rel(2),direction = "x",min.segment.length = 0, force = 15, max.overlaps = 100) +
+  geom_vline(xintercept = log2(11), linetype = "dashed") +
+    geom_vline(xintercept = log2(26), linetype = "dashed") +
+    geom_vline(xintercept = log2(51), linetype = "dashed") +
+    theme_classic(base_size = 14) +
+    labs(title = "Cryptic-containing gene expression",
+         subtitle = "lines left-right are mean of 10, 25 & 50 reads in gene") +
+    theme(axis.text.y = element_blank(),
+          axis.ticks.y = element_blank())
