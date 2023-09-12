@@ -261,6 +261,9 @@ def intron_le_to_sj(gr: pr.PyRanges,
     # overlap-join introns with LEs
     ref_introns_le = introns_gr.join(gr, strandedness="same")
 
+    # ensure that only looking at introns that entirely consume last exons (TODO: allow to match at one end?)
+    ref_introns_le = ref_introns_le.subset(lambda df: (df.Start < df.Start_b) & (df.End > df.End_b))
+
     # parse SJ coordinates from overlapping exon and intron (intron start - last exon start)
     # Note that reference introns can be duplicated across transcript IDs, so only retain one row per intron (don't care about overlapping tx ID)
     le_sj = ref_introns_le.apply(_df_intron_exon_to_sj).drop_duplicate_positions()
