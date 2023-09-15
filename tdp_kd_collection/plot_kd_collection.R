@@ -215,7 +215,7 @@ med_scatter_lab_1dataset <- ggplot(filter(x, !cryptic_any & !cryptic_med), aes(x
   )
 
 
-med_scatter_lab_1dataset
+# med_scatter_lab_1dataset
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
@@ -235,19 +235,17 @@ ggsave(filename = "2023-09-15_tdp_kd_collection_cryptics_scatter_colour_any_cryp
        units = "in",
        dpi = "retina")
 
-# saveRDS()
 
-# mutate(plot_name = if_else(abs(median_delta) > 0.1 & median_ctl < 0.1 & gene_name %in% genes_to_label,
-#                            gene_name,
-#                            ""),
-#        plot_alpha = case_when(plot_name != "" ~ 1,
-#                               abs(median_delta) > 0.1 & median_ctl < 0.1 ~ 0.5,
-#                               abs(median_delta) > 0.1 & median_ctl > 0.1 ~ 0.2,
-#                               TRUE ~ 0.01),
-#        plot_colour = if_else(plot_alpha == 1 | plot_alpha == 0.5,
-#                              "orange", "grey"),
-#        plot_name = if_else(plot_alpha == 1 & gene_name %in% genes_to_label,
-#                            gene_name, "")
-#        )
+# write tsv of median values for each cryptic/regulated evetn
+plot_med_df %>%
+  select(le_id, groupID, gene_name, contains("median"), contains("cryptic"), simple_event_type, contains("plot")) %>%
+  write_tsv("processed/2023-09-15_cryptics_scatter_standard_plot_tbl.tsv", col_names = T)
+
+cryp_any_not_med_df %>%
+  write_tsv("processed/2023-09-15_cryptics_1dataset_not_median_base_delta_tbl.tsv", col_names = T)
+
+# save to Rdata
+save(med_scatter_lab_1dataset, med_scatter, plot_med_df, cryp_any_not_med_df, sig_med_df,file = "processed/fig1_cryptics_scatter.Rdata")
+
 
 
