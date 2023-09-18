@@ -1,5 +1,27 @@
 library(tidyverse)
 
+facet_heatmap <- function(df, plot_title = "Cryptic event deltas across datasets") {
+  df %>%
+  ggplot(aes(x = experiment_name_simple, y = plot_le_id, fill = delta_PPAU_treatment_control, label = plot_label)) + 
+    facet_wrap("~ simple_event_type", ncol = 3, scales = "free_y") +
+    geom_tile() +
+    scale_fill_gradient2(low ="#998ec3", mid = "#f7f7f7", high = "#f1a340",
+                         breaks = seq(-1,1,0.2)) + # "#fee8c8"
+    geom_text(size = rel(1.5), nudge_y = -0.25) +
+    theme_classic() +
+    theme(axis.text.x = element_text(size = rel(0.75), angle = 90),
+          axis.text.y = element_text(size = rel(0.5)),
+          legend.position = "top",
+          legend.key.width = unit(1, "cm")
+    ) +
+    labs(title = plot_title,
+         subtitle = "** = cryptic criteria, * = padj < 0.05, blank = padj > 0.05",
+         x = "Dataset",
+         y = "Last exon ID",
+         fill = "Delta PPAU (KD - CTL)")
+}
+
+
 df <- read_tsv("data/2023-05-24_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
 mv_df <- read_tsv("data/bleedthrough_manual_validation.tsv")
 
@@ -11,6 +33,18 @@ exp_to_keep <- unique(df$experiment_name)[str_detect(unique(df$experiment_name),
                                             unique(df$experiment_name) %in% c("zanovello_skndz_curve_1", "zanovello_shsy5y_curve_0075")]
 
 df <- filter(df, experiment_name %in% exp_to_keep)
+# experiment_name = factor(experiment_name, levels = c("humphrey_i3_cortical",
+#                                                      "brown_i3_cortical",
+#                                                      "seddighi_i3_cortical",
+#                                                      "klim_i3_motor",
+#                                                      "zanovello_shsy5y_curve_0075",
+#                                                      "zanovello_shsy5y_chx_kd_only",
+#                                                      "brown_shsy5y",
+#                                                      "zanovello_skndz_curve_1",
+#                                                      "brown_skndz",
+#                                                      "appocher_skndz"
+# )
+
 
 # remove manually validated isoforms
 mv_fail_ids <- filter(mv_df, event_manual_validation != "yes") %>% pull(le_id)
@@ -111,7 +145,75 @@ regn_score_sum <- regn_score_sum %>%
 # Make cryptic heatmap plot, ordering within event type by regulation score, fill scaled by change in usage
 # Group datasets by event type
 
+# get to plot df
+# generate readable le_id - gene_name + _<1> isoform suffix
+# add label of significance threshold
+# text label for whether classed as cryptic, regulated or not
+
+# define plotting order of datasets
+unique(df$experiment_name)
+plot_exper_name_order <- c("humphrey_i3_cortical",
+                           "brown_i3_cortical",
+                           "seddighi_i3_cortical",
+                           "zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl",
+                           "klim_i3_motor",
+                           "zanovello_shsy5y_curve_0075",
+                           "zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl",
+                           "brown_shsy5y",
+                           "zanovello_skndz_curve_1",
+                           "brown_skndz"
+)
+
+plot_exper_name_simple <- c("Humphrey i3 cortical",
+                            "Brown i3 cortical",
+                            "Seddighi i3 cortical",
+                            "Zanovello i3 cortical",
+                            "Klim i3 motor",
+                            "Zanovello SH-SY-5Y curve",
+                            "Zanovello SH-SY-5Y CHX",
+                            "Brown SH-SY-5Y",
+                            "Zanovello SK-N-DZ curve",
+                            "Brown SK-N-DZ")
+
+# make a named vector where names are the existing values
+names(plot_exper_name_simple) <- plot_exper_name_order
+names(plot_exper_name_simple)
 
 
+# order first by per-experiment average regulation score
+plot_df <- df %>%
+  mutate(plot_le_id = paste(gene_name, str_split_i(le_id, "_", 2), sep = "_"), 
+       # plot_shape = if_else(padj < 0.05, T, F),
+       plot_label = case_when(cryptic ~ "**",
+                              regulated ~ "*",
+                              TRUE ~ "")
+       ) %>%
+  # add in scores
+  left_join(select(regn_score_sum, -gene_name),
+            by = c("le_id")) %>%
+  # Arrange le_ids in order descending order of regulation_score
+  # Arange datasets in chosen order order
+  mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score_norm),
+         experiment_name_simple = plot_exper_name_simple[experiment_name],
+         experiment_name_simple = factor(experiment_name_simple, levels = plot_exper_name_simple)
+         )
+
+
+plot_df %>%
+  # first subset for events that are cryptic in at least one dataset
+  group_by(le_id) %>%
+  filter(any(cryptic)) %>%
+  ungroup() %>%
+  facet_heatmap(plot_title = "Cryptic event deltas across datasets - sorted by normalised sum of regulation score")
+
+
+# repeat - this time just using sum of regulation score across datasets
+plot_df %>%
+  mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score)) %>%
+  # first subset for events that are cryptic in at least one dataset
+  group_by(le_id) %>%
+  filter(any(cryptic)) %>%
+  ungroup() %>%
+  facet_heatmap(plot_title = "Cryptic event deltas across datasets - sorted by sum of regulation score")
 
 
