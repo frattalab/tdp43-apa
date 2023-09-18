@@ -77,7 +77,7 @@ le_exper_summ_counts <- df_all_combos %>%
             n_evaluated = sum(evaluated),
             n_experiments = n())
   
-le_exper_summ_counts %>%
+plot_cryptic_vs_expressed_counts <- le_exper_summ_counts %>%
   filter(n_cryptic > 0 & n_evaluated > 0) %>%
   ggplot(aes(x = n_cryptic, y = n_evaluated)) +
   geom_bin2d(binwidth = c(1,1)) +
@@ -86,9 +86,11 @@ le_exper_summ_counts %>%
   scale_x_continuous(breaks = seq(0,10,1)) +
   scale_y_continuous(breaks = seq(0,10,1)) +
   labs(title = "Cryptics are rarely called in >1 dataset",
-       x = "N datasets cryptic",
-       y = "N datasets tested") +
+       x = "Number of datasets cryptic",
+       y = "Number of datasets expressed") +
   theme_classic(base_size = 14)
+
+plot_cryptic_vs_expressed_counts
 
 
 #2. Calculate regulation consistency score (basically sum of absolute/ signed-ranks of -log10 pvalues
@@ -199,7 +201,7 @@ plot_df <- df %>%
          )
 
 
-plot_df %>%
+cryptics_norm_score_sort_heatmap <- plot_df %>%
   # first subset for events that are cryptic in at least one dataset
   group_by(le_id) %>%
   filter(any(cryptic)) %>%
@@ -208,7 +210,7 @@ plot_df %>%
 
 
 # repeat - this time just using sum of regulation score across datasets
-plot_df %>%
+cryptics_sum_score_sort_heatmap <- plot_df %>%
   mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score)) %>%
   # first subset for events that are cryptic in at least one dataset
   group_by(le_id) %>%
@@ -216,4 +218,40 @@ plot_df %>%
   ungroup() %>%
   facet_heatmap(plot_title = "Cryptic event deltas across datasets - sorted by sum of regulation score")
 
+cryptics_norm_score_sort_heatmap
+cryptics_sum_score_sort_heatmap
 
+if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
+
+ggsave(filename = "2023-09-18_ndatasets_cryptic_vs_expressed_binplot.png",
+       plot = plot_cryptic_vs_expressed_counts,
+              path = "processed",
+              width = 8,
+              height = 8,
+              units = "in",
+              dpi = "retina")
+
+
+ggsave(filename = "2023-09-18_cryptics_normed_regn_score_sort_facet_heatmap.png",
+       plot = cryptics_norm_score_sort_heatmap,
+       path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2023-09-18_cryptics_sum_regn_score_sort_facet_heatmap.png",
+       plot = cryptics_sum_score_sort_heatmap,
+       path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+# write enrichment scores to tsv (summarised)
+write_tsv(regn_score_sum, "processed/2023-09-18_last_exon_regulation_scores.tsv", col_names = T)
+
+# save to Rdata
+regn_score_all <- working_df
+
+save(plot_cryptic_vs_expressed_counts, cryptics_norm_score_sort_heatmap, cryptics_sum_score_sort_heatmap, regn_score_all, regn_score_sum, plot_df, file = "processed/supplementary_fig1_cryptics_consistency.Rdata")
