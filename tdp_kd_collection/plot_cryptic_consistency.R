@@ -3,14 +3,14 @@ library(tidyverse)
 facet_heatmap <- function(df, plot_title = "Cryptic event deltas across datasets") {
   df %>%
   ggplot(aes(x = experiment_name_simple, y = plot_le_id, fill = delta_PPAU_treatment_control, label = plot_label)) + 
-    facet_wrap("~ simple_event_type", ncol = 3, scales = "free_y") +
+    facet_wrap("~ plot_event_type", ncol = 3, scales = "free_y") +
     geom_tile() +
     scale_fill_gradient2(low ="#998ec3", mid = "#f7f7f7", high = "#f1a340",
                          breaks = seq(-1,1,0.2)) + # "#fee8c8"
     geom_text(size = rel(1.5), nudge_y = -0.25) +
     theme_classic() +
     theme(axis.text.x = element_text(size = rel(0.75), angle = 90),
-          axis.text.y = element_text(size = rel(0.5)),
+          axis.text.y = element_text(size = rel(0.55)),
           legend.position = "top",
           legend.key.width = unit(1, "cm")
     ) +
@@ -174,8 +174,8 @@ plot_exper_name_simple <- c("Humphrey i3 cortical",
                             "Zanovello SH-SY-5Y curve",
                             "Zanovello SH-SY-5Y CHX",
                             "Brown SH-SY-5Y",
-                            "Zanovello SK-N-DZ curve",
-                            "Brown SK-N-DZ")
+                            "Zanovello SK-N-BE curve",
+                            "Brown SK-N-BE")
 
 # make a named vector where names are the existing values
 names(plot_exper_name_simple) <- plot_exper_name_order
@@ -197,7 +197,12 @@ plot_df <- df %>%
   # Arange datasets in chosen order order
   mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score_norm),
          experiment_name_simple = plot_exper_name_simple[experiment_name],
-         experiment_name_simple = factor(experiment_name_simple, levels = plot_exper_name_simple)
+         experiment_name_simple = factor(experiment_name_simple, levels = plot_exper_name_simple),
+         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "Bleedthrough-ALE",
+                                     simple_event_type == "distal_3utr_extension" ~ "3'UTR-ALE",
+                                     simple_event_type == "spliced" ~ "AS-ALE",
+                                     T ~ ""),
+         plot_event_type = factor(plot_event_type, levels = c("AS-ALE", "Bleedthrough-ALE", "3'UTR-ALE"))
          )
 
 
@@ -231,8 +236,17 @@ ggsave(filename = "2023-09-18_ndatasets_cryptic_vs_expressed_binplot.png",
               units = "in",
               dpi = "retina")
 
+ggsave(filename = "2023-09-19_ndatasets_cryptic_vs_expressed_binplot.svg",
+       plot = plot_cryptic_vs_expressed_counts,
+       device = svg,
+       path = "processed",
+       width = 8,
+       height = 8,
+       units = "in",
+       dpi = "retina")
 
-ggsave(filename = "2023-09-18_cryptics_normed_regn_score_sort_facet_heatmap.png",
+
+ggsave(filename = "2023-09-19_cryptics_normed_regn_score_sort_facet_heatmap.png",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -240,9 +254,27 @@ ggsave(filename = "2023-09-18_cryptics_normed_regn_score_sort_facet_heatmap.png"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-09-18_cryptics_sum_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2023-09-19_cryptics_sum_regn_score_sort_facet_heatmap.png",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2023-09-19_cryptics_normed_regn_score_sort_facet_heatmap.svg",
+       plot = cryptics_norm_score_sort_heatmap,
+       path = "processed",
+       device = svg,
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2023-09-19_cryptics_sum_regn_score_sort_facet_heatmap.svg",
+       plot = cryptics_sum_score_sort_heatmap,
+       path = "processed",
+       device = svg,
        width = 12,
        height = 12,
        units = "in",
