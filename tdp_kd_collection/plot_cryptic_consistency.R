@@ -174,8 +174,8 @@ plot_exper_name_simple <- c("Humphrey i3 cortical",
                             "Zanovello SH-SY-5Y curve",
                             "Zanovello SH-SY-5Y CHX",
                             "Brown SH-SY-5Y",
-                            "Zanovello SK-N-BE curve",
-                            "Brown SK-N-BE")
+                            "Zanovello SK-N-BE(2) curve",
+                            "Brown SK-N-BE(2)")
 
 # make a named vector where names are the existing values
 names(plot_exper_name_simple) <- plot_exper_name_order
