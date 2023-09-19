@@ -174,7 +174,8 @@ x %>%
   scale_colour_manual(values = c("#000000", "#d95f02", "#7570b3"))
 
 
-colours_3grp <- c("Not cryptic" = "#000000", "Cryptic by medians" = "#d95f02", "Cryptic in >= 1 dataset" = "#7570b3")
+# old purple - "#7570b3"
+colours_3grp <- c("Not cryptic" = "darkgrey", "Cryptic by medians" = "#d95f02", "Cryptic in >= 1 dataset" = "#1b9e77")
 
 med_scatter_lab_1dataset <- ggplot(filter(x, !cryptic_any & !cryptic_med), aes(x = median_ctl*100,
                                                    y = median_delta*100,
@@ -215,23 +216,41 @@ med_scatter_lab_1dataset <- ggplot(filter(x, !cryptic_any & !cryptic_med), aes(x
   )
 
 
-# med_scatter_lab_1dataset
+med_scatter_lab_1dataset
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
 ggsave(filename = "2023-09-15_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
        plot = med_scatter,
        path = "processed",
-       width = 8,
-       height = 8,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-09-15_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
+ggsave(filename = "2023-09-15_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.svg",
+       plot = med_scatter,
+       path = "processed",
+       device = svg,
+       width = 10,
+       height = 10,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2023-09-19_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
        plot = med_scatter_lab_1dataset,
        path = "processed",
-       width = 8,
-       height = 8,
+       width = 10,
+       height = 10,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2023-09-19_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.svg",
+       plot = med_scatter_lab_1dataset,
+       path = "processed",
+       device = svg,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
