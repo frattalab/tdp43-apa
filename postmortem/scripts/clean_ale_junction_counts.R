@@ -86,38 +86,6 @@ summarise_path <- function(dt, id_cols, observed_minreads = 2,
 }
 
 
-plot_junction = function(junc,plotin_table = spliced_counts_ale){
-    
-    vals = c(`ALS-TDP` = "#E1BE6A", Control = "#40B0A6", `FTD-TDP` = "#E1BE6A", 
-             `ALS\nnon-TDP` = "#408A3E", `FTD\nnon-TDP` = "#408A3E")
-    
-    gene_name = plotin_table[paste_into_igv_junction == junc,unique(gene_name)]
-
-    plot_title = glue::glue("{gene_name} - {junc}")
-    
-    plt = plotin_table[paste_into_igv_junction == junc] |>
-        filter(!tissue_clean %in% c("Other","Choroid","Hippocampus","Liver","Sensory_Cortex","Occipital_Cortex")) |> 
-        mutate(disease =  gsub("-n","\nn",disease)) |> 
-        mutate(disease = fct_relevel(disease,"Control", "ALS\nnon-TDP","ALS-TDP", "FTD\nnon-TDP", "FTD-TDP")) |>
-        ggplot(aes(x = disease, y = spliced_reads, fill = disease)) +
-        geom_boxplot(outlier.colour = NA) +
-        geom_jitter(height = 0,alpha = 0.7, pch = 21) +
-        facet_wrap(~tissue_clean, scales = "free_y") +
-        scale_fill_manual(values = vals)  +
-        ylab("N spliced reads") +
-        xlab("") +
-        ggtitle(plot_title) +
-        ggpubr::theme_pubr() +
-        theme(legend.position = 'none') +
-        theme(text = element_text(size = 16)) 
-    
-    
-    
-    return(plt)
-    
-}
-
-
 library_depth = arrow::read_parquet('processed/nygc/nygc_library_sizes.parquet') |> 
     dplyr::rename(sample = sample_id)
 meta_data_full = fread("data/nygc/NYGC_all_RNA_samples_support.tsv")
@@ -158,6 +126,7 @@ expression_by_pathology_ale <- summarise_path(spliced_counts_ale, c("le_id", "ge
 
 counts_enriched_selective_ale <- count(expression_by_pathology_ale, selective, enriched)
 
+write_tsv(spliced_counts_ale, "processed/nygc/spliced_counts_ale_all.tsv")
 write_tsv(expression_by_pathology_ale, "processed/nygc/expression_by_pathology_ale_all.tsv")
 write_tsv(filter(expression_by_pathology_ale, selective), "processed/nygc/expression_by_pathology_ale_selective.tsv")
 write_tsv(filter(expression_by_pathology_ale, enriched), "processed/nygc/expression_by_pathology_ale_enrichedfrac.tsv")
@@ -199,6 +168,7 @@ expression_by_pathology_seddighi <- summarise_path(spliced_counts_seddighi, c("S
 counts_enriched_selective_seddighi <- count(expression_by_pathology_seddighi, selective, enriched)
 
 # write to file
+write_tsv(spliced_counts_seddighi, "processed/nygc/spliced_counts_seddighi_all.tsv")
 write_tsv(expression_by_pathology_seddighi, "processed/nygc/expression_by_pathology_seddighi_all.tsv")
 write_tsv(filter(expression_by_pathology_seddighi, selective), "processed/nygc/expression_by_pathology_seddighi_selective.tsv")
 write_tsv(filter(expression_by_pathology_seddighi, enriched), "processed/nygc/expression_by_pathology_seddighi_enrichedfrac.tsv")
