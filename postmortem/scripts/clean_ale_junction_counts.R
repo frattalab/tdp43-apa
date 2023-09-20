@@ -118,8 +118,6 @@ plot_junction = function(junc,plotin_table = spliced_counts_ale){
 }
 
 
-
-
 library_depth = arrow::read_parquet('processed/nygc/nygc_library_sizes.parquet') |> 
     dplyr::rename(sample = sample_id)
 meta_data_full = fread("data/nygc/NYGC_all_RNA_samples_support.tsv")
@@ -139,27 +137,7 @@ raw_spliced_ale[, le_id := tstrsplit(V7,"\\|")[[1]]]
 raw_spliced_ale[, gene_name := tstrsplit(V7,"\\|")[[2]]]
 raw_spliced_ale[,paste_into_igv_junction := paste0(V1,":",V2,"-",V3)]
 
-# get a dataframe of unique SJs searched (+ associated gene IDs)
-# junction_info = unique(raw_spliced_ale[,.(paste_into_igv_junction,gene_id,gene_name)])
-# 
-# # setnames(junction_info, "V6","strand")
-# # create a table of all combinations of junctions, sample_ids and counts (filling missing counts as 0 if applicable)
-# temp = complete(raw_spliced_ale[,.(paste_into_igv_junction,sample,V5)],
-#          paste_into_igv_junction, sample,fill = list(V5 = 0)) |> as.data.table()
-# 
-# # rename counts column
-# setnames(temp,"V5","spliced_reads")
-# # Add in sample ID & junction annotation information (gene id etc)
-# temp = temp |> left_join(junction_info)
-# # add tissue, disease classification & other metadata 
-# temp = temp |> left_join(meta_data)
-# 
-# # add columns specifying whether tissue with expected TDP path (disease_tissue) & whether has TDP path (tdp_path)
-# spliced_counts_ale = create_formated_metadata(temp) |> unique()
-# rm(temp)
-
 spliced_counts_ale <- bed_add_metadata(raw_spliced_ale, meta_data, c("le_id", "gene_name"))
-
 
 # number of path tissue samples
 total_path = spliced_counts_ale |> 
@@ -175,37 +153,6 @@ total_notpath = spliced_counts_ale |>
 
 # for disease tissues, identify whether junctions are observed (>= 2 spliced reads)
 # and calculate fraction of tissues where observed (relative to own group)
-# expression_by_pathology_ale = spliced_counts_ale |> 
-#     dplyr::select(disease_tissue,spliced_reads,tdp_path,sample,paste_into_igv_junction,le_id,gene_name) |> 
-#     unique() |> 
-#     filter(disease_tissue == TRUE) |> 
-#     mutate(observed = spliced_reads >= 2) |> 
-#     group_by(tdp_path,paste_into_igv_junction) |> 
-#     summarise(n_obs = sum(observed)) |> 
-#     ungroup() |> 
-#     pivot_wider(values_from = 'n_obs',
-#                 names_from = 'tdp_path') |> 
-#     left_join(junction_info)  |> 
-#     as.data.table() |> 
-#     mutate(fraction_not_path = not_path / total_notpath) |> 
-#     mutate(fraction_path = path / total_path)
-# 
-# # Extract selective junctions
-# # ale_selective = expression_by_pathology_ale |>
-# #     filter(fraction_not_path <= 0.005) |>
-# #     filter(fraction_path >= 0.01)
-# # 
-# # # Extract enriched junctions (simple criteria)
-# # ale_enriched = expression_by_pathology_ale[fraction_path > fraction_not_path * 2.5]
-# 
-# # output tables of enriched & specific junctions
-# expression_by_pathology_ale <- expression_by_pathology_ale %>%
-#   mutate(selective = fraction_path >= 0.01 & fraction_not_path <= 0.005,
-#          enriched = !selective & fraction_path > (fraction_not_path * 2.5)) %>%
-#   arrange(desc(selective), desc(enriched))
-
-# for disease tissues, identify whether junctions are observed (>= 2 spliced reads)
-# and calculate fraction of tissues where observed (relative to own group)
 # Also add labels whether passes path specificity/enrichment criteria
 expression_by_pathology_ale <- summarise_path(spliced_counts_ale, c("le_id", "gene_name")) 
 
@@ -217,16 +164,23 @@ write_tsv(filter(expression_by_pathology_ale, enriched), "processed/nygc/express
 write_tsv(counts_enriched_selective_ale, "processed/nygc/expression_by_pathology_ale_counts.tsv")
 
 ## Process Seddighi df
-raw_spliced_seddighi <- read_csv("data/nygc/seddighi_cryptics_nygc.csv")
 
-# subset to minimal cols to mimic processing of ALEs
-min_spliced_seddighi <- raw_spliced_seddighi %>%
-  select(V1:V6, paste_into_igv_junction, sample = sample_id, Symbol) %>%
+raw_spliced_seddighi <- fread("data/nygc/2023-09-19_seddighi_all_cryptics.aggregated.clean.annotated.bed")
+
+# add junction ID
+raw_spliced_seddighi[,paste_into_igv_junction := paste0(V1,":",V2,"-",V3)]
+
+# extract sample from Name field of BED file
+raw_spliced_seddighi = raw_spliced_seddighi |> 
+  mutate(sample = str_extract(V4,"CGND-HRA-\\d{5}"))
+
+# extract ID columns
+raw_spliced_seddighi <- raw_spliced_seddighi %>%
+  rename(Symbol = V7) %>%
   mutate(gene_name = str_split_i(Symbol, "_", 1)) %>%
   as.data.table()
 
-
-spliced_counts_seddighi <- bed_add_metadata(min_spliced_seddighi, meta_data, c("Symbol", "gene_name"))
+spliced_counts_seddighi <- bed_add_metadata(raw_spliced_seddighi, meta_data, c("Symbol", "gene_name"))
 
 # number of path tissue samples
 total_path_seddighi = spliced_counts_seddighi |> 
