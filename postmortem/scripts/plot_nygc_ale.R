@@ -11,13 +11,18 @@ plot_junction = function(junc,plotin_table = spliced_counts_ale){
   plot_title = glue::glue("{gene_name} - {junc}")
   
   plt = plotin_table[paste_into_igv_junction == junc] |>
-    filter(!tissue_clean %in% c("Other","Choroid","Hippocampus","Liver","Sensory_Cortex","Occipital_Cortex")) |> 
+    filter(!tissue_clean %in% c("Other","Choroid","Hippocampus","Liver","Sensory_Cortex","Occipital_Cortex","Thoracic_Spinal_Cord", "Temporal_Cortex")) |>
+    # Only show FTD subtypes for cerebellum and frontal cortex
+    filter(str_detect(disease, "FTD", negate = T) | 
+             (str_detect(disease, "FTD") & tissue_clean %in% c("Cerebellum", "Frontal_Cortex"))
+           ) |>
     mutate(disease =  gsub("-n","\nn",disease)) |> 
-    mutate(disease = fct_relevel(disease,"Control", "ALS\nnon-TDP","ALS-TDP", "FTD\nnon-TDP", "FTD-TDP")) |>
+    mutate(disease = fct_relevel(disease,"Control", "ALS\nnon-TDP","ALS-TDP", "FTD\nnon-TDP", "FTD-TDP"),
+           tissue_clean = fct_relevel(tissue_clean, "Cervical_Spinal_Cord", "Lumbar_Spinal_Cord", "Motor_Cortex", "Cerebellum", "Frontal_Cortex")) |>
     ggplot(aes(x = disease, y = spliced_reads, fill = disease)) +
     geom_boxplot(outlier.colour = NA) +
     geom_jitter(height = 0,alpha = 0.7, pch = 21) +
-    facet_wrap(~tissue_clean, scales = "free_y") +
+    facet_wrap(~tissue_clean, scales = "free") +
     scale_fill_manual(values = vals)  +
     ylab("N spliced reads") +
     xlab("") +
@@ -200,7 +205,7 @@ enr_jnc_ale_plots <- map(enriched_jnc_ale,
 
 walk2(sel_jnc_ale_plots,
       names(sel_jnc_ale_plots),
-      ~ ggsave(filename = glue::glue("2023-09-20_nygc_papa_as_ale.selective.spliced_reads.{.y}.png"),
+      ~ ggsave(filename = glue::glue("2023-09-21_nygc_papa_as_ale.selective.spliced_reads.{.y}.png"),
                path = "processed/nygc/selective_jncs/ale/png/",
                plot = .x,
                height = 14,
@@ -213,7 +218,7 @@ walk2(sel_jnc_ale_plots,
 
 walk2(enr_jnc_ale_plots,
       names(enr_jnc_ale_plots),
-      ~ ggsave(filename = glue::glue("2023-09-20_nygc_papa_as_ale.enriched.spliced_reads.{.y}.png"),
+      ~ ggsave(filename = glue::glue("2023-09-21_nygc_papa_as_ale.enriched.spliced_reads.{.y}.png"),
                path = "processed/nygc/enriched_jncs/ale/png/",
                plot = .x,
                height = 14,
@@ -227,7 +232,7 @@ walk2(enr_jnc_ale_plots,
 # save as SVGs
 walk2(sel_jnc_ale_plots,
       names(sel_jnc_ale_plots),
-      ~ ggsave(filename = glue::glue("2023-09-20_nygc_papa_as_ale.selective.spliced_reads.{.y}.svg"),
+      ~ ggsave(filename = glue::glue("2023-09-21_nygc_papa_as_ale.selective.spliced_reads.{.y}.svg"),
                path = "processed/nygc/selective_jncs/ale/svg/",
                device = svg,
                plot = .x,
@@ -241,7 +246,7 @@ walk2(sel_jnc_ale_plots,
 
 walk2(enr_jnc_ale_plots,
       names(enr_jnc_ale_plots),
-      ~ ggsave(filename = glue::glue("2023-09-20_nygc_papa_as_ale.enriched.spliced_reads.{.y}.svg"),
+      ~ ggsave(filename = glue::glue("2023-09-21_nygc_papa_as_ale.enriched.spliced_reads.{.y}.svg"),
                path = "processed/nygc/enriched_jncs/ale/svg/",
                plot = .x,
                device = svg,
