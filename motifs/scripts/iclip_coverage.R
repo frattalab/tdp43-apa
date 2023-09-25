@@ -70,8 +70,6 @@ split_coverage <- function(coverage_file,
   
 }
 
-
-
 iclip1 <- "data/iCLIP/tardbp-shsy5y-1-20210701-mh_mapped_to_genome_single_peaks.sort.bed"
 iclip2 <- "data/iCLIP/tardbp-shsy5y-2-20210701-mh_mapped_to_genome_single_peaks.sort.bed"
 pooled_iclip <- "data/iCLIP/tardbp-shsy5y.concat.sort.chr.bed"
@@ -168,3 +166,50 @@ list.files(cov_outdir,
   walk(~ system(paste("gzip", .x), intern = T))
 
 
+## repeat for 5'ends of bleedthroughs and spliced events
+
+# input beds
+spliced_start_bed <- "data/iCLIP/2023-07-04_papa_cryptic_spliced.le_start.bed"
+bleedthrough_start_bed <- "data/iCLIP/2023-07-04_papa_cryptic_bleedthrough.le_start.bed"
+
+# extend single nuc coords in either direction
+extend_bed(spliced_start_bed, chromsizes, flank_interval = 500, outfile = "data/iCLIP/2023-07-04_papa_cryptic_spliced.le_start.flank_500.bed")
+extend_bed(bleedthrough_start_bed, chromsizes, flank_interval = 500, outfile = "data/iCLIP/2023-07-04_papa_cryptic_bleedthrough.le_start.flank_500.bed")
+
+tmp_spliced_cov_bed <- file.path(cov_outdir, "spliced", "2023-07-04_papa_cryptic_spliced.le_start.flank_500.coverage.txt")
+tmp_bleedthrough_cov_bed <- file.path(cov_outdir, "bleedthrough", "2023-07-04_papa_cryptic_bleedthrough.le_start.flank_500.coverage.txt")
+
+# Get coverage for spliced events
+get_coverage("data/iCLIP/2023-07-04_papa_cryptic_spliced.le_start.flank_500.bed",
+             iclip = pooled_iclip,
+             outfile = tmp_spliced_cov_bed,
+)
+
+# extract cryptic/bg
+split_coverage(coverage_file = tmp_spliced_cov_bed,
+               outfile_foreground_suffix = ".cr.txt",
+               outfile_background_suffix = ".bg.txt",
+               outfile_prefix = str_remove(tmp_spliced_cov_bed, ".txt$"))
+
+file.remove(tmp_spliced_cov_bed)
+
+# repeat for bleedthrough
+get_coverage("data/iCLIP/2023-07-04_papa_cryptic_bleedthrough.le_start.flank_500.bed",
+             iclip = pooled_iclip,
+             outfile = tmp_bleedthrough_cov_bed,
+)
+
+# extract cryptic/bg
+split_coverage(coverage_file = tmp_bleedthrough_cov_bed,
+               outfile_foreground_suffix = ".cr.txt",
+               outfile_background_suffix = ".bg.txt",
+               outfile_prefix = str_remove(tmp_bleedthrough_cov_bed, ".txt$"))
+
+file.remove(tmp_bleedthrough_cov_bed)
+
+# gzip all the output files
+list.files(cov_outdir,
+           "\\.((bg)|(cr))\\.txt$",
+           full.names = T,
+           recursive = T) %>%
+  walk(~ system(paste("gzip", .x), intern = T))
