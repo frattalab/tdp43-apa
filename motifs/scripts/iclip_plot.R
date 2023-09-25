@@ -49,7 +49,7 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
     ) +
     scale_fill_manual(values = fill_colours) +
     scale_color_manual(values = line_colours) +
-    theme_bw(base_size = 14) +
+    theme_bw(base_size = 20) +
     theme(legend.position = "top") +
     labs(fill = fill_lab, colour = colour_lab, title = title_lab)
   
@@ -141,4 +141,62 @@ iclip_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
      ~ plot_coverage(.x, ci_se_mult = 1, title_lab = .y)
 )
 
+if (!dir.exists("processed/iclip_maps/plots")) { dir.create("processed/iclip_maps/plots", recursive = T)}
+
+
 # write to file (PNG and SVG)
+walk2(.x = iclip_maps_2se,
+      .y = names(iclip_maps_2se),
+      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.2_se_ci.",
+                                str_replace_all(.y, "'|-", "_"),
+                                ".png"),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = "png",
+               height = 6,
+               width = 18,
+               units = "in",
+               dpi = "retina")
+      )
+
+walk2(.x = iclip_maps_1se,
+      .y = names(iclip_maps_1se),
+      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.1_se_ci.",
+                                str_replace_all(.y, "'|-", "_"),
+                                ".png"),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = "png",
+               height = 6,
+               width = 18,
+               units = "in",
+               dpi = "retina")
+)
+
+walk2(.x = iclip_maps_2se,
+      .y = names(iclip_maps_2se),
+      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.2_se_ci.",
+                                str_replace_all(.y, "'|-", "_"),
+                                ".svg"),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = svg,
+               height = 6,
+               width = 18,
+               units = "in",
+               dpi = "retina")
+)
+
+walk2(.x = iclip_maps_1se,
+      .y = names(iclip_maps_1se),
+      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.1_se_ci.",
+                                str_replace_all(.y, "'|-", "_"),
+                                ".svg"),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = svg,
+               height = 6,
+               width = 18,
+               units = "in",
+               dpi = "retina")
+)
