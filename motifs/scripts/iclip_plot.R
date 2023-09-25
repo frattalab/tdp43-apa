@@ -24,6 +24,7 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
   
   group_cols <- c(event_col, group_col)
   
+  
   # generate confidence interval values
   plot_df <- df %>%
     mutate(plot_ymin = avg_coverage - (ci_se_mult*se),
@@ -47,6 +48,8 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
       breaks = seq(0,1000,100),
       labels = as.character(seq(-500,500,100))
     ) +
+    scale_y_continuous(limits = c(NA, 0.1),
+                       breaks = seq(0, 0.1, 0.01)) +
     scale_fill_manual(values = fill_colours) +
     scale_color_manual(values = line_colours) +
     theme_bw(base_size = 20) +
@@ -131,10 +134,6 @@ event_lists <- list("3'UTR-ALE" = d3utr_average_coverage,
                     "AS-ALE" = spliced_average_coverage,
                     "Bleedthrough-ALE" = bleedthrough_average_coverage)
 
-# Standard plots (2*se confidence interval)
-iclip_maps_2se <- map2(.x = event_lists, .y = names(event_lists),
-       ~ plot_coverage(.x, title_lab = .y)
-     )
 
 # More liberal confidence intervals (1*se)
 iclip_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
@@ -145,23 +144,9 @@ if (!dir.exists("processed/iclip_maps/plots")) { dir.create("processed/iclip_map
 
 
 # write to file (PNG and SVG)
-walk2(.x = iclip_maps_2se,
-      .y = names(iclip_maps_2se),
-      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.2_se_ci.",
-                                str_replace_all(.y, "'|-", "_"),
-                                ".png"),
-               plot = .x,
-               path = "processed/iclip_maps/plots/",
-               device = "png",
-               height = 6,
-               width = 18,
-               units = "in",
-               dpi = "retina")
-      )
-
 walk2(.x = iclip_maps_1se,
       .y = names(iclip_maps_1se),
-      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.1_se_ci.",
+      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".png"),
                plot = .x,
@@ -173,23 +158,9 @@ walk2(.x = iclip_maps_1se,
                dpi = "retina")
 )
 
-walk2(.x = iclip_maps_2se,
-      .y = names(iclip_maps_2se),
-      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.2_se_ci.",
-                                str_replace_all(.y, "'|-", "_"),
-                                ".svg"),
-               plot = .x,
-               path = "processed/iclip_maps/plots/",
-               device = svg,
-               height = 6,
-               width = 18,
-               units = "in",
-               dpi = "retina")
-)
-
 walk2(.x = iclip_maps_1se,
       .y = names(iclip_maps_1se),
-      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.1_se_ci.",
+      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".svg"),
                plot = .x,
