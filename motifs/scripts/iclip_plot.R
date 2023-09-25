@@ -20,7 +20,7 @@ parse_coverage <- function(file, flank_interval) {
   
 }
 
-plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "cryptic", facet_ncol = 2, fill_colours = c("#000000", "#d95f02"), line_colours = c("#000000", "#d95f02")) {
+plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "plot_cryptic", facet_ncol = 2, fill_colours = c("#000000", "#d95f02"), line_colours = c("#000000", "#d95f02"), fill_lab = "", colour_lab = "", title_lab = "") {
   
   group_cols <- c(event_col, group_col)
   
@@ -50,13 +50,19 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
     scale_fill_manual(values = fill_colours) +
     scale_color_manual(values = line_colours) +
     theme_bw(base_size = 14) +
-    theme(legend.position = "top")
+    theme(legend.position = "top") +
+    labs(fill = fill_lab, colour = colour_lab, title = title_lab)
   
   
 }
 
-d3utr_paths <- list.files(path = "processed/iclip_maps/d3utr", full.names = T) 
 
+
+d3utr_paths <- list.files(path = "processed/iclip_maps/d3utr", full.names = T) 
+spliced_paths <- list.files(path = "processed/iclip_maps/spliced", full.names = T) 
+bleedthrough_paths <- list.files(path = "processed/iclip_maps/bleedthrough", full.names = T) 
+
+# extract coord type & group from filenames
 # split by '.', extract the two elements before '.txt.gz'
 d3utr_nm <- str_split(basename(d3utr_paths), "\\.",simplify = T) %>% 
   apply(MARGIN = 1,
@@ -64,97 +70,75 @@ d3utr_nm <- str_split(basename(d3utr_paths), "\\.",simplify = T) %>%
                            collapse = ".")
           })
 
-# read in coverages
-d3utr_average_coverage <- d3utr_paths %>%
-  set_names(d3utr_nm) %>%
-  map(~ parse_coverage(.x, 500)) %>%
-  bind_rows(.id = "origin") %>%
-  # pull out site type & status
-  separate(origin, into = c("type", "cryptic"), sep = "\\.", remove = T)
+# 
+# 2023-07-04_papa_cryptic_spliced.le_start.flank_500.coverage.bg.txt.gz -> le_start.bg
+spliced_nm <- str_split(basename(spliced_paths), "\\.",simplify = T) %>% 
+  apply(MARGIN = 1,
+        function(x) {paste(c(x[length(x)-5], x[length(x)-2]),
+                           collapse = ".")
+        })
 
-# make df plot ready
+# processed/iclip_maps/bleedthrough/2023-07-04_papa_cryptic_bleedthrough.le_start.flank_500.coverage.bg.txt.gz -> le_start.bg
+bleedthrough_nm <- str_split(basename(bleedthrough_paths), "\\.",simplify = T) %>% 
+  apply(MARGIN = 1,
+        function(x) {paste(c(x[length(x)-5], x[length(x)-2]),
+                           collapse = ".")
+        })
+
+
+# read in coverages
+#' files - assumes a named vector
+get_combined_coverages <- function(files, flank_interval) {
+  
+  files %>%
+  map(~ parse_coverage(.x, 500)) %>%
+    bind_rows(.id = "origin") %>%
+    # pull out site type & status
+    separate(origin, into = c("type", "cryptic"), sep = "\\.", remove = T)
+  
+}
+
+# read in coverages to combined dfs
+d3utr_average_coverage <- get_combined_coverages(set_names(d3utr_paths, d3utr_nm), 500)
+spliced_average_coverage <- get_combined_coverages(set_names(spliced_paths, spliced_nm), 500)
+bleedthrough_average_coverage <- get_combined_coverages(set_names(bleedthrough_paths, bleedthrough_nm), 500)
+
+
+# d3utr - group specific tidying for plotting
 d3utr_average_coverage <- d3utr_average_coverage %>%
   mutate(plot_type = if_else(type == "prox", "Proximal",
                              "Distal"),
-         plot_type = factor(plot_type, levels = c("Proximal", "Distal"))
+         plot_type = factor(plot_type, levels = c("Proximal", "Distal")),
+         plot_cryptic = if_else(cryptic == "cr", "Cryptic", "Background"),
+         plot_cryptic = factor(plot_cryptic, levels = c("Background", "Cryptic"))
          )
 
+spliced_average_coverage <- spliced_average_coverage %>%
+  mutate(plot_type = if_else(type == "le_start", "Exon Start", "PAS"),
+         plot_type = factor(plot_type, levels = c("Exon Start", "PAS")),
+         plot_cryptic = if_else(cryptic == "cr", "Cryptic", "Background"),
+         plot_cryptic = factor(plot_cryptic, levels = c("Background", "Cryptic")))
+
+bleedthrough_average_coverage <- bleedthrough_average_coverage %>%
+  mutate(plot_type = if_else(type == "le_start", "Exon Start", "PAS"),
+         plot_type = factor(plot_type, levels = c("Exon Start", "PAS")),
+         plot_cryptic = if_else(cryptic == "cr", "Cryptic", "Background"),
+         plot_cryptic = factor(plot_cryptic, levels = c("Background", "Cryptic")))
 
 
-plot_coverage(d3utr_average_coverage)
-plot_coverage(d3utr_average_coverage, ci_se_mult = 1, facet_ncol = 1)
 
-# average_coverage_prox_bg <- parse_coverage(prox_bg_file)
-# average_coverage_dist_bg <- parse_coverage(dist_bg_file)
-# average_coverage_prox_cr <- parse_coverage(prox_cr_file)
-# average_coverage_dist_cr <- parse_coverage(dist_cr_file)
-# 
-# average_coverage_prox_cr$cryptic <- "cryptic"
-# average_coverage_dist_cr$cryptic <- "cryptic"
-# average_coverage_prox_bg$cryptic <- "background"
-# average_coverage_dist_bg$cryptic <- "background"
-# 
-# average_coverage_prox_cr$type <- "proximal"
-# average_coverage_dist_cr$type <- "distal"
-# average_coverage_prox_bg$type <- "proximal"
-# average_coverage_dist_bg$type <- "distal"
+event_lists <- list("3'UTR-ALE" = d3utr_average_coverage,
+                    "AS-ALE" = spliced_average_coverage,
+                    "Bleedthrough-ALE" = bleedthrough_average_coverage)
 
+# Standard plots (2*se confidence interval)
+iclip_maps_2se <- map2(.x = event_lists, .y = names(event_lists),
+       ~ plot_coverage(.x, title_lab = .y)
+     )
 
-### Playground
+# More liberal confidence intervals (1*se)
+iclip_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
+     ~ plot_coverage(.x, ci_se_mult = 1, title_lab = .y)
+)
 
-# 
-# d3utr_average_coverage %>%
-#   ggplot(aes(x = position, y = avg_coverage, color=cryptic, fill=cryptic)) +
-#   geom_smooth(method = "loess", span=0.2, se = F) +
-#   geom_ribbon(data = d3utr_average_coverage  %>% group_by(cryptic) %>%
-#                 mutate(ymin_smooth = stats::predict(loess(lwr~position,span=0.1)),
-#                        ymax_smooth = stats::predict(loess(upr~position,span=0.1))),
-#               aes(ymin = ymin_smooth,  ymax = ymax_smooth, fill = cryptic),
-#               alpha = 0.31) +
-#   xlab("Position") +
-#   ylab("Average Coverage") +
-#   facet_wrap(~plot_type, ncol = 2, scales = "fixed")+
-#   scale_x_continuous(
-#     limits = c(0, 1001),
-#     breaks = seq(0,1000,100),
-#     labels = as.character(seq(-500,500,100))
-#   )
-# 
-# d3utr_average_coverage %>%
-#   ggplot(aes(x = position, y = avg_coverage, color=cryptic, fill=cryptic)) +
-#   geom_smooth(method = "loess", span=0.2, se = F) +
-#   geom_ribbon(data = d3utr_average_coverage  %>% group_by(cryptic) %>%
-#                 mutate(ymin_smooth = stats::predict(loess(lwr~position,span=0.1)),
-#                        ymax_smooth = stats::predict(loess(upr~position,span=0.1))),
-#               aes(ymin = ymin_smooth,  ymax = ymax_smooth, fill = cryptic),
-#               alpha = 0.31) +
-#   xlab("Position") +
-#   ylab("Average Coverage") +
-#   facet_wrap(~plot_type, ncol = 2, scales = "fixed")+
-#   scale_x_continuous(
-#     limits = c(0, 1001),
-#     breaks = seq(0,1000,100),
-#     labels = as.character(seq(-500,500,100))
-#   )
-# 
-# d3utr_average_coverage %>%
-#   ggplot(aes(x = position, y = avg_coverage, color=cryptic, fill=cryptic)) +
-#   geom_smooth(method = "loess", span=0.2, se = F) +
-#   geom_ribbon(data = d3utr_average_coverage  %>% group_by(across(all_of(c("plot_type", "cryptic")))) %>%
-#                 mutate(ymin_smooth = stats::predict(loess(lwr~position,span=0.1)),
-#                        ymax_smooth = stats::predict(loess(upr~position,span=0.1))),
-#               aes(ymin = ymin_smooth,  ymax = ymax_smooth, fill = cryptic),
-#               alpha = 0.31) +
-#   xlab("Position") +
-#   ylab("Average Coverage") +
-#   geom_vline(xintercept = 500, linetype = "dashed", alpha = 0.5) +
-#   facet_wrap(~plot_type, ncol = 1, scales = "fixed") +
-#   scale_x_continuous(
-#     limits = c(0, 1001),
-#     breaks = seq(0,1000,100),
-#     labels = as.character(seq(-500,500,100))
-#   ) +
-#   scale_fill_manual(values = c("#000000", "#d95f02")) +
-#   scale_color_manual(values = c("#000000", "#d95f02")) +
-#   theme_bw(base_size = 14) +
-#   theme(legend.position = "top")
+# write to file (PNG and SVG)
