@@ -66,51 +66,7 @@ gsea_riboseq_cryp_df <- gsea_riboseq_cryp %>%
   left_join(pway_le, by = "pathway")
 
 write_tsv(gsea_riboseq_cryp_df, "processed/2023-09-26_riboseq_gsea_ale_types_results.tsv", col_names = T)
+saveRDS(cryptic_ale_gene_lists, "processed/gsea_riboseq.ale_gene_lists.rds")
+saveRDS(riboseq_fc_ranks, "processed/gsea_riboseq.fc_ranks.rds")
 
 
-
-# # generate dot plot of GSEA results - gene sets, NES as x-y, size of dot indicates significance
-# plot_df_gsea_riboseq <- gsea_riboseq_cryp_df %>%
-#   mutate(plot_pathway = case_when(pathway == "spliced" ~ "AS-ALE",
-#                                   pathway == "distal_3utr_extension" ~ "3'UTR-ALE",
-#                                   pathway == "bleedthrough" ~ "Bleedthrough-ALE")) %>%
-#   mutate(sig = padj < 0.05,
-#          plot_pathway = fct_reorder(plot_pathway, -log10(padj)),
-#          plot_size = -log10(padj)
-#   ) 
-# 
-# # gsea dot plot
-# plot_df_gsea_riboseq %>%
-#   ggplot(aes(x = NES, y = plot_pathway, colour = sig, size = plot_size)) +
-#   geom_point() +
-#   geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
-#   scale_x_continuous(limits = c(-3, 3)) +
-#   theme_bw(base_size = 20) +
-#   scale_colour_manual(values = c("#d95f02", "#1b9e77")) +
-#   labs(x = "GSEA normalised enrichment score",
-#        y = "Gene set",
-#        colour = "padj < 0.05",
-#        size = "-log10(padj)")
-# 
-# ggsave("processed/2023-06-28_gsea_cryptics_dotplot.png",
-#        height = 8,
-#        width = 12,
-#        units = "in")
-# 
-# 
-# # classic enrichment plots
-# plotEnrichment(cryptic_ale_gene_lists[["distal_3utr_extension"]],
-#                riboseq_fc_ranks) +
-#   labs(title = "3'UTR-ALE",
-#        subtitle = glue::glue("NES = {round(plot_df_gsea_riboseq[2,6], 4)}, padj = {round(plot_df_gsea_riboseq[2,3], 4)}"),
-#        x = "Gene Ranks",
-#        y = "Enrichment Score") +
-#   theme(title = element_text(size = rel(1.5)),
-#         axis.text = element_text(size = rel(1.5)))
-# 
-# ggsave("processed/2023-06-28_gsea_3utr_ext_cryptics_enrichplot.png",
-#        device = "png",
-#        height = 8,
-#        width = 8,
-#        units = "in",
-#        dpi = "retina")
