@@ -20,19 +20,25 @@ parse_coverage <- function(file, flank_interval) {
   
 }
 
-plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "plot_cryptic", facet_ncol = 2, fill_colours = c("#000000", "#d95f02"), line_colours = c("#000000", "#d95f02"), fill_lab = "", colour_lab = "", title_lab = "") {
+plot_coverage_df <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "plot_cryptic") {
   
   group_cols <- c(event_col, group_col)
   
-  
   # generate confidence interval values
-  plot_df <- df %>%
+  df %>%
     mutate(plot_ymin = avg_coverage - (ci_se_mult*se),
            plot_ymax = avg_coverage + (ci_se_mult*se)) %>%
     group_by(across(all_of(group_cols))) %>%
-    mutate(ymin_smooth = stats::predict(loess(plot_ymin~position,span=0.1)),
-           ymax_smooth = stats::predict(loess(plot_ymax~position,span=0.1))) %>%
+    mutate(ymin_smooth = stats::predict(loess(plot_ymin~position, span=0.1)),
+           ymax_smooth = stats::predict(loess(plot_ymax~position, span=0.1))) %>%
     ungroup()
+  
+}
+
+plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "plot_cryptic", facet_ncol = 2, fill_colours = c("#000000", "#d95f02"), line_colours = c("#000000", "#d95f02"), fill_lab = "", colour_lab = "", title_lab = "") {
+  
+  # generate confidence interval values
+  plot_df <- plot_coverage_df(df, ci_se_mult, event_col, group_col)
   
   plot_df %>%
     ggplot(aes(x = position, y = avg_coverage, color=!!sym(group_col), fill=!!sym(group_col))) +
@@ -49,7 +55,7 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
       labels = as.character(seq(-500,500,100))
     ) +
     scale_y_continuous(limits = c(NA, 0.1),
-                       breaks = seq(0, 0.1, 0.01)) +
+                       breaks = seq(0, 0.1, 0.02)) +
     scale_fill_manual(values = fill_colours) +
     scale_color_manual(values = line_colours) +
     theme_bw(base_size = 20) +
@@ -135,20 +141,27 @@ event_lists <- list("3'UTR-ALE" = d3utr_average_coverage,
                     "Bleedthrough-ALE" = bleedthrough_average_coverage)
 
 
+# 
+
 # More liberal confidence intervals (1*se)
 iclip_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
      ~ plot_coverage(.x, ci_se_mult = 1, title_lab = .y)
 )
 
-if (!dir.exists("processed/iclip_maps/plots")) { dir.create("processed/iclip_maps/plots", recursive = T)}
+# get underlying dfs
+iclip_dfs_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
+                           ~ plot_coverage_df(.x, ci_se_mult = 1)
+)
 
+if (!dir.exists("processed/iclip_maps/plots")) { dir.create("processed/iclip_maps/plots", recursive = T)}
 
 # write to file (PNG and SVG)
 walk2(.x = iclip_maps_1se,
       .y = names(iclip_maps_1se),
-      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
+      ~ ggsave(filename = paste("2023-09-26_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
                                 str_replace_all(.y, "'|-", "_"),
-                                ".png"),
+                                ".png",
+                                sep = ""),
                plot = .x,
                path = "processed/iclip_maps/plots/",
                device = "png",
@@ -160,9 +173,10 @@ walk2(.x = iclip_maps_1se,
 
 walk2(.x = iclip_maps_1se,
       .y = names(iclip_maps_1se),
-      ~ ggsave(filename = paste("2023-09-25_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
+      ~ ggsave(filename = paste("2023-09-26_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
                                 str_replace_all(.y, "'|-", "_"),
-                                ".svg"),
+                                ".svg",
+                                sep = ""),
                plot = .x,
                path = "processed/iclip_maps/plots/",
                device = svg,
@@ -171,3 +185,15 @@ walk2(.x = iclip_maps_1se,
                units = "in",
                dpi = "retina")
 )
+
+# write plot dfs to file
+walk2(.x = iclip_dfs_maps_1se,
+      .y = names(iclip_dfs_maps_1se),
+      ~ write_tsv(.x, 
+                  paste("processed/iclip_maps/plots/2023-09-26_papa_cryptic_iclip_df.horiz_stack.fixed_ylim.1_se_ci.",
+                            str_replace_all(.y, "'|-", "_"),
+                            ".tsv",
+                            sep = ""),
+                  col_names = T
+                  )
+      )
