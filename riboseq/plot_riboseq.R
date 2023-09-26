@@ -1,6 +1,7 @@
 library(tidyverse)
 library(fgsea)
 library(ggrepel)
+source("helpers.R")
 set.seed(123)
 
 
@@ -14,6 +15,11 @@ papa_cryp_et <- read_tsv("../preprocessing/processed/cryptics_summary_all_events
 papa_pm_et_mc <- read_tsv("../postmortem/processed/2023-09-11_liu_facs_decoys_per_sample_delta_ppau.cryptics.tsv")
 bleedthrough_mv <- read_tsv("../preprocessing/processed/bleedthrough_manual_validation.tsv")
 event_type_complex_mc <- read_tsv("../postmortem/data/cryptics_summary_complex_manual_curation.tsv")
+
+# riboseq gsea results 
+gsea_riboseq_cryp_df <- read_tsv("processed/2023-09-26_riboseq_gsea_ale_types_results.tsv")
+
+
 # ELK1 riboseq counts plot
 plot_df_elk1_nc <- normed_count_mtx %>%
 filter(gene_name == "ELK1") %>%
@@ -348,8 +354,132 @@ ggsave("processed/2023-07-10_riboseq_elk1_six3_tlx1_labels_big_larger_points.png
        dpi = "retina"
 )
 
+####-----
+# GSEA plots
+####-----
 
+# generate dot plot of GSEA results - gene sets, NES as x-y, size of dot indicates significance
+plot_df_gsea_riboseq <- gsea_riboseq_cryp_df %>%
+  mutate(plot_pathway = case_when(pathway == "spliced" ~ "AS-ALE",
+                                  pathway == "distal_3utr_extension" ~ "3'UTR-ALE",
+                                  pathway == "bleedthrough" ~ "Bleedthrough-ALE")) %>%
+  mutate(sig = padj < 0.05,
+         plot_pathway = fct_reorder(plot_pathway, -log10(padj)),
+         plot_size = -log10(padj)
+  )
+
+# gsea dot plot
+plot_df_gsea_riboseq %>%
+  ggplot(aes(x = NES, y = plot_pathway, colour = sig, size = plot_size)) +
+  geom_point() +
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
+  scale_x_continuous(limits = c(-3, 3)) +
+  theme_bw(base_size = 20) +
+  scale_colour_manual(values = c("#d95f02", "#1b9e77")) +
+  labs(x = "GSEA normalised enrichment score",
+       y = "Gene set",
+       colour = "padj < 0.05",
+       size = "-log10(padj)")
+
+ggsave("processed/2023-09-26_gsea_cryptics_dotplot.png",
+       height = 8,
+       width = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave("processed/2023-09-26_gsea_cryptics_dotplot.svg",
+       height = 8,
+       width = 12,
+       units = "in",
+       dpi = "retina",
+       device = svg)
+
+# classic GSEA enrichment plots
+
+# read in GSEA input gene lists for different ALE types (as )
+cryptic_ale_gene_lists <- readRDS("processed/gsea_riboseq.ale_gene_lists.rds")
+riboseq_fc_ranks <- readRDS("processed/gsea_riboseq.fc_ranks.rds")
+
+
+plot_gsea_line <- function(gene_list, ranks, nes, padj, plot_title = "",round_digits = 5) {
+  
+  # print(gsea_df)
+  # # extract NES & padj from gsea_df
+  # pway_df <- gsea_df %>%
+  #   dplyr::filter(pathway %in% plot_pathway)
+  # 
+  # padj <- round(pway_df$padj, digits = round_digits)
+  # nes <- round(pway_df$NES, digits = round_digits)
+  # print(padj)
+  # print(nes)
+  # print(pway_df)
+  
+  plotEnrichment(gene_list,
+                 ranks) +
+  labs(title = plot_title,
+         subtitle = glue::glue("NES = {round(nes, round_digits)}, padj = {round(padj, round_digits)}"),
+         x = "Gene Ranks",
+         y = "Enrichment Score") +
+    theme(title = element_text(size = rel(1.5)),
+          axis.text = element_text(size = rel(1.5))
+          )
+    
+}
+
+
+plot_gsea_line(gene_list = cryptic_ale_gene_lists[["distal_3utr_extension"]],
+              ranks = riboseq_fc_ranks,nes = 1.5, padj = 0.03,plot_title = "3'UTR-ALE")
+
+tmp_grpd <- plot_df_gsea_riboseq %>%
+  group_by(plot_pathway)
+
+gsea_pway_grpd <- group_split(tmp_grpd) %>%
+  set_names(group_keys(tmp_grpd) %>% pull())  # group keys returns 1 col df in case of single group
+
+gsea_enrichplots <- pmap(list(x = cryptic_ale_gene_lists,
+          y = gsea_pway_grpd,
+          z = names(gsea_pway_grpd)),
+     function(x,y, z) plot_gsea_line(x, riboseq_fc_ranks, y$NES, y$padj, plot_title = z)
+     )
+
+gsea_enrichplots <- gsea_enrichplots %>%
+  set_names(names(gsea_pway_grpd))
+
+walk2(.x = gsea_enrichplots,
+      .y = names(gsea_enrichplots),
+      ~ ggsave(paste("processed/2023-09-26_gsea_cryptics_enrichplot.",
+               str_replace_all(.y, "'|-", "_"),
+               ".png",
+               sep = ""),
+               plot = .x,
+         device = "png",
+       height = 8,
+       width = 12,
+       units = "in",
+       dpi = "retina")
+      )
+
+walk2(.x = gsea_enrichplots,
+      .y = names(gsea_enrichplots),
+      ~ ggsave(paste("processed/2023-09-26_gsea_cryptics_enrichplot.",
+                     str_replace_all(.y, "'|-", "_"),
+                     ".svg",
+                     sep = ""),
+               plot = .x,
+               device = svg,
+               height = 8,
+               width = 12,
+               units = "in",
+               dpi = "retina")
+)
+
+
+
+
+
+####-------
 # Are ribo-seq significant cryptics also changed in corresponding direction on RNA level?
+####-------
 seddighi_rna <- read_csv("data/rnaseq/seddighi.ipscCortical_neuron.DESEQ2_results.csv")
 
 plot_df_cryp_volc_rna <- plot_df_cryp_volc %>%
