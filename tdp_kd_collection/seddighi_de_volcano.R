@@ -18,7 +18,8 @@ seddighi_df <- read_csv("data/seddighi.ipscCortical_neuron.DESEQ2_results.csv")
 seddighi_df <- clean_deseq_df(seddighi_df)
 
 # volcano with specific genes highlighted
-highlight_genes <- c("ELK1", "SIX3", "TLX1")
+# here - all 3'UTR extension cryptics with increased overall translation
+highlight_genes <- c("ELK1", "SIX3", "TLX1", "BRINP2")
 
 plot_seddighi_cryp_3utr <- seddighi_df %>%
   mutate(plot_label = if_else(gene_name %in% highlight_genes,
@@ -60,8 +61,15 @@ ggplot(filter(plot_seddighi_cryp_3utr, plot_colour == "other"),
        x = "Log2FoldChange (KD / WT)",
        y = "-log10(padj)")
 
-ggsave("2023-08-30_seddighi_rna_de_volcano_cryptic_3utrs.png",
+ggsave("processed/2023-09-26_seddighi_rna_de_volcano_cryptic_3utrs_lab.png",
        device = "png",
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+ggsave("processed/2023-09-26_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
+       device = svg,
        height = 8,
        width = 8,
        dpi = "retina",
