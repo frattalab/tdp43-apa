@@ -25,6 +25,24 @@ Commands used:
 `python scripts/last_exons_to_sj.py data/2023-09-06_papa_cryptic_spliced.last_exons.cryptic_only.blacklist_filtered.bed data/reference_filtered.gtf processed/2023-09-12_papa_as_ale_cryptic &> processed/2023-09-12_papa_as_ale_cryptic.last_exons_to_sj.log.txt`
 
 1 missing event - `ENSG00000002746.15_3|HECW1|spliced|cryptic` - which is better described as a novel bleedthrough event that an AS-ALE, but has been categorised as annotated by this scriptin this case. Why classified as a spliced event?
+
 - 5'end is shifted 1 nucleotide upstream relative to annotated internal exon
 - No annotated intron/SJ that contains this exon
 - Probably initially classified as spliced because of novel exon 5'end (+ 3'end being contained within intron), but 5'end of last intron matches a known intron
+
+
+### BED file of SJs from Seddighi counts table
+
+Count table AL provided was missign ~ 200 samples (they quantified subset of NYGC), so need to re-run.
+Luckily the SJ coordinates are first 6 columns in table, although want to replace Name field with 'Symbol' from df
+Provided file is a CSV file, but some fields of the 'disease_full' column contain commas, which breaks a simple awk parsing of CSV files (but readr can handle)
+
+```{r}
+library(tidyverse)
+df <- read_csv("data/nygc/seddighi_cryptics_nygc.csv")
+write_tsv(df, "data/nygc/seddighi_cryptics_nygc.tsv")
+``` 
+
+Then ran this one-liner to extract fields of interest then drop duplicate rows
+
+`awk -F"\t" 'BEGIN {OFS=FS} {if (NR > 1) {print $1,$2,$3,$21,".",$6}}' data/nygc/seddighi_cryptics_nygc.tsv | sort -u -k1,1 -k2,2n -k3,3n -k6,6 > data/nygc/seddighi_cryptics_sjs.bed`
