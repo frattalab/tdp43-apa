@@ -145,8 +145,8 @@ papa_cryp_et_i3 <- papa_cryp_et %>%
 
 # # load in manual curation (of bleedthroughs) & get a df of failing IDs
 # 
-# bleedthrough_f <- bleedthrough_mv %>%
-#   filter(event_manual_validation != "yes")
+bleedthrough_f <- bleedthrough_mv %>%
+  filter(event_manual_validation != "yes")
 
 # have manual curation of event types
 # combine the two tables, filtering for passing events
@@ -269,6 +269,10 @@ ggsave("processed/2023-09-26_riboseq_ale_events_volcano_clean_gn.svg",
        dpi = "retina",
        device = svg
 )
+
+
+# save plotting df to file
+write_tsv(plot_df_cryp_volc,file = "processed/2023-09-26_riboseq_volcano_plot_df.tsv", col_names = T)
 
 # volcano with no text labels, but larger points 
 # base_volcano +
