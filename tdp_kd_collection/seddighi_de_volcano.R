@@ -56,13 +56,13 @@ ggplot(filter(plot_seddighi_cryp_3utr, plot_colour == "other"),
   scale_x_continuous(limits = c(-5,5),
                      breaks = seq(-10,10,1)) +
   guides(alpha = "none", colour = "none") +
-  labs(title = "i3 Cortical Neuron RNA Differential expression",
+  labs(
        x = "Log2FoldChange (KD / WT)",
        y = "-log10(padj)")
 
 ggsave("2023-08-30_seddighi_rna_de_volcano_cryptic_3utrs.png",
        device = "png",
        height = 8,
-       width = 12,
+       width = 8,
        dpi = "retina",
        units = "in")
