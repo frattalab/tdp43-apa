@@ -141,9 +141,7 @@ event_lists <- list("3'UTR-ALE" = d3utr_average_coverage,
                     "Bleedthrough-ALE" = bleedthrough_average_coverage)
 
 
-# 
-
-# More liberal confidence intervals (1*se)
+# More liberal confidence intervals (1*se) - faceted/side-by-side
 iclip_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
      ~ plot_coverage(.x, ci_se_mult = 1, title_lab = .y)
 )
@@ -152,6 +150,30 @@ iclip_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
 iclip_dfs_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
                            ~ plot_coverage_df(.x, ci_se_mult = 1)
 )
+
+
+# generate single event type maps (for spliced & bleedthrough)
+
+iclip_maps_single_le_start_1se <- map2(.x = event_lists[2:length(event_lists)],
+                                       .y = names(event_lists)[2:length(event_lists)],
+                                       ~ plot_coverage(filter(.x, type == "le_start"),
+                                                       ci_se_mult = 1,
+                                                       title_lab = .y)
+                                       )
+
+iclip_maps_single_pas_1se <- map2(.x = event_lists[2:length(event_lists)],
+                                  .y = names(event_lists)[2:length(event_lists)],
+                                  ~ plot_coverage(filter(.x, type == "pas"), ci_se_mult = 1, title_lab = .y)
+                                  )
+
+# now make single panel plots for 3'UTR-APA
+iclip_maps_single_d3utr_1se <- c("prox", "dist") %>%
+  set_names() %>%
+  map(~ plot_coverage(filter(d3utr_average_coverage, type == .x),
+                      ci_se_mult = 1,
+                      title_lab = "3'UTR-APA")
+      )
+
 
 if (!dir.exists("processed/iclip_maps/plots")) { dir.create("processed/iclip_maps/plots", recursive = T)}
 
@@ -197,3 +219,51 @@ walk2(.x = iclip_dfs_maps_1se,
                   col_names = T
                   )
       )
+
+
+# write single panel d3'utrs to file
+walk2(.x = iclip_maps_single_d3utr_1se,
+      .y = names(iclip_maps_single_d3utr_1se),
+      ~ ggsave(filename = paste("2023-09-29_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.",
+                                .y,
+                                ".svg",
+                                sep = ""),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = svg,
+               height = 6,
+               width = 18,
+               units = "in",
+               dpi = "retina")
+      )
+
+# write single panel le starts to file
+walk2(.x = iclip_maps_single_le_start_1se,
+      .y = names(iclip_maps_single_le_start_1se),
+      ~ ggsave(filename = paste("2023-09-29_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.le_start.",
+                                str_replace_all(.y, "'|-", "_"),
+                                ".svg",
+                                sep = ""),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = svg,
+               height = 6,
+               width = 18,
+               units = "in",
+               dpi = "retina")
+        )
+
+walk2(.x = iclip_maps_single_pas_1se,
+      .y = names(iclip_maps_single_pas_1se),
+      ~ ggsave(filename = paste("2023-09-29_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.pas.",
+                                str_replace_all(.y, "'|-", "_"),
+                                ".svg",
+                                sep = ""),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = svg,
+               height = 6,
+               width = 18,
+               units = "in",
+               dpi = "retina")
+)
