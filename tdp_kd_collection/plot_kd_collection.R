@@ -140,10 +140,10 @@ med_scatter <- plot_med_df %>%
   theme_bw(base_size = 16) + 
   guides(alpha = "none",
          colour = "none") +
-  theme(axis.title.x = element_text(size = rel(1.5)),
-        axis.title.y = element_text(size = rel(1.5)),
-        axis.text.x = element_text(size = rel(1.2)),
-        axis.text.y = element_text(size = rel(1.2))
+  theme(axis.title.x = element_text(size = rel(1.75)),
+        axis.title.y = element_text(size = rel(1.75)),
+        axis.text.x = element_text(size = rel(1.5)),
+        axis.text.y = element_text(size = rel(1.5))
   )
 
 med_scatter
