@@ -123,17 +123,17 @@ med_scatter <- plot_med_df %>%
   geom_vline(xintercept = 10, linetype = "dashed") +
   scale_colour_manual(values = c("#000000", "#d95f02")) +
   geom_text_repel(max.overlaps = 700, 
-                  size = rel(5),
-                  force = 50,
-                  force_pull = 0.8,
+                  size = rel(8),
+                  force = 60,
+                  force_pull = 0.75,
                   direction = "both",
                   min.segment.length = 0,
                   seed = 123,
                   xlim = c(0,70),
-                  ylim = c(-40, 105)
+                  ylim = c(-40, 100)
   ) +
   scale_x_continuous(breaks = seq(0,100,10)) + 
-  scale_y_continuous(limits = c(-110,110),
+  scale_y_continuous(limits = c(-100,100),
                      breaks = seq(-100,100,10)) +
   labs(x = "Median of CTL mean PAS usage %",
        y = "Median of change in usage (TDP-43 KD - CTL)") +
@@ -220,20 +220,20 @@ med_scatter_lab_1dataset
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2023-09-15_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
+ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
        plot = med_scatter,
        path = "processed",
-       width = 10,
-       height = 10,
+       width = 12,
+       height = 12,
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-09-15_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.svg",
+ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.svg",
        plot = med_scatter,
        path = "processed",
        device = svg,
-       width = 10,
-       height = 10,
+       width = 12,
+       height = 12,
        units = "in",
        dpi = "retina")
 
