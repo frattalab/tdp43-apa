@@ -59,7 +59,11 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
     scale_fill_manual(values = fill_colours) +
     scale_color_manual(values = line_colours) +
     theme_bw(base_size = 20) +
-    theme(legend.position = "top") +
+    theme(legend.position = "top",
+          axis.text = element_text(size = rel(1.25)),
+          axis.title = element_text(size = rel(1.25)),
+          strip.text = element_text(size = rel(1.25))
+          ) +
     labs(fill = fill_lab, colour = colour_lab, title = title_lab)
   
   
@@ -224,15 +228,15 @@ walk2(.x = iclip_dfs_maps_1se,
 # write single panel d3'utrs to file
 walk2(.x = iclip_maps_single_d3utr_1se,
       .y = names(iclip_maps_single_d3utr_1se),
-      ~ ggsave(filename = paste("2023-09-29_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.",
+      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.",
                                 .y,
                                 ".svg",
                                 sep = ""),
                plot = .x,
                path = "processed/iclip_maps/plots/",
                device = svg,
-               height = 6,
-               width = 18,
+               height = 7.5,
+               width = 22.5,
                units = "in",
                dpi = "retina")
       )
@@ -240,30 +244,30 @@ walk2(.x = iclip_maps_single_d3utr_1se,
 # write single panel le starts to file
 walk2(.x = iclip_maps_single_le_start_1se,
       .y = names(iclip_maps_single_le_start_1se),
-      ~ ggsave(filename = paste("2023-09-29_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.le_start.",
+      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.le_start.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".svg",
                                 sep = ""),
                plot = .x,
                path = "processed/iclip_maps/plots/",
                device = svg,
-               height = 6,
-               width = 18,
+               height = 7.5,
+               width = 22.5,
                units = "in",
                dpi = "retina")
         )
 
 walk2(.x = iclip_maps_single_pas_1se,
       .y = names(iclip_maps_single_pas_1se),
-      ~ ggsave(filename = paste("2023-09-29_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.pas.",
+      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.pas.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".svg",
                                 sep = ""),
                plot = .x,
                path = "processed/iclip_maps/plots/",
                device = svg,
-               height = 6,
-               width = 18,
+               height = 7.5,
+               width = 22.5,
                units = "in",
                dpi = "retina")
 )
