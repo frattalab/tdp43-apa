@@ -86,16 +86,19 @@ plot_cryptic_vs_expressed_counts <- le_exper_summ_counts %>%
   filter(n_cryptic > 0 & n_evaluated > 0) %>%
   ggplot(aes(x = n_cryptic, y = n_evaluated)) +
   geom_bin2d(binwidth = c(1,1)) +
-  stat_bin2d(geom = "text", aes(label = after_stat(count)), size = rel(3), binwidth = c(1,1)) +
+  stat_bin2d(geom = "text", aes(label = after_stat(count)), size = rel(6), binwidth = c(1,1)) +
   scale_fill_gradient(low = "#fee8c8", high = "#e34a33") +
   scale_x_continuous(breaks = seq(0,10,1)) +
   scale_y_continuous(breaks = seq(0,10,1)) +
   labs(title = "Cryptics are rarely called in >1 dataset",
        x = "Number of datasets cryptic",
        y = "Number of datasets expressed") +
-  theme_classic(base_size = 14)
+  theme_classic(base_size = 20)
 
 plot_cryptic_vs_expressed_counts
+
+plot_cryptic_vs_expressed_counts_notitle <- plot_cryptic_vs_expressed_counts + 
+  labs(title = "")
 
 
 #2. Calculate regulation consistency score (basically sum of absolute/ signed-ranks of -log10 pvalues
@@ -255,22 +258,42 @@ cryptics_sum_score_sort_heatmap_nolab
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2023-09-18_ndatasets_cryptic_vs_expressed_binplot.png",
+ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot.png",
        plot = plot_cryptic_vs_expressed_counts,
               path = "processed",
-              width = 8,
-              height = 8,
+              width = 12,
+              height = 12,
               units = "in",
               dpi = "retina")
 
-ggsave(filename = "2023-09-19_ndatasets_cryptic_vs_expressed_binplot.svg",
+ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot.svg",
        plot = plot_cryptic_vs_expressed_counts,
        device = svg,
        path = "processed",
-       width = 8,
-       height = 8,
+       width = 12,
+       height = 12,
        units = "in",
        dpi = "retina")
+
+
+ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.png",
+       plot = plot_cryptic_vs_expressed_counts_notitle,
+       path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.svg",
+       plot = plot_cryptic_vs_expressed_counts_notitle,
+       device = svg,
+       path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+
 
 
 ggsave(filename = "2023-10-06_cryptics_normed_regn_score_sort_facet_heatmap.png",
