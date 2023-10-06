@@ -204,7 +204,7 @@ med_scatter_lab_1dataset <- ggplot(filter(x, !cryptic_any & !cryptic_med), aes(x
                      breaks = seq(-100,100,10)) +
   labs(x = "Median of CTL mean PAS usage %",
        y = "Median of change in usage (TDP-43 KD - CTL)",
-       colour = "Cryptic status") +
+       colour = "") +
   theme_bw(base_size = 16) + 
   guides(alpha = "none"
          ) +
@@ -212,7 +212,8 @@ med_scatter_lab_1dataset <- ggplot(filter(x, !cryptic_any & !cryptic_med), aes(x
         axis.title.y = element_text(size = rel(1.5)),
         axis.text.x = element_text(size = rel(1.2)),
         axis.text.y = element_text(size = rel(1.2)),
-        legend.position = "top"
+        legend.position = "top",
+        legend.text = element_text(size = rel(1.25))
   )
 
 
@@ -237,20 +238,20 @@ ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-09-19_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
+ggsave(filename = "2023-10-06_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
        plot = med_scatter_lab_1dataset,
        path = "processed",
-       width = 10,
-       height = 10,
+       width = 12,
+       height = 12,
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-09-19_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.svg",
+ggsave(filename = "2023-10-06_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.svg",
        plot = med_scatter_lab_1dataset,
        path = "processed",
        device = svg,
-       width = 10,
-       height = 10,
+       width = 12,
+       height = 12,
        units = "in",
        dpi = "retina")
 
