@@ -114,12 +114,19 @@ sel_bar_gn <- path_summ_comb %>%
   ggplot(aes(x = fraction_path * 100, y = plot_name_simple, fill = event_type)) +
   geom_col() +
   scale_fill_manual(values = c("#d95f02", "#7570b3")) +
-  theme_bw(base_size = 14) +
+  theme_bw(base_size = 20) +
   labs(title = "Selective AS-ALE junctions",
        subtitle = "Non path detected fraction < 0.005, path detected > 0.01. Min spliced reads = 2",
        x = "% of TDP-43 pathological tissues cryptic detected",
        y = "Event ID",
        fill = "Event type")
+
+# remove unnecessary axis labels + legends
+sel_bar_gn_simple <- sel_bar_gn +
+  guides(fill = "none") +
+  labs(title = "",
+       subtitle = "",
+       y = "")
   
 dir.create("processed/nygc/selective_jncs/ale/svg", recursive = T)
 dir.create("processed/nygc/selective_jncs/ale/png", recursive = T)
@@ -134,7 +141,7 @@ ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_jnc_gn_bar.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_gn_bar.png",
+ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar.png",
        plot = sel_bar_gn,
        path = "processed/nygc/",
        width = 12,
@@ -151,12 +158,40 @@ ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
        units = "in",
        dpi = "retina")
 
+ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar.svg",
+       plot = sel_bar_gn,
+       device = svg,
+       path = "processed/nygc/",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+
 ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_gn_bar.svg",
        plot = sel_bar_gn,
        device = svg,
        path = "processed/nygc/",
        width = 12,
        height = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar_simple.png",
+       plot = sel_bar_gn_simple,
+       path = "processed/nygc/",
+       width = 7.5,
+       height = 15,
+       units = "in",
+       dpi = "retina")
+
+
+ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar_simple.svg",
+       plot = sel_bar_gn_simple,
+       device = svg,
+       path = "processed/nygc/",
+       width = 7.5,
+       height = 15,
        units = "in",
        dpi = "retina")
 
