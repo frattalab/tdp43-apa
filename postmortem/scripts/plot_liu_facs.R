@@ -60,31 +60,45 @@ plot_df_median_5_delta <- ppau_delta_paired_cryp %>%
                                 simple_event_type == "bleedthrough" ~ "Bleedthrough-ALE",
                                 simple_event_type == "distal_3utr_extension" ~ "3'UTR-ALE",
                                 str_detect(simple_event_type, ",") ~ "Complex"),
-    plot_event_type = factor(plot_event_type, levels = c("AS-ALE", "Bleedthrough-ALE", "3'UTR-ALE", "Complex", NA))
+    plot_event_type = factor(plot_event_type, levels = c("AS-ALE", "Bleedthrough-ALE", "3'UTR-ALE", "Complex", NA)),
+    plot_patient_id = factor(paste("Sample_", str_extract(patient_id, "\\d$"), sep = ""), levels = c("Sample_2", "Sample_6", "Sample_7", "Sample_1", "Sample_3", "Sample_4", "Sample_5"))
   )
 
 plot_df_median_5_delta %>%
-  ggplot(aes(x = patient_id,
+  ggplot(aes(x = plot_patient_id,
              y = plot_le_id,
              fill = paired_delta_ppau_neg_pos)) +
   facet_wrap("~ plot_event_type", scales = "free_y") +
   geom_tile() +
-  scale_fill_gradientn(name = "Sample-wise dPPAU (TDPneg - TDPpos)",
+  scale_fill_gradientn(name = "",
                        colours = c("#998ec3", "#f7f7f7", "#f1a340"),
-                       limits = c(-1, 1)) +
-  theme_bw(base_size = 16) +
-  labs(subtitle = "Cryptic last exons with median dPPAU > 0.05",
-       x = "Sample ID",
-       y = "Gene name") +
+                       limits = c(-1, 1),
+                       breaks = seq(-1, 1, 0.2)) +
+  theme_bw(base_size = 20) +
+  labs(x = "",
+       y = "") +
   theme(axis.text.x = element_text(angle = 90),
-        legend.position = "bottom",
-        legend.key.size = unit(8, "mm")
+        legend.position = "top",
+        legend.key.size = unit(20, "mm"),
+        legend.key.width = unit(25, "mm"),
+        legend.key.height = unit(10, "mm") 
         )
 
+if (!dir.exists("processed/liu_facs")) {dir.create("processed/liu_facs", recursive = T)}
 
-ggsave("2023-06-30_liu_facs_cryptic_median_delta_05_event_type_facet.png",
+ggsave("2023-10-09_liu_facs_cryptic_median_delta_05_event_type_facet.png",
+       path = "processed/liu_facs",
        height = 8,
        width = 12,
+       units = "in",
+       dpi = "retina")
+
+
+ggsave("2023-10-09_liu_facs_cryptic_median_delta_05_event_type_facet.svg",
+       path = "processed/liu_facs",
+       height = 10,
+       width = 15,
+       device = svg,
        units = "in",
        dpi = "retina")
 
