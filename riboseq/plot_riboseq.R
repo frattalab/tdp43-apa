@@ -251,6 +251,24 @@ ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn.svg",
        device = svg
 )
 
+# volcano with no colour legend
+base_volcano + guides(colour = "none")
+
+ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn_no_leg.png",
+       height = 8,
+       width = 8,
+       units = "in",
+       dpi = "retina"
+)
+
+ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn_no_leg.svg",
+       height = 8,
+       width = 8,
+       units = "in",
+       dpi = "retina",
+       device = svg
+)
+
 # volcano with text labels
 base_volcano +
   geom_text_repel(data = filter(plot_df_cryp_volc, simple_event_type != "other"),
