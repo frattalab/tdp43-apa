@@ -53,7 +53,7 @@ ggplot(filter(plot_seddighi_cryp_3utr, plot_colour == "other"),
                   seed = 123
   ) +
   scale_colour_manual(values = c("#d95f02", "#bdbdbd")) +
-  theme_bw(base_size = 16) +
+  theme_bw(base_size = 20) +
   scale_x_continuous(limits = c(-5,5),
                      breaks = seq(-10,10,1)) +
   guides(alpha = "none", colour = "none") +
@@ -61,14 +61,14 @@ ggplot(filter(plot_seddighi_cryp_3utr, plot_colour == "other"),
        x = "Log2FoldChange (KD / WT)",
        y = "-log10(padj)")
 
-ggsave("processed/2023-09-26_seddighi_rna_de_volcano_cryptic_3utrs_lab.png",
+ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.png",
        device = "png",
        height = 8,
        width = 8,
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-09-26_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
+ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
        device = svg,
        height = 8,
        width = 8,
