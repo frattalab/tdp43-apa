@@ -227,7 +227,7 @@ base_volcano <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
   scale_y_continuous(limits = c(0,10.5),
                      breaks = seq(0,10,1)) +
   scale_colour_manual(values = c("#d95f02", "#1f78b4", "#33a02c", "#a6cee3", "#bdbdbd")) +
-  theme_bw(base_size = 16) +
+  theme_bw(base_size = 20) +
   guides(alpha = "none") +
   labs(x = "Log2FoldChange (KD / WT)",
        y = "-log10(padj)",
@@ -236,16 +236,16 @@ base_volcano <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
 
 base_volcano
 
-ggsave("processed/2023-09-26_riboseq_ale_events_volcano_clean_no_gn.png",
+ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn.png",
        height = 8,
-       width = 12,
+       width = 8,
        units = "in",
        dpi = "retina"
 )
 
-ggsave("processed/2023-09-26_riboseq_ale_events_volcano_clean_no_gn.svg",
+ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn.svg",
        height = 8,
-       width = 12,
+       width = 8,
        units = "in",
        dpi = "retina",
        device = svg
@@ -373,13 +373,14 @@ plot_df_gsea_riboseq %>%
   ggplot(aes(x = NES, y = plot_pathway, colour = sig, size = plot_size)) +
   geom_point() +
   geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
-  scale_x_continuous(limits = c(-3, 3)) +
+  scale_x_continuous(limits = c(-2.5, 2.5)) +
   theme_bw(base_size = 20) +
   scale_colour_manual(values = c("#d95f02", "#1b9e77")) +
+  guides(colour = "none") +
   labs(x = "GSEA normalised enrichment score",
-       y = "Gene set",
-       colour = "padj < 0.05",
-       size = "-log10(padj)")
+       y = "",
+       size = "-log10(padj)") +
+  theme(legend.position = "top")
 
 ggsave("processed/2023-09-26_gsea_cryptics_dotplot.png",
        height = 8,
@@ -387,9 +388,16 @@ ggsave("processed/2023-09-26_gsea_cryptics_dotplot.png",
        units = "in",
        dpi = "retina")
 
-ggsave("processed/2023-09-26_gsea_cryptics_dotplot.svg",
+ggsave("processed/2023-10-10_gsea_cryptics_dotplot.svg",
        height = 8,
-       width = 12,
+       width = 8,
+       units = "in",
+       dpi = "retina",
+       device = svg)
+
+ggsave("processed/2023-10-10_gsea_cryptics_dotplot_wide.svg",
+       height = 5.33,
+       width = 8,
        units = "in",
        dpi = "retina",
        device = svg)
