@@ -108,6 +108,24 @@ cryp_any_not_med_df <- cryp_any_med_df %>%
   distinct(le_id, gene_name, simple_event_type, median_ctl, median_delta) %>%
   arrange(desc(median_ctl))
 
+# Categorise cryptics according to their expression criteria for medians of significant datasets
+cryp_type_med_df <- cryp_any_med_df %>%
+  filter(cryptic_any | cryptic_med) %>%
+  distinct(le_id, gene_name, simple_event_type, median_ctl, median_delta, cryptic_any, cryptic_med) %>%
+  mutate(median_cryp_status = case_when(cryptic_med ~ "median_cryptic",
+                                        median_ctl < 0.1 & median_delta < 0 ~ "median_low_exprn_negative_delta",
+                                        median_ctl > 0.1 & median_delta < 0 ~ "median_high_exprn_negative_delta",
+                                        median_ctl < 0.1 & median_delta < 0.1 ~ "median_low_exprn_low_delta",
+                                        median_ctl >= 0.1 & median_delta > 0.1 ~ "median_high_exprn_high_delta",
+                                        T ~ "median_high_exprn_low_delta"
+                                        )) 
+
+cryp_type_med_df_counts <- cryp_type_med_df %>%
+  count(median_cryp_status) %>%
+  mutate(frac = n / sum(n))
+
+
+
 # prepare base df for plotting
 highlight_genes <- c("ELK1", "ARHGAP32", "STMN2", "CNPY3", "TLX1", "ANKRD27")
 plot_med_df <- get_scatter_df(cryp_any_med_df, highlight_genes)
@@ -264,8 +282,14 @@ plot_med_df %>%
 cryp_any_not_med_df %>%
   write_tsv("processed/2023-09-15_cryptics_1dataset_not_median_base_delta_tbl.tsv", col_names = T)
 
+cryp_type_med_df %>%
+  write_tsv("processed/2023-10-12_cryptic_median_exprn_category_tbl.tsv", col_names = T)
+
+cryp_type_med_df_counts %>%
+  write_tsv("processed/2023-10-12_cryptic_median_exprn_category_counts.tsv", col_names = T)
+
 # save to Rdata
-save(med_scatter_lab_1dataset, med_scatter, plot_med_df, cryp_any_not_med_df, sig_med_df,file = "processed/fig1_cryptics_scatter.Rdata")
+save(med_scatter_lab_1dataset, med_scatter, plot_med_df, cryp_any_not_med_df, sig_med_df, cryp_type_med_df_counts, cryp_type_med_df, file = "processed/fig1_cryptics_scatter.Rdata")
 
 
 
