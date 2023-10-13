@@ -130,7 +130,7 @@ liu_all_means <-  bind_rows(counts_norm = select(liu_counts_norm_cryp, gene_id, 
 
 # standard counts filter - try a few different mean cutoffs (how many excluded?)
 
-seq(0,100, 10) %>%
+low_counts_mean_all_ngenes <- seq(0,100, 10) %>%
   set_names() %>%
   map(~ liu_all_means %>%
         filter(abundance_type == "counts_norm",
@@ -138,7 +138,6 @@ seq(0,100, 10) %>%
         summarise(n_genes = n_distinct(gene_name))
       )  %>%
   bind_rows(.id = "max_counts")
-
 # max_counts n_genes
 # <chr>        <int>
 #   1 0                1
@@ -152,6 +151,30 @@ seq(0,100, 10) %>%
 # 9 80              31
 # 10 90              36
 # 11 100             39
+
+
+low_counts_mean_neg_ngenes <- seq(0,100, 10) %>%
+  set_names() %>%
+  map(~ liu_all_means %>%
+        filter(abundance_type == "counts_norm",
+               mean_neg <= .x) %>%
+        summarise(n_genes = n_distinct(gene_name))
+  )  %>%
+  bind_rows(.id = "max_counts")
+
+low_counts_mean_pos_ngenes <- seq(0,100, 10) %>%
+  set_names() %>%
+  map(~ liu_all_means %>%
+        filter(abundance_type == "counts_norm",
+               mean_pos <= .x) %>%
+        summarise(n_genes = n_distinct(gene_name))
+  )  %>%
+  bind_rows(.id = "max_counts")
+
+
+write_tsv(low_counts_mean_all_ngenes, "processed/gene_exprn/2023-10-13_gene_exprn_low_count_filter_mean_all.tsv", col_names = T)
+write_tsv(low_counts_mean_neg_ngenes, "processed/gene_exprn/2023-10-13_gene_exprn_low_count_filter_mean_neg.tsv", col_names = T)
+write_tsv(low_counts_mean_pos_ngenes, "processed/gene_exprn/2023-10-13_gene_exprn_low_count_filter_mean_pos.tsv", col_names = T)
 
 # ~ 40 / 283 have GENE-level counts < 100. I.e. unique fragments across the whole gene, so could be very few reads over individual isoforms/exons. Hard to say what's enough coverage to say difficult to detect an individual exon
 # abvoe is conventional filter for gene-level stats analysis, not necessarily event-level
