@@ -1,6 +1,8 @@
 library(tidyverse)
 library(rstatix)
 library(ggpubr)
+library(ggprism)
+set.seed(123)
 
 norm_control_by_batch <- function(df, value_col, conds = c("CTRL", "TDP")) {
   
@@ -61,4 +63,61 @@ counts_norm_ttest_adj <- counts_norm_ttest %>%
   adjust_pvalue(p.col = "p", output.col = "p.adj", method = "BH") %>%
   add_significance(p.col = "p.adj", output.col = "p.adj.signif")
 
-counts_norm_ttest_adj  
+counts_norm_ttest_adj
+
+# Plot the count ratios with respective pvalues
+
+# Make pvalue df reading for plotting
+plot_df_counts_all_pval <- counts_norm_ttest_adj %>%
+  filter(metric == "mean_cell") %>%
+  mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic")),
+         group1 = "CTRL", group2 = "TDP")
+  
+# prep coutns for plotting
+plot_df_counts_all <- counts_norm$mean_cell %>%
+  pivot_longer(cols = all_of(c("CTRL", "TDP")),
+               names_to = "condition",
+               values_to = "mean_count"
+  ) %>%
+  mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic"))) 
+
+
+plot_counts_all <- plot_df_counts_all %>%
+  ggplot(aes(x = condition, y = mean_count)) +
+  facet_wrap("~ plot_probe") +
+  scale_y_continuous(limits = c(0,10),
+                     breaks = seq(0,10, 2)) +
+  # pval df doesn't have replicate aesthetic, so add to plot first before plotting the values
+  ggprism::add_pvalue(plot_df_counts_all_pval, y.position = 10,tip.length = 0,label.size = 5) +
+  geom_jitter(aes(x = condition, y= mean_count, shape = replicate),
+              data = plot_df_counts_all,
+              height = 0, width = 0.4, size = 3) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Mean foci per cell ratio",
+       shape = "Replicate")
+
+plot_counts_all
+
+if (!dir.exists("processed/")) {dir.create("processed")}
+
+ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.png",
+       plot = plot_counts_all,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 8,
+       width = 8,
+       dpi = "retina")
+
+ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.svg",
+       plot = plot_counts_all,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 8,
+       width = 8,
+       dpi = "retina")
