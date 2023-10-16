@@ -102,6 +102,39 @@ plot_counts_all <- plot_df_counts_all %>%
 
 plot_counts_all
 
+
+# Repeat for ratio
+# Make pvalue df reading for plotting
+plot_df_ratio_prox_pval <- counts_norm_ttest_adj %>%
+  filter(metric == "extranuc_nuc_ratio") %>%
+  mutate(group1 = "CTRL", group2 = "TDP")
+
+# prep coutns for plotting
+plot_df_ratio_prox <- counts_norm$extranuc_nuc_ratio %>%
+  pivot_longer(cols = all_of(c("CTRL", "TDP")),
+               names_to = "condition",
+               values_to = "extranuc_nuc_ratio"
+  ) %>% filter(probe == "proximal")
+
+# plot
+plot_ratio_prox <- plot_df_ratio_prox %>%
+  ggplot(aes(x = condition, y = extranuc_nuc_ratio)) +
+  scale_y_continuous(limits = c(0,2.25),
+                     breaks = seq(0,2, 0.5)) +
+  # pval df doesn't have replicate aesthetic, so add to plot first before plotting the values
+  ggprism::add_pvalue(plot_df_ratio_prox_pval, y.position = 2.25, tip.length = 0,label.size = 5) +
+  geom_jitter(aes(x = condition, y= extranuc_nuc_ratio, shape = replicate),
+              data = plot_df_ratio_prox,
+              height = 0, width = 0.4, size = 3) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Extranuclear:nuclear foci ratio",
+       shape = "Replicate")
+
+plot_ratio_prox
+
+
 if (!dir.exists("processed/")) {dir.create("processed")}
 
 ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.png",
@@ -115,6 +148,25 @@ ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.png",
 
 ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.svg",
        plot = plot_counts_all,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 8,
+       width = 8,
+       dpi = "retina")
+
+
+ggsave("2023-10-16_fish_prox_subcell_ratio.png",
+       plot = plot_ratio_prox,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 8,
+       width = 8,
+       dpi = "retina")
+
+ggsave("2023-10-16_fish_prox_subcell_ratio.svg",
+       plot = plot_ratio_prox,
        path = "processed/",
        device = svg,
        units = "in",
