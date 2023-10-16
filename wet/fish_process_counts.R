@@ -27,7 +27,7 @@ fish_counts_mean <- fish_counts_longer %>%
   group_by(condition, replicate, probe) %>%
   summarise(sum_nuclei = sum(n_nuclei),
             sum_foci = sum(n_foci),
-            mean_cell = sum_nuclei / sum_foci) %>%
+            mean_cell = sum_foci / sum_nuclei) %>%
   ungroup()
 
 # for each probe and replicate, calculate the nuclear:extra-nuclear foci-count ratio
