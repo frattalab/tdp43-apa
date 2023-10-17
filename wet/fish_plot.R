@@ -91,16 +91,25 @@ plot_counts_all <- plot_df_counts_all %>%
                      breaks = seq(0,10, 2)) +
   # pval df doesn't have replicate aesthetic, so add to plot first before plotting the values
   ggprism::add_pvalue(plot_df_counts_all_pval, y.position = 10,tip.length = 0,label.size = 5) +
-  geom_jitter(aes(x = condition, y= mean_count, shape = replicate),
-              data = plot_df_counts_all,
-              height = 0, width = 0.4, size = 3) +
+  geom_point(aes(x = condition, y= mean_count, shape = replicate),
+             data = plot_df_counts_all,
+             position = position_dodge(width = 0.25),
+             size = 3) +
   theme_bw(base_size = 20) +
   theme(legend.position = "top") +
   labs(x = "",
        y = "Mean foci per cell ratio",
        shape = "Replicate")
 
-plot_counts_all
+# same plot, jsut y-axis starts at 1
+plot_counts_all_1 <- plot_counts_all +
+  scale_y_continuous(limits = c(1,10),
+                     breaks = seq(1,10, 1)) +
+  labs(y = "Mean foci per cell\n(normalised to CTRL)")
+
+plot_counts_all_1
+
+
 
 
 # Repeat for ratio
@@ -123,21 +132,28 @@ plot_ratio_prox <- plot_df_ratio_prox %>%
                      breaks = seq(0,2, 0.5)) +
   # pval df doesn't have replicate aesthetic, so add to plot first before plotting the values
   ggprism::add_pvalue(plot_df_ratio_prox_pval, y.position = 2.25, tip.length = 0,label.size = 5) +
-  geom_jitter(aes(x = condition, y= extranuc_nuc_ratio, shape = replicate),
-              data = plot_df_ratio_prox,
-              height = 0, width = 0.4, size = 3) +
+  geom_point(aes(x = condition, y= extranuc_nuc_ratio, shape = replicate),
+             data = plot_df_ratio_prox,
+             position = position_dodge(width = 0.25),
+             size = 3) +
   theme_bw(base_size = 20) +
   theme(legend.position = "top") +
   labs(x = "",
-       y = "Extranuclear:nuclear foci ratio",
+       y = "Extranuclear:nuclear foci ratio\n(normalised to CTRL)",
        shape = "Replicate")
 
 plot_ratio_prox
 
+# same plot, just shrink the range so y axis starts at 1
+plot_ratio_prox_1 <- plot_ratio_prox + 
+  scale_y_continuous(limits = c(1,2.25),
+                     breaks = seq(1,2,0.5))
+
+plot_ratio_prox_1
 
 if (!dir.exists("processed/")) {dir.create("processed")}
 
-ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.png",
+ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet.png",
        plot = plot_counts_all,
        path = "processed/",
        device = "png",
@@ -146,7 +162,7 @@ ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.svg",
+ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet.svg",
        plot = plot_counts_all,
        path = "processed/",
        device = svg,
@@ -155,8 +171,7 @@ ggsave("2023-10-16_fish_probe_count_ratio_all_cell_facet.svg",
        width = 8,
        dpi = "retina")
 
-
-ggsave("2023-10-16_fish_prox_subcell_ratio.png",
+ggsave("2023-10-17_fish_prox_subcell_ratio.png",
        plot = plot_ratio_prox,
        path = "processed/",
        device = "png",
@@ -165,8 +180,45 @@ ggsave("2023-10-16_fish_prox_subcell_ratio.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-16_fish_prox_subcell_ratio.svg",
+ggsave("2023-10-17_fish_prox_subcell_ratio.svg",
        plot = plot_ratio_prox,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 8,
+       width = 8,
+       dpi = "retina")
+
+ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet_start1.png",
+       plot = plot_counts_all_1,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 8,
+       width = 8,
+       dpi = "retina")
+
+ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet_start1.svg",
+       plot = plot_counts_all_1,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 8,
+       width = 8,
+       dpi = "retina")
+
+
+ggsave("2023-10-17_fish_prox_subcell_ratio_start1.png",
+       plot = plot_ratio_prox_1,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 8,
+       width = 8,
+       dpi = "retina")
+
+ggsave("2023-10-17_fish_prox_subcell_ratio_start1.svg",
+       plot = plot_ratio_prox_1,
        path = "processed/",
        device = svg,
        units = "in",
