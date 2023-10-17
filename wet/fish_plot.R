@@ -90,11 +90,11 @@ plot_counts_all <- plot_df_counts_all %>%
   scale_y_continuous(limits = c(0,10),
                      breaks = seq(0,10, 2)) +
   # pval df doesn't have replicate aesthetic, so add to plot first before plotting the values
-  ggprism::add_pvalue(plot_df_counts_all_pval, y.position = 10,tip.length = 0,label.size = 5) +
+  ggprism::add_pvalue(plot_df_counts_all_pval, y.position = 10,tip.length = 0,label.size = 7) +
   geom_point(aes(x = condition, y= mean_count, shape = replicate),
              data = plot_df_counts_all,
-             position = position_dodge(width = 0.25),
-             size = 3) +
+             position = position_dodge(width = 0.3),
+             size = 4) +
   theme_bw(base_size = 20) +
   theme(legend.position = "top") +
   labs(x = "",
@@ -131,11 +131,11 @@ plot_ratio_prox <- plot_df_ratio_prox %>%
   scale_y_continuous(limits = c(0,2.25),
                      breaks = seq(0,2, 0.5)) +
   # pval df doesn't have replicate aesthetic, so add to plot first before plotting the values
-  ggprism::add_pvalue(plot_df_ratio_prox_pval, y.position = 2.25, tip.length = 0,label.size = 5) +
+  ggprism::add_pvalue(plot_df_ratio_prox_pval, y.position = 2.25, tip.length = 0,label.size = 7) +
   geom_point(aes(x = condition, y= extranuc_nuc_ratio, shape = replicate),
              data = plot_df_ratio_prox,
-             position = position_dodge(width = 0.25),
-             size = 3) +
+             position = position_dodge(width = 0.3),
+             size = 4) +
   theme_bw(base_size = 20) +
   theme(legend.position = "top") +
   labs(x = "",
