@@ -26,7 +26,7 @@ plot_hl <- function(go_of_interest, fitted = all_old_rna_long_fitted, real = all
                     show.legend = FALSE) + 
     ylab("Unlabelled RNA") + 
     xlab("4SU labelling time") + 
-    scale_color_manual(values=c('#999999','#E69F00')) +
+    scale_color_manual(labels = c("CTRL", "TDP43KD"), values=c('#999999','#E69F00')) +
     scale_x_continuous(breaks = c(0, 1, 4, 8, 12, 24)) + 
     scale_y_continuous(limits = c(0,1500),
                        breaks = seq(0,1500,250)) +
@@ -157,7 +157,7 @@ fwrite(corticali3_kinetic, "processed/2023-08-22_i3cortical_slamseq_grandr_kinet
 
 walk2(goi_hl_curves,
       names(goi_hl_curves),
-      ~ ggsave(filename = glue("2023-10-10_i3cortical_hl_curve_{.y}.svg"),
+      ~ ggsave(filename = glue("2023-10-18_i3cortical_hl_curve_{.y}.svg"),
                plot = .x,
                device = svg,
                path = "processed/",
