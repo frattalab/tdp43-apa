@@ -74,3 +74,70 @@ ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
        width = 8,
        dpi = "retina",
        units = "in")
+
+
+
+## Volcano plot labelling all diff translated genes (from ribo-seq) on RNA levels
+riboseq <- read_tsv("data/2023-10-18_i3_cryptic_genes_riboseq_deseq_summary.tsv")
+riboseq_sig <- filter(riboseq, diff_translated)
+
+
+# df specifying plot criteria - labels for diff translated genes containing cryptics
+plot_seddighi_cryp_all <- seddighi_df %>%
+  left_join(select(riboseq_sig, gene_name, simple_event_type, diff_translated), by = "gene_name") %>%
+  mutate(plot_label = if_else(diff_translated & padj < 0.05,
+                              gene_name,
+                              ""),
+         plot_padj = if_else(-log10(padj) > 50, 50, -log10(padj)),
+         plot_alpha = case_when(diff_translated ~ 5,
+                                plot_padj > -log10(0.05) ~ 0.1,
+                                TRUE ~ 0.01
+         ),
+         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "Bleedthrough-ALE",
+                                     simple_event_type == "distal_3utr_extension" ~ "3'UTR-ALE",
+                                     simple_event_type == "spliced" ~ "AS-ALE"),
+         plot_event_type = factor(plot_event_type, levels = c("AS-ALE","Bleedthrough-ALE","3'UTR-ALE"))
+         # plot_colour = if_else(plot_label %in% highlight_genes, "3'UTR-ALE cryptics", "other")
+  ) %>%
+  arrange(desc(diff_translated))
+
+
+ggplot(filter(plot_seddighi_cryp_all, is.na(diff_translated)),
+       aes(x = log2FoldChange,
+           y = plot_padj,
+           colour = plot_event_type,
+           label=plot_label,
+           alpha=plot_alpha)) +
+  geom_point() +
+  geom_point(data = filter(plot_seddighi_cryp_all, diff_translated)) +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", "alpha" = 0.5) +
+  scale_colour_manual(name = "",
+                      values = c("#d95f02","#1f78b4", "#33a02c")) +
+  scale_x_continuous(limits = c(-5,5),
+                     breaks = seq(-10,10,1)) +
+  geom_text_repel(data = filter(plot_seddighi_cryp_all, diff_translated),
+                  max.overlaps = 1000,
+                  force = 10,
+                  size = rel(6),
+                  seed = 123
+  ) +
+  theme_bw(base_size = 20) +
+  guides(alpha = "none", label = "none") +
+  labs(
+    x = "Log2FoldChange (KD / WT)",
+    y = "-log10(padj)") +
+  theme(legend.position = "top")
+
+ggsave("processed/2023-10-18_seddighi_rna_de_volcano_cryptic_all_lab.png",
+       device = "png",
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+ggsave("processed/2023-10-18_seddighi_rna_de_volcano_cryptic_all_lab.svg",
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
