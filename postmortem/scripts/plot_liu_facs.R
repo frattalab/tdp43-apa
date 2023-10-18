@@ -45,7 +45,40 @@ ppau_order_cryp_median_gn_5 <- ppau_order_cryp %>%
   filter(median_paired_delta_ppau > 0.05) %>%
   pull(plot_le_id)
 
+# decay of number of enriched events as increase the delta cut-off
+cryp_median_min_delta_n <- seq(0,0.25,0.05) %>%
+  set_names() %>%
+  map(~ ppau_order_cryp %>%
+                               filter(median_paired_delta_ppau > .x) %>%
+        summarise(n_events = n_distinct(plot_le_id))
+  ) %>%
+  bind_rows(.id = "min_median_delta_pau")
 
+
+# Get the number of enriched events by event type at delta cut-off
+cryp_median_min_5_nevent_by_type <- ppau_order_cryp %>%
+  left_join(distinct(ppau_delta_paired_cryp, plot_le_id, simple_event_type), by = "plot_le_id") %>%
+  mutate(enriched = median_paired_delta_ppau > 0.05) %>%
+  group_by(simple_event_type) %>%
+  summarise(n_enriched = sum(enriched),
+            n = n_distinct(plot_le_id),
+            )
+
+cryp_median_min_delta_nevent_by_type <- seq(0,0.25,0.05) %>%
+  set_names() %>%
+  map(~ ppau_order_cryp %>% # lazy
+        left_join(distinct(ppau_delta_paired_cryp, plot_le_id, simple_event_type), by = "plot_le_id") %>%
+        mutate(enriched = median_paired_delta_ppau > .x) %>%
+        group_by(simple_event_type) %>%
+        summarise(n_enriched = sum(enriched),
+                  n = n_distinct(plot_le_id),
+        )
+        ) %>%
+  bind_rows(.id = "median_delta_cutoff")
+  
+
+  
+####
 plot_df_median_5_delta <- ppau_delta_paired_cryp %>%
   filter(plot_le_id %in% ppau_order_cryp_median_gn_5) %>%
   mutate(
@@ -70,7 +103,7 @@ plot_df_median_5_delta %>%
              fill = paired_delta_ppau_neg_pos)) +
   facet_wrap("~ plot_event_type", scales = "free_y") +
   geom_tile() +
-  scale_fill_gradientn(name = "",
+  scale_fill_gradientn(name = "Delta polyA usage (TDPnegative - TDPpositive)",
                        colours = c("#998ec3", "#f7f7f7", "#f1a340"),
                        limits = c(-1, 1),
                        breaks = seq(-1, 1, 0.2)) +
@@ -86,7 +119,7 @@ plot_df_median_5_delta %>%
 
 if (!dir.exists("processed/liu_facs")) {dir.create("processed/liu_facs", recursive = T)}
 
-ggsave("2023-10-09_liu_facs_cryptic_median_delta_05_event_type_facet.png",
+ggsave("2023-10-18_liu_facs_cryptic_median_delta_05_event_type_facet.png",
        path = "processed/liu_facs",
        height = 8,
        width = 12,
@@ -94,7 +127,7 @@ ggsave("2023-10-09_liu_facs_cryptic_median_delta_05_event_type_facet.png",
        dpi = "retina")
 
 
-ggsave("2023-10-09_liu_facs_cryptic_median_delta_05_event_type_facet.svg",
+ggsave("2023-10-18_liu_facs_cryptic_median_delta_05_event_type_facet.svg",
        path = "processed/liu_facs",
        height = 10,
        width = 15,
@@ -102,7 +135,9 @@ ggsave("2023-10-09_liu_facs_cryptic_median_delta_05_event_type_facet.svg",
        units = "in",
        dpi = "retina")
 
-
+write_tsv(cryp_median_min_5_nevent_by_type, "processed/liu_facs/2023-10-18_liu_facs_min_delta_5_numevents_eventtype.tsv", col_names = T)
+write_tsv(cryp_median_min_delta_nevent_by_type, "processed/liu_facs/2023-10-18_liu_facs_min_delta_range_numevents_eventtype.tsv", col_names = T)
+write_tsv(cryp_median_min_delta_n, "processed/liu_facs/2023-10-18_liu_facs_min_delta_cutoffs_numevents_all.tsv", col_names = T)
 
 # ppau_delta_paired_cryp %>%
 #   filter(plot_le_id %in% ppau_order_cryp_median_gn_5) %>%
