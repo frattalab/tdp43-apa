@@ -4,7 +4,7 @@ library(ggpubr)
 library(ggprism)
 set.seed(123)
 
-norm_control_by_batch <- function(df, value_col, conds = c("CTRL", "TDP")) {
+norm_control_by_batch <- function(df, value_col, conds = c("CTRL", "TDP43KD")) {
   
   # group by batch
   rep_grpd <- fish_counts %>%
@@ -32,6 +32,9 @@ norm_control_by_batch <- function(df, value_col, conds = c("CTRL", "TDP")) {
 
 
 fish_counts <- read_tsv("processed/2023-10-13_fish_counts_processed.tsv")
+# update condition labels
+fish_counts <- mutate(fish_counts,
+                      condition = if_else(condition == "TDP", "TDP43KD", condition))
 
 # Plots/comparisons to make
 # 1. Ratio of foci counts per cell (normalised with respect to control sample in each replicate), for both probes
@@ -41,14 +44,16 @@ fish_counts <- read_tsv("processed/2023-10-13_fish_counts_processed.tsv")
 # (eacj element in list is count/ratio col - all tables contain each probe)
 counts_norm <- c("mean_cell", "extranuc_nuc_ratio", "nuc_extranuc_ratio") %>%
   set_names() %>%
-  map(~ norm_control_by_batch(fish_counts, .x))
+  map(~ norm_control_by_batch(fish_counts, .x)
+      )
+
   
 # 1 sample t.test for each probe, log transforming input values with null hypotheis that difference is not eaual to log(1) (0)
 
 counts_norm_ttest <- counts_norm %>%
-  map(~ mutate(.x, TDP = log(TDP)) %>%
+  map(~ mutate(.x, TDP43KD = log(TDP43KD)) %>%
         group_by(probe) %>%
-        t_test(TDP ~ 0) %>% # log(1) = 0 
+        t_test(TDP43KD ~ 0) %>% # log(1) = 0 
         ungroup()
       ) %>%
   bind_rows(.id = "metric")
@@ -72,11 +77,11 @@ plot_df_counts_all_pval <- counts_norm_ttest_adj %>%
   filter(metric == "mean_cell") %>%
   mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
                              levels = c("Total", "Cryptic")),
-         group1 = "CTRL", group2 = "TDP")
+         group1 = "CTRL", group2 = "TDP43KD")
   
 # prep coutns for plotting
 plot_df_counts_all <- counts_norm$mean_cell %>%
-  pivot_longer(cols = all_of(c("CTRL", "TDP")),
+  pivot_longer(cols = all_of(c("CTRL", "TDP43KD")),
                names_to = "condition",
                values_to = "mean_count"
   ) %>%
@@ -110,17 +115,15 @@ plot_counts_all_1 <- plot_counts_all +
 plot_counts_all_1
 
 
-
-
 # Repeat for ratio
 # Make pvalue df reading for plotting
 plot_df_ratio_prox_pval <- counts_norm_ttest_adj %>%
   filter(metric == "extranuc_nuc_ratio") %>%
-  mutate(group1 = "CTRL", group2 = "TDP")
+  mutate(group1 = "CTRL", group2 = "TDP43KD")
 
 # prep coutns for plotting
 plot_df_ratio_prox <- counts_norm$extranuc_nuc_ratio %>%
-  pivot_longer(cols = all_of(c("CTRL", "TDP")),
+  pivot_longer(cols = all_of(c("CTRL", "TDP43KD")),
                names_to = "condition",
                values_to = "extranuc_nuc_ratio"
   ) %>% filter(probe == "proximal")
@@ -153,7 +156,7 @@ plot_ratio_prox_1
 
 if (!dir.exists("processed/")) {dir.create("processed")}
 
-ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet.png",
+ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet.png",
        plot = plot_counts_all,
        path = "processed/",
        device = "png",
@@ -162,7 +165,7 @@ ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet.svg",
+ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet.svg",
        plot = plot_counts_all,
        path = "processed/",
        device = svg,
@@ -171,7 +174,7 @@ ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet.svg",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-17_fish_prox_subcell_ratio.png",
+ggsave("2023-10-18_fish_prox_subcell_ratio.png",
        plot = plot_ratio_prox,
        path = "processed/",
        device = "png",
@@ -180,7 +183,7 @@ ggsave("2023-10-17_fish_prox_subcell_ratio.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-17_fish_prox_subcell_ratio.svg",
+ggsave("2023-10-18_fish_prox_subcell_ratio.svg",
        plot = plot_ratio_prox,
        path = "processed/",
        device = svg,
@@ -189,7 +192,7 @@ ggsave("2023-10-17_fish_prox_subcell_ratio.svg",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet_start1.png",
+ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet_start1.png",
        plot = plot_counts_all_1,
        path = "processed/",
        device = "png",
@@ -198,7 +201,7 @@ ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet_start1.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet_start1.svg",
+ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet_start1.svg",
        plot = plot_counts_all_1,
        path = "processed/",
        device = svg,
@@ -208,7 +211,7 @@ ggsave("2023-10-17_fish_probe_count_ratio_all_cell_facet_start1.svg",
        dpi = "retina")
 
 
-ggsave("2023-10-17_fish_prox_subcell_ratio_start1.png",
+ggsave("2023-10-18_fish_prox_subcell_ratio_start1.png",
        plot = plot_ratio_prox_1,
        path = "processed/",
        device = "png",
@@ -217,7 +220,7 @@ ggsave("2023-10-17_fish_prox_subcell_ratio_start1.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-17_fish_prox_subcell_ratio_start1.svg",
+ggsave("2023-10-18_fish_prox_subcell_ratio_start1.svg",
        plot = plot_ratio_prox_1,
        path = "processed/",
        device = svg,
