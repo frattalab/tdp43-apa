@@ -178,6 +178,21 @@ papa_cryp_et_i3 <- left_join(papa_cryp_et_i3, select(event_type_complex_mc_p, ge
 # union(bleedthrough_f$gene_name,
 #       filter(event_type_complex_mc, event_manual_validation != "yes") %>% pull(gene_name))
 
+# annotate input cryptics with Riboseq DESeq information
+papa_cryp_et_i3_deseq <- papa_cryp_et_i3 %>%
+  left_join(select(deseq_res_df, gene_name, baseMean, log2FoldChange, log2FoldChangeShrink, pvalue, padj), by = "gene_name") %>%
+  mutate(diff_translated = padj < 0.05)
+
+# counts of signif events in each event type
+papa_cryp_et_i3_sig_counts <- count(papa_cryp_et_i3_deseq, simple_event_type, diff_translated) %>%
+  group_by(simple_event_type) %>%
+  mutate(frac_signif = n / sum(n)) %>%
+  ungroup()
+
+# write to file
+write_tsv(papa_cryp_et_i3_deseq, "processed/2023-10-18_i3_cryptic_genes_riboseq_deseq_summary.tsv", col_names = T)
+write_tsv(papa_cryp_et_i3_sig_counts, "processed/2023-10-18_i3_cryptic_genes_riboseq_eventtype_sig_summary.tsv", col_names = T)
+
 
 # Generate volcano plot with points highlighted if cryptic ALE containing (split by event type)
 plot_df_cryp_volc <- deseq_res_df %>%
@@ -500,7 +515,7 @@ walk2(.x = gsea_enrichplots,
 )
 
 
-
+## TSVs
 
 
 ####-------
