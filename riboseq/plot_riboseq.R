@@ -403,32 +403,32 @@ plot_df_gsea_riboseq <- gsea_riboseq_cryp_df %>%
 
 # gsea dot plot
 plot_df_gsea_riboseq %>%
-  ggplot(aes(x = NES, y = plot_pathway, colour = sig, size = plot_size)) +
+  ggplot(aes(x = NES, y = plot_pathway, colour = plot_pathway, size = plot_size)) +
   geom_point() +
   geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
   scale_x_continuous(limits = c(-2.5, 2.5)) +
   theme_bw(base_size = 20) +
-  scale_colour_manual(values = c("#d95f02", "#1b9e77")) +
+  scale_colour_manual(values = c("#33a02c", "#d95f02", "#1f78b4")) +
   guides(colour = "none") +
   labs(x = "GSEA normalised enrichment score",
        y = "",
        size = "-log10(padj)") +
   theme(legend.position = "top")
 
-ggsave("processed/2023-09-26_gsea_cryptics_dotplot.png",
+ggsave("processed/2023-10-20_gsea_cryptics_dotplot.png",
        height = 8,
-       width = 12,
+       width = 8,
        units = "in",
        dpi = "retina")
 
-ggsave("processed/2023-10-10_gsea_cryptics_dotplot.svg",
+ggsave("processed/2023-10-20_gsea_cryptics_dotplot.svg",
        height = 8,
        width = 8,
        units = "in",
        dpi = "retina",
        device = svg)
 
-ggsave("processed/2023-10-10_gsea_cryptics_dotplot_wide.svg",
+ggsave("processed/2023-10-20_gsea_cryptics_dotplot_wide.svg",
        height = 5.33,
        width = 8,
        units = "in",
