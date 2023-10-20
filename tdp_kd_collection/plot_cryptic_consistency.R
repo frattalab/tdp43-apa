@@ -5,7 +5,7 @@ facet_heatmap <- function(df,
                           plot_subtitle = "** = cryptic criteria, * = padj < 0.05, blank = padj > 0.05",
                           plot_x = "Dataset",
                           plot_y = "Last exon ID",
-                          plot_fill = "Delta PPAU (KD - CTL)") {
+                          plot_fill = "PolyA site usage % (KD - CTL)") {
   df %>%
   ggplot(aes(x = experiment_name_simple, y = plot_le_id, fill = delta_PPAU_treatment_control, label = plot_label)) + 
     facet_wrap("~ plot_event_type", ncol = 3, scales = "free_y") +
@@ -23,7 +23,7 @@ facet_heatmap <- function(df,
          subtitle = plot_subtitle,
          x = plot_x,
          y = plot_y,
-         fill = plot_y)
+         fill = plot_fill)
 }
 
 
@@ -296,7 +296,7 @@ ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.svg
 
 
 
-ggsave(filename = "2023-10-06_cryptics_normed_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.png",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -304,7 +304,7 @@ ggsave(filename = "2023-10-06_cryptics_normed_regn_score_sort_facet_heatmap.png"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-06_cryptics_sum_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.png",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -312,7 +312,7 @@ ggsave(filename = "2023-10-06_cryptics_sum_regn_score_sort_facet_heatmap.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-06_cryptics_normed_regn_score_sort_facet_heatmap.svg",
+ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.svg",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        device = svg,
@@ -321,7 +321,7 @@ ggsave(filename = "2023-10-06_cryptics_normed_regn_score_sort_facet_heatmap.svg"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-06_cryptics_sum_regn_score_sort_facet_heatmap.svg",
+ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.svg",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
        device = svg,
@@ -330,7 +330,7 @@ ggsave(filename = "2023-10-06_cryptics_sum_regn_score_sort_facet_heatmap.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-06_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.svg",
+ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.svg",
        plot = cryptics_sum_score_sort_heatmap_nolab,
        path = "processed",
        device = svg,
@@ -339,7 +339,7 @@ ggsave(filename = "2023-10-06_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-06_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.pdf",
+ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.pdf",
        plot = cryptics_sum_score_sort_heatmap_nolab,
        path = "processed",
        device = "pdf",
