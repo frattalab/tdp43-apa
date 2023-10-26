@@ -241,6 +241,21 @@ walk2(.x = iclip_maps_single_d3utr_1se,
                dpi = "retina")
       )
 
+walk2(.x = iclip_maps_single_d3utr_1se,
+      .y = names(iclip_maps_single_d3utr_1se),
+      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.",
+                                .y,
+                                ".png",
+                                sep = ""),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = "png",
+               height = 7.5,
+               width = 22.5,
+               units = "in",
+               dpi = "retina")
+)
+
 # write single panel le starts to file
 walk2(.x = iclip_maps_single_le_start_1se,
       .y = names(iclip_maps_single_le_start_1se),
@@ -266,6 +281,37 @@ walk2(.x = iclip_maps_single_pas_1se,
                plot = .x,
                path = "processed/iclip_maps/plots/",
                device = svg,
+               height = 7.5,
+               width = 22.5,
+               units = "in",
+               dpi = "retina")
+)
+
+
+walk2(.x = iclip_maps_single_le_start_1se,
+      .y = names(iclip_maps_single_le_start_1se),
+      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.le_start.",
+                                str_replace_all(.y, "'|-", "_"),
+                                ".png",
+                                sep = ""),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = "png",
+               height = 7.5,
+               width = 22.5,
+               units = "in",
+               dpi = "retina")
+)
+
+walk2(.x = iclip_maps_single_pas_1se,
+      .y = names(iclip_maps_single_pas_1se),
+      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.pas.",
+                                str_replace_all(.y, "'|-", "_"),
+                                ".png",
+                                sep = ""),
+               plot = .x,
+               path = "processed/iclip_maps/plots/",
+               device = "png",
                height = 7.5,
                width = 22.5,
                units = "in",
