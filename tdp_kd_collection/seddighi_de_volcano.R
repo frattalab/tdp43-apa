@@ -15,7 +15,19 @@ clean_deseq_df <- function(df, padj_col = "padj", id_col = "gene_name") {
 
 
 seddighi_df <- read_csv("data/seddighi.ipscCortical_neuron.DESEQ2_results.csv")
+
+# manual curation
+bleedthrough_mv <- read_tsv("../preprocessing/processed/bleedthrough_manual_validation.tsv")
+event_type_complex_mc <- read_tsv("../postmortem/data/cryptics_summary_complex_manual_curation.tsv")
+
+# mv fail genes
+bleedthrough_mv_f_nm <- bleedthrough_mv %>% filter(event_manual_validation != "yes") %>% pull(gene_name)
+event_type_complex_mc_f_nm <- event_type_complex_mc %>% filter(event_manual_validation != "yes") %>% pull(gene_name)
+mv_fail_gn <- c(bleedthrough_mv_f_nm, event_type_complex_mc_f_nm)
+
+
 seddighi_df <- clean_deseq_df(seddighi_df)
+
 
 # volcano with specific genes highlighted
 # here - all 3'UTR extension cryptics with increased overall translation
@@ -85,11 +97,11 @@ riboseq_sig <- filter(riboseq, diff_translated)
 # df specifying plot criteria - labels for diff translated genes containing cryptics
 plot_seddighi_cryp_all <- seddighi_df %>%
   left_join(select(riboseq_sig, gene_name, simple_event_type, diff_translated), by = "gene_name") %>%
-  mutate(plot_label = if_else(diff_translated & padj < 0.05,
+  mutate(plot_label = if_else(diff_translated & padj < 0.05 & !(gene_name %in% mv_fail_gn),
                               gene_name,
                               ""),
          plot_padj = if_else(-log10(padj) > 50, 50, -log10(padj)),
-         plot_alpha = case_when(diff_translated ~ 5,
+         plot_alpha = case_when(diff_translated & !(gene_name %in% mv_fail_gn) ~ 5,
                                 plot_padj > -log10(0.05) ~ 0.1,
                                 TRUE ~ 0.01
          ),
@@ -101,26 +113,20 @@ plot_seddighi_cryp_all <- seddighi_df %>%
   ) %>%
   arrange(desc(diff_translated))
 
-
-ggplot(filter(plot_seddighi_cryp_all, is.na(diff_translated)),
+# base plot with just colours by event type
+base_ev_type_volc <- ggplot(filter(plot_seddighi_cryp_all, is.na(diff_translated)),
        aes(x = log2FoldChange,
            y = plot_padj,
            colour = plot_event_type,
            label=plot_label,
            alpha=plot_alpha)) +
-  geom_point() +
+  geom_point(colour = "#bdbdbd") +
   geom_point(data = filter(plot_seddighi_cryp_all, diff_translated)) +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed", "alpha" = 0.5) +
   scale_colour_manual(name = "",
-                      values = c("#d95f02","#1f78b4", "#33a02c")) +
+                      values = c( "#1f78b4","#33a02c","#d95f02")) +
   scale_x_continuous(limits = c(-5,5),
                      breaks = seq(-10,10,1)) +
-  geom_text_repel(data = filter(plot_seddighi_cryp_all, diff_translated),
-                  max.overlaps = 1000,
-                  force = 10,
-                  size = rel(6),
-                  seed = 123
-  ) +
   theme_bw(base_size = 20) +
   guides(alpha = "none", label = "none") +
   labs(
@@ -128,14 +134,75 @@ ggplot(filter(plot_seddighi_cryp_all, is.na(diff_translated)),
     y = "-log10(padj)") +
   theme(legend.position = "top")
 
-ggsave("processed/2023-10-18_seddighi_rna_de_volcano_cryptic_all_lab.png",
+base_ev_type_volc
+
+# colour all event types, label all genes
+all_gn_ev_type_volc <- base_ev_type_volc +
+  geom_text_repel(data = filter(plot_seddighi_cryp_all, diff_translated),
+                max.overlaps = 1000,
+                force = 10,
+                size = rel(6),
+                seed = 123
+) 
+
+# VOLOUR ALL event types but just label the 3'UTR-ALEs
+utr3_gn_ev_type_volc <- base_ev_type_volc +
+  geom_text_repel(data = filter(plot_seddighi_cryp_all, diff_translated & gene_name %in% highlight_genes),
+                  max.overlaps = 1000,
+                  force = 10,
+                  size = rel(6),
+                  seed = 123
+  ) 
+
+base_ev_type_volc
+all_gn_ev_type_volc
+utr3_gn_ev_type_volc
+
+# base plot, no labels
+ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_no_lab.png",
+       plot = base_ev_type_volc,
        device = "png",
        height = 8,
        width = 8,
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-10-18_seddighi_rna_de_volcano_cryptic_all_lab.svg",
+ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_no_lab.svg",
+       plot = base_ev_type_volc,
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+# all labelled
+ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_all_lab.png",
+       plot = all_gn_ev_type_volc,
+       device = "png",
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_all_lab.svg",
+       plot = all_gn_ev_type_volc,
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+# only increased 3'UTRs up
+ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
+       plot = utr3_gn_ev_type_volc,
+       device = "png",
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_3utr_lab.svg",
+       plot = utr3_gn_ev_type_volc,
        device = svg,
        height = 8,
        width = 8,
