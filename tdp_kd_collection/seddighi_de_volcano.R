@@ -121,7 +121,7 @@ base_ev_type_volc <- ggplot(filter(plot_seddighi_cryp_all, is.na(diff_translated
            label=plot_label,
            alpha=plot_alpha)) +
   geom_point(colour = "#bdbdbd") +
-  geom_point(data = filter(plot_seddighi_cryp_all, diff_translated)) +
+  geom_point(data = filter(plot_seddighi_cryp_all, diff_translated), size = 3) +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed", "alpha" = 0.5) +
   scale_colour_manual(name = "",
                       values = c( "#1f78b4","#33a02c","#d95f02")) +
@@ -150,7 +150,7 @@ utr3_gn_ev_type_volc <- base_ev_type_volc +
   geom_text_repel(data = filter(plot_seddighi_cryp_all, diff_translated & gene_name %in% highlight_genes),
                   max.overlaps = 1000,
                   force = 10,
-                  size = rel(6),
+                  size = rel(8),
                   seed = 123
   ) 
 
