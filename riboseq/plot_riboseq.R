@@ -352,7 +352,7 @@ write_tsv(plot_df_cryp_volc,file = "processed/2023-09-26_riboseq_volcano_plot_df
 # )
 
 
-ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
+volc_ribo_gn_base <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
        aes(x = log2FoldChange,
            y = plot_padj,
            colour = simple_event_type,
@@ -367,22 +367,80 @@ ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
   scale_y_continuous(limits = c(0,10.5),
                      breaks = seq(0,10,1)) +
   scale_colour_manual(values = c("#33a02c", "#a6cee3", "#d95f02", "#bdbdbd", "#1f78b4")) +
+  theme_bw(base_size = 20) +
+  guides(alpha = "none") +
+  labs(x = "Log2FoldChange (KD / WT)",
+       y = "-log10(padj)",
+       colour = "Event type") +
+  theme(legend.position = "top")
+
+volc_ribo_gn_base
+
+# just elk1, six3 & tlx1
+volc_ribo_gn_3utr_tfs <- volc_ribo_gn_base +
   geom_text_repel(data = filter(plot_df_cryp_volc, gene_name %in% c("ELK1", "SIX3", "TLX1")),
                   max.overlaps = 10000,
                   force = 30,
                   size = rel(8),
-                  min.segment.length = 0
-  ) +
-  theme_bw(base_size = 16) +
-  guides(alpha = "none") +
-  labs(x = "Log2FoldChange (KD / WT)",
-       y = "-log10(padj)",
-       colour = "Event type")
+                  min.segment.length = 0,
+                  seed = 123
+  )
 
+volc_ribo_gn_3utr_up <- volc_ribo_gn_base +
+  geom_text_repel(data = filter(plot_df_cryp_volc, gene_name %in% c("ELK1", "SIX3", "TLX1", "BRINP2")),
+                max.overlaps = 10000,
+                force = 30,
+                size = rel(8),
+                min.segment.length = 0,
+                seed = 123
+                )
 
-ggsave("processed/2023-07-10_riboseq_elk1_six3_tlx1_labels_big_larger_points.png",
+volc_ribo_gn_3utr_up
+
+d3utr_sig_tr_gn <- plot_df_cryp_volc %>%
+  filter(padj < 0.05 & simple_event_type == "distal_3utr_extension") %>%
+  pull(gene_name)
+
+# label all d3utr reg genes
+volc_ribo_gn_3utr_all <- volc_ribo_gn_base +
+  geom_text_repel(data = filter(plot_df_cryp_volc, gene_name %in% d3utr_sig_tr_gn),
+                  max.overlaps = 10000,
+                  force = 30,
+                  size = rel(8),
+                  min.segment.length = 0,
+                  seed = 123
+  )
+
+volc_ribo_gn_3utr_all
+
+ggsave("processed/2023-10-31_riboseq_no_labels_big_larger_points.png",
+       plot = volc_ribo_gn_base,
        height = 8,
-       width = 12,
+       width = 8,
+       units = "in",
+       dpi = "retina"
+)
+
+ggsave("processed/2023-10-31_riboseq_d3utr_elk1_six3_tlx1_labels_big_larger_points.png",
+       plot = volc_ribo_gn_3utr_tfs,
+       height = 8,
+       width = 8,
+       units = "in",
+       dpi = "retina"
+)
+
+ggsave("processed/2023-10-31_riboseq_d3utr_up_labels_big_larger_points.png",
+       plot = volc_ribo_gn_3utr_up,
+       height = 8,
+       width = 8,
+       units = "in",
+       dpi = "retina"
+)
+
+ggsave("processed/2023-10-31_riboseq_d3utr_all_labels_big_larger_points.png",
+       plot = volc_ribo_gn_3utr_all,
+       height = 8,
+       width = 8,
        units = "in",
        dpi = "retina"
 )
