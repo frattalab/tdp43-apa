@@ -1,0 +1,11 @@
+__default__:
+  h_vmem: 4G
+  tmem: 4G
+  h_rt:  2:00:00
+  submission_string: " "
+
+peka:
+  h_vmem: 22G
+  tmem: 22G
+  h_rt:  8:00:00
+  submission_string: " "
