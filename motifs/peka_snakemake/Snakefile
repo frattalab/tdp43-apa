@@ -36,26 +36,23 @@ rule pas_to_peka_beds:
     params:
         script="scripts/pas_to_peka_beds.py",
         foreground_key=lambda wildcards: get_param(wildcards, 'foreground_key'),
-        group1_key=lambda wildcards: get_param(wildcards, 'group1_key'),
-        group2_key=lambda wildcards: get_param(wildcards, 'group2_key'),
         output_prefix = os.path.join(base_outdir, "peka_beds", "{sample}")
 
     log:
         stdout=os.path.join(base_outdir, "logs", "pas_to_peka_beds.{sample}.stdout.txt"),
         stderr=os.path.join(base_outdir, "logs", "pas_to_peka_beds.{sample}.stderr.txt")
 
+    conda:
+        "envs/peka_fork.yaml"
+
     shell:
        """python {params.script} \
        -f {params.foreground_key} \
-       -g1 {params.group1_key} \
-       -g2 {params.group2_key} \
        {input.pas} \
        {params.output_prefix} \
        1> {log.stdout} \
        2> {log.stderr}
        """
-
-
 
 
 #Note: PEKA's final output file is quite complicated to track with Snakemake
@@ -87,13 +84,16 @@ rule peka:
         stdout=os.path.join(base_outdir, "logs", "peka.{sample}.stdout.txt"),
         stderr=os.path.join(base_outdir, "logs", "peka.{sample}.stderr.txt")
 
+    conda:
+        "envs/peka_fork.yaml"
+
     shell:
         """
         mkdir -p {params.tmpdir} && export TMPDIR={params.tmpdir}
         peka -x {input.comb_bed} \
         -i {input.reg_bed} \
-        -g {params.genome} \
-        -gi {params.genome_idx} \
+        -g {input.genome} \
+        -gi {input.genome_idx} \
         -r {params.regions} \
         -k {params.kmer} \
         -p {params.pos} \
@@ -105,5 +105,4 @@ rule peka:
         1> {log.stdout} \
         2> {log.stderr} && \
         touch {output}
-
         """

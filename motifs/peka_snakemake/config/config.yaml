@@ -8,24 +8,24 @@ sample_table: config/sample_table.csv
 base_output_dir: output_peka/
 
 # path to genome fasta
-genome: /path/to/genome.fasta
+genome: data/GRCh38.primary_assembly.genome.fa
 # path to genome fasta index
-genome_idx: /path/to/genome.fasta.fai
+genome_idx: data/GRCh38.primary_assembly.genome.fa.fai
 
 # genome segmentation file produced as output of "iCount segment" function
 # (NB: for our hacky use case of looking across the whole genome, pre-provided GTF is sufficient)
-regions_gtf: TestData/inputs/sorted.regions.gtf.gz
+regions_gtf: data/sorted.regions.gtf.gz
 # kmer length
-kmer: 6
+kmer: 5
 # window around thresholded crosslinks (in our case genomic landmarks) for finding enriched kmers (PEKA default: 20)
 window: 20
 # window aound enriched kmers to calculate distribution (PEKA default: 150)
-distal_window: 1000
+distal_window: 150
 
 # choose to run PEKA on a specific region only, to specify multiple regions enter them space separated (default: only )
 specific_region: "genome"
 
-# controls the number of outputs, can be True or False
+# controls the number of outputs, can be True or False. Recommend setting to True for our use case to make custom plot
 alloutputs: True
 
 # Percentile to set as threshold for relevant positions. Accepted values are floats between 0 and 99 [0, 99]. If threshold is set to 0 then all positions within the set window (-w, default 20 nt) will be considered for enrichment calculation.
