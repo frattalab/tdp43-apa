@@ -1,0 +1,7 @@
+comparison_name,regions_bed,foreground_key
+d3utr_pas_proximal,data/2023-07-04_papa_cryptic_d3utr.pas.proximal.bed,cryptic
+d3utr_pas_distal,data/2023-07-04_papa_cryptic_d3utr.pas.distal.bed,cryptic
+spliced_pas,data/2023-07-04_papa_cryptic_spliced.pas.bed,cryptic
+bleedthrough_pas,data/2023-07-04_papa_cryptic_bleedthrough.pas.bed,cryptic
+spliced_exonstart,data/2023-07-04_papa_cryptic_spliced.le_start.bed,cryptic
+bleedthrough_exonstart,data/2023-07-04_papa_cryptic_bleedthrough.le_start.bed,cryptic

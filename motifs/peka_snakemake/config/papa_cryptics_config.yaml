@@ -1,0 +1,35 @@
+# 'comparison_name', 'regions_bed', 'foreground_key' columns
+# comparison_name - unique identifier to track comparison of interest
+# regions_bed - BED of single nucleotide coordinates of two groups of events that wish to compare
+# foreground_key - string present in 'Name' field of BED file that identifies 'foreground' events
+sample_table: config/cryptics_sample_table.csv
+
+# base output directory for pipeline run
+base_output_dir: processed/2023-11-01_papa_cryptics_kmer6_window_200_distal_window_250/
+
+# path to genome fasta
+genome: data/GRCh38.primary_assembly.genome.fa
+# path to genome fasta index
+genome_idx: data/GRCh38.primary_assembly.genome.fa.fai
+
+# genome segmentation file produced as output of "iCount segment" function
+# (NB: for our hacky use case of looking across the whole genome, pre-provided GTF is sufficient)
+regions_gtf: data/sorted.regions.gtf.gz
+# kmer length
+kmer: 6
+# window around thresholded crosslinks (in our case genomic landmarks) for finding enriched kmers (PEKA default: 20)
+window: 200
+# window aound enriched kmers to calculate distribution (PEKA default: 150)
+distal_window: 250
+
+# choose to run PEKA on a specific region only, to specify multiple regions enter them space separated (default: only )
+specific_region: "genome"
+
+# controls the number of outputs, can be True or False. Recommend setting to True for our use case to make custom plot
+alloutputs: True
+
+# Percentile to set as threshold for relevant positions. Accepted values are floats between 0 and 99 [0, 99]. If threshold is set to 0 then all positions within the set window (-w, default 20 nt) will be considered for enrichment calculation.
+# If threshold is not zero, it will be used to determine relevant positions for enrichment calculation for each k-mer. 
+# If the -pos option is not set, then the threshold will be automatically assigned based on k-mer length and number of crosslinks in region.
+# For our case, recommend using 0
+pos: 0
