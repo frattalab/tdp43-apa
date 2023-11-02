@@ -24,7 +24,7 @@ base_outdir = config["base_output_dir"]
 # Define a rule to generate the target files using the 'sample' wildcard
 rule all:
     input:
-        expand(os.path.join(base_outdir, "{sample}", "peka.done"), sample=sample_names)
+        expand(os.path.join(base_outdir, "{sample}", "cv_coverage_{group}", "cv_coverage.done"), sample=sample_names, group=["foreground", "background"]) if config["run_cv_coverage"] else expand(os.path.join(base_outdir, "{sample}", "peka.done"), sample=sample_names)
 
 
 rule pas_to_peka_beds:
@@ -32,7 +32,8 @@ rule pas_to_peka_beds:
         pas=lambda wildcards: get_param(wildcards, 'regions_bed')
     output:
         comb_bed=os.path.join(base_outdir, "peka_beds", "{sample}.all.bed"),
-        reg_bed=os.path.join(base_outdir, "peka_beds", "{sample}.foreground.bed")
+        reg_bed=os.path.join(base_outdir, "peka_beds", "{sample}.foreground.bed"),
+        bg_bed=os.path.join(base_outdir, "peka_beds", "{sample}.background.bed")
     params:
         script="scripts/pas_to_peka_beds.py",
         foreground_key=lambda wildcards: get_param(wildcards, 'foreground_key'),
@@ -105,4 +106,130 @@ rule peka:
         1> {log.stdout} \
         2> {log.stderr} && \
         touch {output}
+        """
+
+# plot & get % coverage for specific motifs in given window around foreground regions
+# final TSV output to ./results/no_of_txn_{sample_name}' 
+# where sample_name is input BED file with .bed suffix removed and any text with '.xl.' removed 
+# again too lazy to code out
+# outputs in current directory, so have to make and switch inside script
+rule cv_coverage_foreground:
+    input:
+        bed=os.path.abspath(rules.pas_to_peka_beds.output.reg_bed),
+        genome=os.path.abspath(config["genome"]),
+        genome_idx=os.path.abspath(config["genome_idx"])
+
+    output:
+         os.path.join(base_outdir, "{sample}", "cv_coverage_foreground", "cv_coverage.done")
+    
+    params:
+        script=os.path.abspath("scripts/cv_coverage.py"),
+        motifs=",".join(config["cv_coverage_motifs"]),
+        kmer=config["kmer"],
+        percentile=config["percentile"],
+        regions=os.path.abspath(config["regions_gtf"]),
+        specific_region=config["specific_region"],
+        window=config["distal_window"],
+        smoothing=config["cv_coverage_smoothing"],
+        use_scores=config["cv_coverage_usescores"],
+        cap=config["cv_coverage_cap"],
+        chunk_size=10000,
+        outdir=os.path.join(base_outdir, "{sample}", "cv_coverage_foreground"),
+        tmpdir=os.path.abspath(os.path.join(base_outdir, "{sample}", "cv_coverage_foreground", "tmp")),
+        out="cv_coverage.done"
+
+    threads:
+        config["cv_coverage_n_cores"]
+
+
+    log:
+        stdout=os.path.abspath(os.path.join(base_outdir, "logs", "cv_coverage.{sample}.stdout.txt")),
+        stderr=os.path.abspath(os.path.join(base_outdir, "logs", "cv_coverage.{sample}.stderr.txt"))
+
+    conda:
+        "envs/peka_fork.yaml"
+
+
+    shell:
+        """
+        mkdir -p {params.tmpdir} && export TMPDIR={params.tmpdir} && cd {params.outdir}
+        python {params.script} \
+        {input.bed} \
+        {params.motifs} \
+        {params.specific_region} \
+        {params.kmer} \
+        {input.genome} \
+        {input.genome_idx} \
+        {params.regions} \
+        {params.smoothing} \
+        {params.percentile} \
+        {params.window} \
+        {params.use_scores} \
+        {threads} \
+        {params.chunk_size} \
+        {params.cap} \
+        1> {log.stdout} \
+        2> {log.stderr} && \
+        touch {params.out}
+        """
+
+
+rule cv_coverage_background:
+    input:
+        bed=os.path.abspath(rules.pas_to_peka_beds.output.bg_bed),
+        genome=os.path.abspath(config["genome"]),
+        genome_idx=os.path.abspath(config["genome_idx"])
+    
+    output:
+         os.path.join(base_outdir, "{sample}", "cv_coverage_background", "cv_coverage.done")
+    
+    params:
+        script=os.path.abspath("scripts/cv_coverage.py"),
+        motifs=",".join(config["cv_coverage_motifs"]),
+        kmer=config["kmer"],
+        percentile=config["percentile"],
+        regions=os.path.abspath(config["regions_gtf"]),
+        specific_region=config["specific_region"],
+        window=config["distal_window"],
+        smoothing=config["cv_coverage_smoothing"],
+        use_scores=config["cv_coverage_usescores"],
+        cap=config["cv_coverage_cap"],
+        chunk_size=10000,
+        outdir=os.path.join(base_outdir, "{sample}", "cv_coverage_background"),
+        tmpdir=os.path.abspath(os.path.join(base_outdir, "{sample}", "cv_coverage_background", "tmp")),
+        out="cv_coverage.done"
+
+    threads:
+        config["cv_coverage_n_cores"]
+
+
+    log:
+        stdout=os.path.abspath(os.path.join(base_outdir, "logs", "cv_coverage.{sample}.stdout.txt")),
+        stderr=os.path.abspath(os.path.join(base_outdir, "logs", "cv_coverage.{sample}.stderr.txt"))
+
+    conda:
+        "envs/peka_fork.yaml"
+
+
+    shell:
+        """
+        mkdir -p {params.tmpdir} && export TMPDIR={params.tmpdir} && cd {params.outdir}
+        python {params.script} \
+        {input.bed} \
+        {params.motifs} \
+        {params.specific_region} \
+        {params.kmer} \
+        {input.genome} \
+        {input.genome_idx} \
+        {params.regions} \
+        {params.smoothing} \
+        {params.percentile} \
+        {params.window} \
+        {params.use_scores} \
+        {threads} \
+        {params.chunk_size} \
+        {params.cap} \
+        1> {log.stdout} \
+        2> {log.stderr} && \
+        touch {params.out}
         """

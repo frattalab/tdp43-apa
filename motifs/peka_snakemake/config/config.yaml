@@ -34,4 +34,28 @@ alloutputs: True
 # for our purposes, cDNA count is irrelevant (so want treat all background equally), so set to 0
 percentile: 0
 
-              
+
+## cv_coverage parameters (to get speicifc occurrences of motifs across window)
+
+# flag whether to run cv_coverage.py or not
+run_cv_coverage: True
+
+# group of motifs to be displayed around the input landmarks
+# Should be same length as kmer
+# pass as a list of strings
+cv_coverage_motifs: ["UGUGU", "GUGUG"]
+
+# the size of the smoothing window (rolling mean), usually 12
+cv_coverage_smoothing: 12
+
+# If True, each landmark is weighted by its score, else all landmarks will have equal weigths of 1
+# for our purposes set to False
+cv_coverage_usescores: False
+
+# is the number of threads used in the process (4 is the usual value);
+# if > 1 & using uCL submit.sh, be sure to update the request
+cv_coverage_n_cores: 1
+
+# is the max value for any landmarks score. 
+# It is only used if use_scores is set to True (20 is the recommended value);
+cv_coverage_cap: 20

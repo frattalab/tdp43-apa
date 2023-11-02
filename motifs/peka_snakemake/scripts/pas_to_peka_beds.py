@@ -113,30 +113,37 @@ bed.loc[:, "name"] = "."
 if grp:
     # split foreground & bg into two separate groups
     bed_fg_g1 = bed[foreg_mask & grp1_mask]
+    bed_bg_g1 = bed[(~foreg_mask) & (grp1_mask)]
     bed_g1 = bed[grp1_mask]
 
     print(f"Number of foreground intervals in group1 - {len(bed_fg_g1)}")
+    print(f"Number of background intervals in group1 - {len(bed_bg_g1)}")
     print(f"Number of total intervals in group1 - {len(bed_g1)}")
     
     bed_fg_g2 = bed[foreg_mask & grp2_mask]
+    bed_bg_g2 = bed[(~foreg_mask) & (grp2_mask)]
     bed_g2 = bed[~foreg_mask & grp2_mask]
 
     print(f"Number of foreground intervals in group2 - {len(bed_fg_g2)}")
+    print(f"Number of background intervals in group2 - {len(bed_bg_g2)}")
     print(f"Number of total intervals in group2 - {len(bed_g2)}")
 
     # write to file
     bed_fg_g1[bed_col_order].to_csv(".".join([out_prefix, grp1, "foreground.bed"]), index=False, sep="\t", header=False)
+    bed_bg_g1[bed_col_order].to_csv(".".join([out_prefix, grp1, "background.bed"]), index=False, sep="\t", header=False)
     bed_g1[bed_col_order].to_csv(".".join([out_prefix, grp1, "all.bed"]), index=False, sep="\t", header=False)
-    bed
 
     bed_fg_g2[bed_col_order].to_csv(".".join([out_prefix, grp2, "foreground.bed"]), index=False, sep="\t", header=False)
+    bed_bg_g2[bed_col_order].to_csv(".".join([out_prefix, grp2, "background.bed"]), index=False, sep="\t", header=False)
     bed_g2[bed_col_order].to_csv(".".join([out_prefix, grp2, "all.bed"]), index=False, sep="\t", header=False)
 
 else:
     # just simple forground & background
     bed_fg = bed[foreg_mask]
+    bed_bg = bed[~foreg_mask]
 
     # write to file
     bed_fg[bed_col_order].to_csv(out_prefix + ".foreground.bed", index=False, sep="\t", header=False)
+    bed_bg[bed_col_order].to_csv(out_prefix + ".background.bed", index=False, sep="\t", header=False)
     bed[bed_col_order].to_csv(out_prefix + ".all.bed", index=False, sep="\t", header=False)
 
