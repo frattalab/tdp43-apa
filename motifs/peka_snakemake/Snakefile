@@ -75,7 +75,7 @@ rule peka:
         distal_window=config["distal_window"],
         specific_region=config["specific_region"],
         alloutputs=config["alloutputs"],
-        pos=config["pos"],
+        percentile=config["percentile"],
         regions=config["regions_gtf"],
         outdir = os.path.join(base_outdir, "{sample}", ""),
         tmpdir = os.path.join(base_outdir, "{sample}", "tmp")
@@ -96,7 +96,7 @@ rule peka:
         -gi {input.genome_idx} \
         -r {params.regions} \
         -k {params.kmer} \
-        -p {params.pos} \
+        -p {params.percentile} \
         -w {params.window} \
         -dw {params.distal_window} \
         --specificregion {params.specific_region} \

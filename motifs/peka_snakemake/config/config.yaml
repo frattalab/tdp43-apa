@@ -28,8 +28,10 @@ specific_region: "genome"
 # controls the number of outputs, can be True or False. Recommend setting to True for our use case to make custom plot
 alloutputs: True
 
-# Percentile to set as threshold for relevant positions. Accepted values are floats between 0 and 99 [0, 99]. If threshold is set to 0 then all positions within the set window (-w, default 20 nt) will be considered for enrichment calculation.
-# If threshold is not zero, it will be used to determine relevant positions for enrichment calculation for each k-mer. 
-# If the -pos option is not set, then the threshold will be automatically assigned based on k-mer length and number of crosslinks in region.
-# For our case, recommend using 0
-pos: 0
+# Percentile for considering thresholded crosslinks. Accepts a value between 0 and 1 [0, 1). 
+# Percentile 0.7 means that a cDNA count threshold is determined at which >=70 percent of the crosslink sites within the region have a cDNA count equal or below the threshold.
+# Thresholded crosslinks have cDNA count above the threshold. [DEFAULT 0.7]
+# for our purposes, cDNA count is irrelevant (so want treat all background equally), so set to 0
+percentile: 0
+
+              
