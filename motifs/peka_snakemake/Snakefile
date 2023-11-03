@@ -24,7 +24,8 @@ base_outdir = config["base_output_dir"]
 # Define a rule to generate the target files using the 'sample' wildcard
 rule all:
     input:
-        expand(os.path.join(base_outdir, "{sample}", "cv_coverage_{group}", "cv_coverage.done"), sample=sample_names, group=["foreground", "background"]) if config["run_cv_coverage"] else expand(os.path.join(base_outdir, "{sample}", "peka.done"), sample=sample_names)
+        expand(os.path.join(base_outdir, "{sample}", "cv_coverage_{group}", "cv_coverage.done"), sample=sample_names, group=["foreground", "background"]) if config["run_cv_coverage"] else expand(os.path.join(base_outdir, "{sample}", "peka.done"), sample=sample_names),
+        expand(os.path.join(base_outdir, "{sample}", "peka.done"), sample=sample_names)
 
 
 rule pas_to_peka_beds:
