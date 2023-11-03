@@ -9,3 +9,15 @@ peka:
   tmem: 22G
   h_rt:  8:00:00
   submission_string: " "
+
+cv_coverage_foreground:
+  h_vmem: 12G
+  tmem: 12G
+  h_rt:  8:00:00
+  submission_string: " "
+
+cv_coverage_background:
+  h_vmem: 12G
+  tmem: 12G
+  h_rt:  8:00:00
+  submission_string: " "
