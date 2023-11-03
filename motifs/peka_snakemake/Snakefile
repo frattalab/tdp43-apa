@@ -115,7 +115,7 @@ rule peka:
 # outputs in current directory, so have to make and switch inside script
 rule cv_coverage_foreground:
     input:
-        bed=os.path.abspath(rules.pas_to_peka_beds.output.reg_bed),
+        bed=rules.pas_to_peka_beds.output.reg_bed,
         genome=os.path.abspath(config["genome"]),
         genome_idx=os.path.abspath(config["genome_idx"])
 
@@ -124,6 +124,7 @@ rule cv_coverage_foreground:
     
     params:
         script=os.path.abspath("scripts/cv_coverage.py"),
+        bed=os.path.abspath(rules.pas_to_peka_beds.output.reg_bed),
         motifs=",".join(config["cv_coverage_motifs"]),
         kmer=config["kmer"],
         percentile=config["percentile"],
@@ -154,7 +155,7 @@ rule cv_coverage_foreground:
         """
         mkdir -p {params.tmpdir} && export TMPDIR={params.tmpdir} && cd {params.outdir}
         python {params.script} \
-        {input.bed} \
+        {params.bed} \
         {params.motifs} \
         {params.specific_region} \
         {params.kmer} \
@@ -176,7 +177,7 @@ rule cv_coverage_foreground:
 
 rule cv_coverage_background:
     input:
-        bed=os.path.abspath(rules.pas_to_peka_beds.output.bg_bed),
+        bed=rules.pas_to_peka_beds.output.bg_bed,
         genome=os.path.abspath(config["genome"]),
         genome_idx=os.path.abspath(config["genome_idx"])
     
@@ -185,6 +186,7 @@ rule cv_coverage_background:
     
     params:
         script=os.path.abspath("scripts/cv_coverage.py"),
+        bed=os.path.abspath(rules.pas_to_peka_beds.output.reg_bed),
         motifs=",".join(config["cv_coverage_motifs"]),
         kmer=config["kmer"],
         percentile=config["percentile"],
@@ -215,7 +217,7 @@ rule cv_coverage_background:
         """
         mkdir -p {params.tmpdir} && export TMPDIR={params.tmpdir} && cd {params.outdir}
         python {params.script} \
-        {input.bed} \
+        {params.bed} \
         {params.motifs} \
         {params.specific_region} \
         {params.kmer} \
