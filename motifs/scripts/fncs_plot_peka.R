@@ -3,12 +3,12 @@ library(glue)
 library(zoo)
 
 #' convert peka _distribution table to long format with one row per position and kmer
-peka_wide_to_long <- function(df, kmers, first_posn_idx = 14) {
+peka_wide_to_long <- function(df, kmers, first_posn_idx = 14, sum_occur = FALSE, sum_group_cols = c("rel_posn")) {
   
   # all remaining columns after first are the position cols
   coord_cols <- colnames(df)[first_posn_idx:length(colnames(df))]
   
-  df %>%
+  df_long <- df %>%
     filter(kmer %in% kmers) %>%
     pivot_longer(cols = all_of(coord_cols),
                  names_to = "rel_posn",
@@ -16,6 +16,17 @@ peka_wide_to_long <- function(df, kmers, first_posn_idx = 14) {
                  names_transform = list(rel_posn = as.integer)
     )    
   
+  if (sum_occur) {
+    out <- df_long %>%
+      group_by(across(all_of(sum_group_cols))) %>%
+      summarise(rel_occur = sum(rel_occur)) %>%
+      ungroup()
+      
+  } else { 
+    out <- df_long
+    }
+  
+  out
 }
 
 #' convert n_pas_groups_by_window.tsv df to labels of counts in each direction for proximal and distal
