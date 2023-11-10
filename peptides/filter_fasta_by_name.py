@@ -40,3 +40,6 @@ print(seq_df)
 
 # do they match?
 print(seq_df["peptide_seq_full_x"] == seq_df["peptide_seq_full_y"].str.rstrip("*"))
+
+
+print(pred.apply(lambda row: len(row["peptide_seq_full"]) == row["longest_match_slice"], axis=1))
