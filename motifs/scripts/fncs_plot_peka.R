@@ -87,7 +87,7 @@ df_plot_pair_kmer_dbrn <- function(peka_df, count_df, join_cols = c("experiment_
 }
 
 #' Construct a general kmer occurrence plot relative to PAS (with optional smoothing by rolling mean)
-plot_kmer_dbrn <- function(plot_df, rolling_mean = F, rolling_k = 5, facet_w = "~ label", title = "", subtitle = "", n_row = 2, n_col = 1, base_size = 14, breaks = seq(-150, 150, 20)) {
+plot_kmer_dbrn <- function(plot_df, rolling_mean = F, rolling_k = 5, facet_w = "~ label", title = "", subtitle = "", n_row = 2, n_col = 1, base_size = 14, breaks = seq(-150, 150, 20), plot_colours = c("#1b9e77", "#7570b3")) {
   
   
   plot_base <- plot_df %>%
@@ -112,7 +112,7 @@ plot_kmer_dbrn <- function(plot_df, rolling_mean = F, rolling_k = 5, facet_w = "
   plot_base +
     geom_vline(xintercept = 0, linetype = "dashed") +
     scale_x_continuous(breaks = breaks) +
-    scale_colour_manual(values = c("#1b9e77", "#7570b3")) +
+    scale_colour_manual(values = plot_colours) +
     theme_classic(base_size = base_size) +
     labs(title = title,
          subtitle = subtitle,
