@@ -78,6 +78,7 @@ rule peka:
         specific_region=config["specific_region"],
         alloutputs=config["alloutputs"],
         percentile=config["percentile"],
+        relpos="-pos " + str(config["relpos"]) if config["relpos"] != "auto" else "",
         regions=config["regions_gtf"],
         outdir = os.path.join(base_outdir, "{sample}", ""),
         tmpdir = os.path.join(base_outdir, "{sample}", "tmp")
@@ -99,6 +100,7 @@ rule peka:
         -r {params.regions} \
         -k {params.kmer} \
         -p {params.percentile} \
+        {params.relpos} \
         -w {params.window} \
         -dw {params.distal_window} \
         --specificregion {params.specific_region} \
