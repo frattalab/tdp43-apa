@@ -1,8 +1,7 @@
 library(tidyverse)
-library(tidytext)
 
 # find paths to all kmer distrivution tables for different comparisons
-dbrn_paths <- list.files(path = "data/peka_papa/2023-11-03_papa_cryptics_kmer6_window_250_distal_window_500",
+dbrn_paths <- list.files(path = "data/peka_papa/2023-11-16_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0",
                          pattern = "_6mer_distribution_genome.tsv$",
                          recursive = T,
                          full.names = T) %>%
@@ -34,9 +33,9 @@ simp_dbrn_tbl <- dbrn_tbl %>%
 if (!dir.exists("processed/peka/papa")) {dir.create("processed/peka/papa", recursive = T)}
 
 write_tsv(dbrn_tbl,
-          "processed/peka/papa/2023-11-03_papa_cryptics_kmer6_window_250_distal_window_500.cleaned_6mer_distribution_genome.tsv",
+          "processed/peka/papa/2023-11-16_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0.cleaned_6mer_distribution_genome.tsv",
           col_names = T)
 
 write_tsv(simp_dbrn_tbl,
-          "processed/peka/papa/2023-11-03_papa_cryptics_kmer6_window_250_distal_window_500.cleaned_6mer_distribution_genome_simple.tsv",
+          "processed/peka/papa/2023-11-16_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0.cleaned_6mer_distribution_genome_simple.tsv",
           col_names = T)
