@@ -8,7 +8,7 @@ dbrn_paths <- list.files(path = "data/peka_papa/2023-11-16_papa_cryptics_kmer6_w
 dbrn_paths
 
 # get the 'comparison name' from the name of bed file
-comparison_names <- str_remove(basename(dbrn_paths), ".foreground_genome_20_UGUGUG_GUGUGU.tsv$")
+comparison_names <- str_remove(basename(dbrn_paths), "\\.(foreground|background)_genome_20_UGUGUG_GUGUGU.tsv$")
 # want to go two folders back to whether foreground or background seqs (cv_coverage_<foreground/background>)
 # then extract whether foreground/background (final field after split by _)
 region_names <- str_split_i(basename(dirname(dirname(dbrn_paths))), "_", 3)
