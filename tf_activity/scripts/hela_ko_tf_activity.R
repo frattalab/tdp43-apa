@@ -1,0 +1,191 @@
+library(tidyverse)
+library(fgsea)
+library(dorothea)
+library(decoupleR)
+source("scripts/helpers.R")
+set.seed(123)
+
+# target genes with an ELK1 chIP seq peak within 1kb of TSS
+chipatlas_elk1 <- read_tsv("data/chip_atlas/2023-11-15_chipatlas_tss_1kb_ELK1.tsv")
+ferguson_deseq <- read_csv("data/tdp43_kd_collection/deseq2_outputs/ferguson.hela.DESEQ2_results.csv")
+ferguson_counts <- read_csv("data/tdp43_kd_collection/deseq2_outputs/ferguson.hela.DESEQ2_normedcounts.csv")
+ferguson_splicing <- read_csv("data/tdp43_kd_collection/splicing/ferguson_collected_splicing.csv")
+
+# any genes with 'significant' splicing change
+ferguson_diff_spliced <- ferguson_splicing %>%
+  filter(probability_changing > 0.95) %>%
+  distinct(gene_name) %>%
+  pull()
+
+#
+ferguson_cryptic <- ferguson_splicing %>%
+  filter(baseline_PSI < 0.05 & mean_dpsi_per_lsv_junction > 0.20 & probability_changing > 0.95) %>%
+  distinct(gene_name) %>%
+  pull()
+
+
+# output of dl_collectri.R
+collectri_hs <- read_tsv("data/2023-11-15_collectri_homosapiens.tsv")
+
+# shoudl only be two datasets 
+cols_hela <- colnames(chipatlas_elk1)[str_detect(colnames(chipatlas_elk1), "HeLa")]
+length(cols_hela) == 2
+
+# subset for hela targets
+hela_targets_elk1 <- chipatlas_elk1 %>%
+  select(Target_genes, contains("HeLa")) %>%
+  filter(!!sym(cols_hela[1]) != 0 | !!sym(cols_hela[2]) != 0)
+
+# subset for target genes called in both HeLa datasets
+hela_targets_elk1_both <- hela_targets_elk1 %>%
+  filter(!!sym(cols_hela[1]) != 0 & !!sym(cols_hela[2]) != 0) 
+
+# define a list of target gene IDs for use with fgsea
+chipseq_hela_target_lists <- list(chipseq_all_elk1 = pull(chipatlas_elk1, Target_genes),
+                                  chipseq_hela_elk1 = pull(hela_targets_elk1, Target_genes),
+                                  chipseq_hela_both_elk1 = pull(hela_targets_elk1_both, Target_genes))
+
+
+# remove genes with NA padj value, keep one row per gene name
+ferguson_deseq <- clean_deseq_df(ferguson_deseq)
+
+# calculate signed -log10 pvalue (multiplied by sign of log2Fold change)
+# also handles exact matches of pvalues (genes with larger FCs are prioritised)
+ferguson_deseq <- add_signed_pval(ferguson_deseq,)
+
+# create a list of genes ranked by various metrics
+# stat, signed_pvalue, pval 
+ferguson_deseq_ranks <- c("stat", "signed_pvalue") %>%
+  set_names() %>%
+  map(~ get_ranked_gene_list(ferguson_deseq, score_col = .x))
+
+# list of genes with diff spliced removed (+ TARDBP) (i.e. effect on expression likely accounted for by splicing)
+ferguson_deseq_ranks_nospl <- map(ferguson_deseq_ranks,
+                                  ~ .x[!names(.x) %in% c(ferguson_diff_spliced, "TARDBP")])
+
+
+# now can run fgsea using all 3 different stats (to see how stable results are)
+
+gsea_ferguson_chipseq <- map(ferguson_deseq_ranks,
+                             ~ fgsea(pathways = chipseq_hela_target_lists,
+                                     stats = .x,
+                                     eps = 0),
+                             .progress = T
+                             ) %>%
+  bind_rows(.id = "score_type")
+
+gsea_ferguson_nospl_chipseq <- map(ferguson_deseq_ranks_nospl,
+                             ~ fgsea(pathways = chipseq_hela_target_lists,
+                                     stats = .x,
+                                     eps = 0),
+                             .progress = T
+) %>%
+  bind_rows(.id = "score_type")
+
+
+# log2fold * pvalue seems the most unstable,
+# stat and signed-pvalue are pretty consistent in relative terms. CHIP-seq both is by far the weakest by significance, but still consistent directionality
+
+# get list of ELK1 dorothea targets split by direction for fgsea input
+dorothea_elk1_target_list <- dorothea_hs %>%
+  filter(tf == "ELK1") %>%
+  dorothea_to_gsea()
+
+names(dorothea_elk1_target_list) <- paste("dorothea", names(dorothea_elk1_target_list), sep = "_")
+
+# repeat for collectri
+collectri_elk1_target_list <- collectri_hs %>%
+  filter(source == "ELK1") %>%
+  rename(tf = source) %>%
+  dorothea_to_gsea()
+
+names(collectri_elk1_target_list) <- paste("collectri", names(collectri_elk1_target_list), sep = "_")
+
+# final combined list of all targets
+elk1_target_list <- c(dorothea_elk1_target_list,
+                      collectri_elk1_target_list,
+                      chipseq_hela_target_lists["chipseq_hela_both_elk1"]
+                      )
+
+
+
+# run for final gene-sets
+gsea_ferguson_all <- map(ferguson_deseq_ranks,
+                         ~ fgsea(pathways = elk1_target_list,
+                                 stats = .x,
+                                 eps = 0),
+                         .progress = T
+) %>%
+  bind_rows(.id = "score_type")
+
+gsea_ferguson_nospl_all <- map(ferguson_deseq_ranks_nospl,
+                         ~ fgsea(pathways = elk1_target_list,
+                                 stats = .x,
+                                 eps = 0),
+                         .progress = T
+) %>%
+  bind_rows(.id = "score_type")
+
+# As before:
+# ranking by signed pvalue gives modest significant enrichment for downreg genes with ChIP-seq, but stat a strong enrichment
+# Dorothea & collectri targets, which include sign/expected mode of regulation, show no significant association with up/downregulation
+# Dorothea expected pos are biased towards pos NES, suggesting that ELK1's activity has increased. Does that suggest ChIP-seq genes are broadly downregulated/expected to be repressed?
+
+# TODO: remove diff spliced genes (expression change likely due to TDP-43's splicing function) + TDP-43 (expression down due to deletion) & see effect on observed enrichment
+# TODO: try univariate linear model with collect RI/dorothea
+
+
+### run decoupler methods
+
+# get matrix of deseq results
+ferguson_deseq_mtx <- ferguson_deseq %>%
+  select(gene_name, log2FoldChange, stat, pvalue) %>%
+  drop_na(gene_name) %>%
+  column_to_rownames(var = "gene_name") %>%
+  as.matrix()
+
+ferguson_nospl_deseq_mtx <- ferguson_deseq %>%
+  filter(!gene_name %in% c("TARDBP", ferguson_diff_spliced)) %>%
+  select(gene_name, log2FoldChange, stat, pvalue) %>%
+  drop_na(gene_name) %>%
+  column_to_rownames(var = "gene_name") %>%
+  as.matrix()
+
+# try ulm 
+ferguson_ulm_collectri <- run_ulm(ferguson_deseq_mtx[, 'stat', drop=FALSE],
+                                  network = collectri_hs, .source = "source", .target = "target",.mor = "mor")
+ferguson_ulm_dorothea <- run_ulm(ferguson_deseq_mtx[, 'stat', drop=FALSE],
+                                  network = filter(dorothea_hs, confidence %in% c("A", "B", "C")),
+                                 .source = "tf", .target = "target",.mor = "mor")
+
+ferguson_nospl_ulm_collectri <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', drop=FALSE],
+                                  network = collectri_hs, .source = "source", .target = "target",.mor = "mor")
+ferguson_nospl_ulm_dorothea <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', drop=FALSE],
+                                 network = filter(dorothea_hs, confidence %in% c("A", "B", "C")),
+                                 .source = "tf", .target = "target",.mor = "mor")
+
+# run just the ELKs
+ferguson_ulm_collectri_elks <- run_ulm(ferguson_deseq_mtx[, 'stat', drop=FALSE],
+                                  network = filter(collectri_hs, str_detect(source, "^ELK")),  
+                                  .source = "source", .target = "target",.mor = "mor")
+ferguson_ulm_dorothea_elks <- run_ulm(ferguson_deseq_mtx[, 'stat', drop=FALSE],
+                                 network = filter(dorothea_hs, confidence %in% c("A", "B", "C") & str_detect(tf, "^ELK")),
+                                 .source = "tf", .target = "target",.mor = "mor")
+
+ferguson_nospl_ulm_collectri_elks <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', drop=FALSE],
+                                       network = filter(collectri_hs, str_detect(source, "^ELK")),  
+                                       .source = "source", .target = "target",.mor = "mor")
+ferguson_nospl_ulm_dorothea_elks <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', drop=FALSE],
+                                      network = filter(dorothea_hs, confidence %in% c("A", "B", "C") & str_detect(tf, "^ELK")),
+                                      .source = "tf", .target = "target",.mor = "mor")
+
+
+# Notes:
+#
+
+# padjs and extract out ELK1
+
+# repeat, but remove differentially spliced
+if (!dir.exists("processed/ferguson_hela")) {dir.create("processed/ferguson_hela", recursive = T)}
+
+save.image("processed/ferguson_hela/hela_ko_tf_activity.Rdata")
