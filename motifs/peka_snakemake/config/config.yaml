@@ -40,7 +40,7 @@ percentile: 0
 # If the -pos option is not set, then the threshold will be automatically assigned based on k-mer length and number of crosslinks in region.
 # for pipeline, please pass 'auto' if you want the threshold to be automatically assigned
 # otherwise a float betweeen 0 & 99
-relpos: 0
+relpos: "auto"
 
 
 ## cv_coverage parameters (to get speicifc occurrences of motifs across window)
