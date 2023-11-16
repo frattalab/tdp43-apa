@@ -189,7 +189,7 @@ rule cv_coverage_background:
     
     params:
         script=os.path.abspath("scripts/cv_coverage.py"),
-        bed=os.path.abspath(rules.pas_to_peka_beds.output.reg_bed),
+        bed=os.path.abspath(rules.pas_to_peka_beds.output.bg_bed),
         motifs=",".join(config["cv_coverage_motifs"]),
         kmer=config["kmer"],
         percentile=config["percentile"],
