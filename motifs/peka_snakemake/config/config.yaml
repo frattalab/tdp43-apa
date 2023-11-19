@@ -46,7 +46,13 @@ relpos: "auto"
 ## cv_coverage parameters (to get speicifc occurrences of motifs across window)
 
 # flag whether to run cv_coverage.py or not
+# only applies for Snakefile, ignored if run cv_coverage.smk
 run_cv_coverage: True
+
+# Whether to also generate maps per-motif around input landmarks
+# Only applies for cv_coverage.smk, ignored in run Snakefile
+# True/False, default = True
+run_per_motif: True
 
 # group of motifs to be displayed around the input landmarks
 # Should be same length as kmer
