@@ -21,3 +21,15 @@ cv_coverage_background:
   tmem: 12G
   h_rt:  8:00:00
   submission_string: " "
+
+per_motif_cv_coverage_foreground:
+  h_vmem: 12G
+  tmem: 12G
+  h_rt:  8:00:00
+  submission_string: " "
+
+per_motif_cv_coverage_background:
+  h_vmem: 12G
+  tmem: 12G
+  h_rt:  8:00:00
+  submission_string: " "
