@@ -21,40 +21,13 @@ sample_names = sample_table['comparison_name'].tolist()
 base_outdir = config["base_output_dir"]
 
 
-# Define a rule to generate the target files using the 'sample' wildcard
+# import rule to generate PEKA compatible BED files
+include: "peka_beds.smk"
+
 rule all:
     input:
         expand(os.path.join(base_outdir, "{sample}", "cv_coverage_{group}", "cv_coverage.done"), sample=sample_names, group=["foreground", "background"]) if config["run_cv_coverage"] else expand(os.path.join(base_outdir, "{sample}", "peka.done"), sample=sample_names),
         expand(os.path.join(base_outdir, "{sample}", "peka.done"), sample=sample_names)
-
-
-rule pas_to_peka_beds:
-    input:
-        pas=lambda wildcards: get_param(wildcards, 'regions_bed')
-    output:
-        comb_bed=os.path.join(base_outdir, "peka_beds", "{sample}.all.bed"),
-        reg_bed=os.path.join(base_outdir, "peka_beds", "{sample}.foreground.bed"),
-        bg_bed=os.path.join(base_outdir, "peka_beds", "{sample}.background.bed")
-    params:
-        script="scripts/pas_to_peka_beds.py",
-        foreground_key=lambda wildcards: get_param(wildcards, 'foreground_key'),
-        output_prefix = os.path.join(base_outdir, "peka_beds", "{sample}")
-
-    log:
-        stdout=os.path.join(base_outdir, "logs", "pas_to_peka_beds.{sample}.stdout.txt"),
-        stderr=os.path.join(base_outdir, "logs", "pas_to_peka_beds.{sample}.stderr.txt")
-
-    conda:
-        "envs/peka_fork.yaml"
-
-    shell:
-       """python {params.script} \
-       -f {params.foreground_key} \
-       {input.pas} \
-       {params.output_prefix} \
-       1> {log.stdout} \
-       2> {log.stderr}
-       """
 
 
 #Note: PEKA's final output file is quite complicated to track with Snakemake
