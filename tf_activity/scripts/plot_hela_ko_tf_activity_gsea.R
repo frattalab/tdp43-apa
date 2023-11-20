@@ -1,7 +1,7 @@
 library(tidyverse)
 library(patchwork)
 library(fgsea)
-load("processed/ferguson_hela/hela_ko_tf_activity.Rdata")
+load("processed/ferguson_hela/hela_ko_tf_activity_gsea.Rdata")
 
 
 find_cross_0_idx <- function(x) {
@@ -196,3 +196,4 @@ for (i in seq_along(gsea_enrichplots_ferguson_comb_all)) {
 
 # Close the PDF file
 dev.off()
+

@@ -53,14 +53,27 @@ ferguson_deseq <- clean_deseq_df(ferguson_deseq)
 # also handles exact matches of pvalues (genes with larger FCs are prioritised)
 ferguson_deseq <- add_signed_pval(ferguson_deseq,)
 
+# also calculate absolute stat and -log10 pvalue
+ferguson_deseq <- ferguson_deseq %>%
+  mutate(abs_stat = abs(stat),
+         abs_signed_pvalue = abs(signed_pvalue))
+
 # create a list of genes ranked by various metrics
 # stat, signed_pvalue, pval 
 ferguson_deseq_ranks <- c("stat", "signed_pvalue") %>%
   set_names() %>%
   map(~ get_ranked_gene_list(ferguson_deseq, score_col = .x))
 
+# repeat for absolute cols
+ferguson_deseq_ranks_abs <- c("abs_stat", "abs_signed_pvalue") %>%
+  set_names() %>%
+  map(~ get_ranked_gene_list(ferguson_deseq, score_col = .x))
+
 # list of genes with diff spliced removed (+ TARDBP) (i.e. effect on expression likely accounted for by splicing)
 ferguson_deseq_ranks_nospl <- map(ferguson_deseq_ranks,
+                                  ~ .x[!names(.x) %in% c(ferguson_diff_spliced, "TARDBP")])
+
+ferguson_deseq_ranks_abs_nospl <- map(ferguson_deseq_ranks_abs,
                                   ~ .x[!names(.x) %in% c(ferguson_diff_spliced, "TARDBP")])
 
 
@@ -69,7 +82,8 @@ ferguson_deseq_ranks_nospl <- map(ferguson_deseq_ranks,
 gsea_ferguson_chipseq <- map(ferguson_deseq_ranks,
                              ~ fgsea(pathways = chipseq_hela_target_lists,
                                      stats = .x,
-                                     eps = 0),
+                                     eps = 0,
+                                     nproc = 2),
                              .progress = T
                              ) %>%
   bind_rows(.id = "score_type")
@@ -77,8 +91,30 @@ gsea_ferguson_chipseq <- map(ferguson_deseq_ranks,
 gsea_ferguson_nospl_chipseq <- map(ferguson_deseq_ranks_nospl,
                              ~ fgsea(pathways = chipseq_hela_target_lists,
                                      stats = .x,
-                                     eps = 0),
+                                     eps = 0,
+                                     nproc = 2),
                              .progress = T
+) %>%
+  bind_rows(.id = "score_type")
+
+# repeat for abs
+gsea_ferguson_chipseq_abs <- map(ferguson_deseq_ranks_abs,
+                             ~ fgsea(pathways = chipseq_hela_target_lists,
+                                     stats = .x,
+                                     eps = 0,
+                                     scoreType = "pos",
+                                     nproc = 2),
+                             .progress = T
+) %>%
+  bind_rows(.id = "score_type")
+
+gsea_ferguson_nospl_chipseq_abs <- map(ferguson_deseq_ranks_abs_nospl,
+                                   ~ fgsea(pathways = chipseq_hela_target_lists,
+                                           stats = .x,
+                                           eps = 0,
+                                           scoreType = "pos",
+                                           nproc = 2),
+                                   .progress = T
 ) %>%
   bind_rows(.id = "score_type")
 
@@ -91,7 +127,13 @@ dorothea_elk1_target_list <- dorothea_hs %>%
   filter(tf == "ELK1") %>%
   dorothea_to_gsea()
 
+#  do not split by mode of regulation
+dorothea_elk1_target_list_abs <- dorothea_hs %>%
+  filter(tf == "ELK1") %>%
+  dorothea_to_gsea(split_by_mor = F)
+
 names(dorothea_elk1_target_list) <- paste("dorothea", names(dorothea_elk1_target_list), sep = "_")
+names(dorothea_elk1_target_list_abs) <- paste("dorothea", names(dorothea_elk1_target_list_abs), sep = "_")
 
 # repeat for collectri
 collectri_elk1_target_list <- collectri_hs %>%
@@ -99,7 +141,13 @@ collectri_elk1_target_list <- collectri_hs %>%
   rename(tf = source) %>%
   dorothea_to_gsea()
 
+collectri_elk1_target_list_abs <- collectri_hs %>%
+  filter(source == "ELK1") %>%
+  rename(tf = source) %>%
+  dorothea_to_gsea(split_by_mor = F)
+
 names(collectri_elk1_target_list) <- paste("collectri", names(collectri_elk1_target_list), sep = "_")
+names(collectri_elk1_target_list_abs) <- paste("collectri", names(collectri_elk1_target_list_abs), sep = "_")
 
 # final combined list of all targets
 elk1_target_list <- c(dorothea_elk1_target_list,
@@ -107,6 +155,10 @@ elk1_target_list <- c(dorothea_elk1_target_list,
                       chipseq_hela_target_lists["chipseq_hela_both_elk1"]
                       )
 
+elk1_target_list_abs <- c(dorothea_elk1_target_list_abs,
+                      collectri_elk1_target_list_abs,
+                      chipseq_hela_target_lists["chipseq_hela_both_elk1"]
+)
 
 
 # run for final gene-sets
@@ -126,6 +178,24 @@ gsea_ferguson_nospl_all <- map(ferguson_deseq_ranks_nospl,
 ) %>%
   bind_rows(.id = "score_type")
 
+gsea_ferguson_all_abs <- map(ferguson_deseq_ranks,
+                         ~ fgsea(pathways = elk1_target_list_abs,
+                                 stats = .x,
+                                 eps = 0,
+                                 scoreType = "pos"),
+                         .progress = T
+) %>%
+  bind_rows(.id = "score_type")
+
+gsea_ferguson_nospl_all_abs <- map(ferguson_deseq_ranks_nospl,
+                               ~ fgsea(pathways = elk1_target_list_abs,
+                                       stats = .x,
+                                       eps = 0,
+                                       scoreType = "pos"),
+                               .progress = T
+) %>%
+  bind_rows(.id = "score_type")
+
 # As before:
 # ranking by signed pvalue gives modest significant enrichment for downreg genes with ChIP-seq, but stat a strong enrichment
 # Dorothea & collectri targets, which include sign/expected mode of regulation, show no significant association with up/downregulation
@@ -133,51 +203,6 @@ gsea_ferguson_nospl_all <- map(ferguson_deseq_ranks_nospl,
 
 # TODO: remove diff spliced genes (expression change likely due to TDP-43's splicing function) + TDP-43 (expression down due to deletion) & see effect on observed enrichment
 # TODO: try univariate linear model with collect RI/dorothea
-
-
-### run decoupler methods
-
-# get matrix of deseq results
-ferguson_deseq_mtx <- ferguson_deseq %>%
-  select(gene_name, log2FoldChange, stat, pvalue) %>%
-  drop_na(gene_name) %>%
-  column_to_rownames(var = "gene_name") %>%
-  as.matrix()
-
-ferguson_nospl_deseq_mtx <- ferguson_deseq %>%
-  filter(!gene_name %in% c("TARDBP", ferguson_diff_spliced)) %>%
-  select(gene_name, log2FoldChange, stat, pvalue) %>%
-  drop_na(gene_name) %>%
-  column_to_rownames(var = "gene_name") %>%
-  as.matrix()
-
-# try ulm 
-ferguson_ulm_collectri <- run_ulm(ferguson_deseq_mtx[, 'stat', drop=FALSE],
-                                  network = collectri_hs, .source = "source", .target = "target",.mor = "mor")
-ferguson_ulm_dorothea <- run_ulm(ferguson_deseq_mtx[, 'stat', drop=FALSE],
-                                  network = filter(dorothea_hs, confidence %in% c("A", "B", "C")),
-                                 .source = "tf", .target = "target",.mor = "mor")
-
-ferguson_nospl_ulm_collectri <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', drop=FALSE],
-                                  network = collectri_hs, .source = "source", .target = "target",.mor = "mor")
-ferguson_nospl_ulm_dorothea <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', drop=FALSE],
-                                 network = filter(dorothea_hs, confidence %in% c("A", "B", "C")),
-                                 .source = "tf", .target = "target",.mor = "mor")
-
-# run just the ELKs
-ferguson_ulm_collectri_elks <- run_ulm(ferguson_deseq_mtx[, 'stat', drop=FALSE],
-                                  network = filter(collectri_hs, str_detect(source, "^ELK")),  
-                                  .source = "source", .target = "target",.mor = "mor")
-ferguson_ulm_dorothea_elks <- run_ulm(ferguson_deseq_mtx[, 'stat', drop=FALSE],
-                                 network = filter(dorothea_hs, confidence %in% c("A", "B", "C") & str_detect(tf, "^ELK")),
-                                 .source = "tf", .target = "target",.mor = "mor")
-
-ferguson_nospl_ulm_collectri_elks <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', drop=FALSE],
-                                       network = filter(collectri_hs, str_detect(source, "^ELK")),  
-                                       .source = "source", .target = "target",.mor = "mor")
-ferguson_nospl_ulm_dorothea_elks <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', drop=FALSE],
-                                      network = filter(dorothea_hs, confidence %in% c("A", "B", "C") & str_detect(tf, "^ELK")),
-                                      .source = "tf", .target = "target",.mor = "mor")
 
 
 # Notes:
@@ -188,4 +213,4 @@ ferguson_nospl_ulm_dorothea_elks <- run_ulm(ferguson_nospl_deseq_mtx[, 'stat', d
 # repeat, but remove differentially spliced
 if (!dir.exists("processed/ferguson_hela")) {dir.create("processed/ferguson_hela", recursive = T)}
 
-save.image("processed/ferguson_hela/hela_ko_tf_activity.Rdata")
+save.image("processed/ferguson_hela/hela_ko_tf_activity_gsea.Rdata")

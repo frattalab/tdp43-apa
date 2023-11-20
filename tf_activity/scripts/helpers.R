@@ -134,18 +134,34 @@ get_ranked_gene_list <- function(df, score_col = "signed_pvalue", name_col = "ge
   
 }
 
-dorothea_to_gsea <- function(df) {
+#' Convert dorothea df to 
+dorothea_to_gsea <- function(df, split_by_mor = T) {
+  
+  #
+  if (split_by_mor) {
+    
+    group_cols <- c("tf", "mor")
+    
+  } else {
+    group_cols <- c("tf")
+  }
   
   # first group by tf & direction of regulation for each conf level
-  df_grpd <- group_by(df, tf, mor)
+  df_grpd <- group_by(df,across(all_of(group_cols)))
   
   # generate a 'group name' - combine group column values with '_' separator
-  # in practice this is usually tf + direction of regulation
-  grp_names <- mutate(group_keys(df_grpd), # df of tf & mor (in same order as split list of groups)
+
+  if (split_by_mor) {
+    # set to tf + direction of regulation
+    grp_names <- mutate(group_keys(df_grpd), # df of tf & mor (in same order as split list of groups)
                       tf_mor = paste(tf, mor, sep = "_")) %>%
     pull(tf_mor)
-              
-  
+    
+  } else { 
+    # just set to tf
+    grp_names <- pull(group_keys(df_grpd)) # returns single col df
+  }
+
   # generate list of tfs and target genes
   df_grpd %>%
     # split into list of dfs (by group)
