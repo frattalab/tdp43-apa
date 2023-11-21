@@ -96,6 +96,15 @@ elk1_kd_decoupler_consensus_dorothea <- c("log2fc", "signed_pvalue", "pvalScaled
 # deseq size-factor normalised counts
 liu_facs_deseq <- read_tsv("../postmortem/processed/gene_exprn/deseq2/2023-20-11_deseq2_liu_facs_results.tsv")
 
+# mtx ready for decoupler
+liu_facs_deseq_mtx <- liu_facs_deseq %>%
+  group_by(gene_name) %>%
+  filter(n() == 1) %>%
+  ungroup() %>%
+  select(gene_name, stat, log2FoldChange, log2FoldChangeShrink, pvalue, padj) %>%
+  column_to_rownames("gene_name") %>%
+  as.matrix()
+  
 liu_facs_deseq_decoupler_consensus <- list(collectri = collectri_hs, dorothea_abc = dorothea_hs_abc) %>%
   map(~ decouple(liu_facs_deseq_mtx[, "stat", drop=FALSE],
                  network = .x,
@@ -121,4 +130,35 @@ liu_facs_deseq_decoupler_consensus %>%
   facet_wrap("database ~ statistic", scales = "free_y") +
   geom_density() + 
   theme_bw(base_size = 20)
+
+# add rank within db + statistic
+liu_facs_deseq_decoupler_consensus <- liu_facs_deseq_decoupler_consensus %>%
+  group_by(database, statistic) %>%
+  arrange(desc(abs(score)), .by_group = T) %>%
+  mutate(rank = row_number(),
+         frac_rank = rank / n()) %>%
+  ungroup()
+
+
+elk1_hela_scores_liu_plot <- liu_facs_deseq_decoupler_consensus %>%
+  filter(source == "ELK1") %>%
+  ggplot(aes(x = statistic, y = frac_rank * 100, label = round(p_value, 3))) +
+  facet_wrap("~ database") +
+  geom_point() + 
+  geom_text(nudge_y = 5) +
+  scale_y_continuous(limits = c(0,100),
+                     breaks = seq(0,100,10)) +
+  theme_bw(base_size = 20) +
+  labs(title = "ELK1 inferred TF activity in Liu FACS",
+       subtitle = "text label = raw p-value",
+       x = "",
+       y = "Score percentile"
+       ) +
+  theme(axis.text.x = element_text(angle = 90))
+
+ggsave("processed/2023-11-21_liu_facs_elk1_decoupler_tf_activity_percentile.png",
+       height = 10,
+       width = 10,
+       units = "in",
+       dpi = "retina")
          
