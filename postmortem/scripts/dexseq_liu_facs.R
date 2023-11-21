@@ -62,7 +62,7 @@ cryp_gn_01 <- res_df %>% filter(cryptic_status, sig_01) %>% pull(gene_name)
 write_lines(cryp_gn_005, "processed/liu_facs/2023-11-21_liu_facs_covariate_patient_only_TDPneg_TDPpos.cryptics_sig_005.txt")
 write_lines(cryp_gn_01, "processed/liu_facs/2023-11-21_liu_facs_covariate_patient_only_TDPneg_TDPpos.cryptics_sig_01.txt")
 write_tsv(sig_cryp_counts, "processed/liu_facs/2023-11-21_liu_facs_covariate_patient_only_TDPneg_TDPpos.sig_gene_counts_cryptic_status.tsv")
-
+write_tsv(res_df, "processed/liu_facs/2023-11-21_liu_facs_covariate_patient_only_TDPneg_TDPpos.results.processed.tsv")
 ggsave("processed/liu_facs/2023-11-21_liu_facs_covariate_patient_only_TDPneg_TDPpos.pvalue_histogram.png",
        pval_hist,
        device = "png",
