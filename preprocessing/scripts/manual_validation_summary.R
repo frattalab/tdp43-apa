@@ -5,9 +5,10 @@ library(tidyverse)
 
 i3_mv <- read_tsv("data/PAPA/riboseq_manual_verification_of_i3_cortical_cryptic_bleedthroughs.tsv")
 other_mv <- read_tsv("data/PAPA/cryptics_summary_bleedthrough_manual_validation.tsv")
+complex_mv <- read_tsv("data/PAPA/cryptics_summary_complex_manual_curation.tsv")
 
-i3_mv
 
+# combine two dfs
 joined_mv <- other_mv %>%
   select(-all_of(c("chromosome", "start", "end", "strand"))) %>%
   left_join(select(i3_mv,
@@ -54,6 +55,8 @@ fail_ids <- joined_mv_clean %>% filter(event_manual_validation != "yes") %>% pul
 
 cryp_summ_f <- filter(cryp_summ, !(le_id %in% fail_ids))
 
+write_tsv(cryp_summ_f, "processed/cryptics_summary_all_events_bleedthrough_manual_validation.tsv")
+
 # number of cryptic events
 n_distinct(cryp_summ_f$le_id)
 # [1] 259
@@ -61,9 +64,10 @@ n_distinct(cryp_summ_f$le_id)
 # number for each category
 cryp_summ_f %>%
   count(simple_event_type, sort = T) %>%
-  mutate(frac = n / sum(n))
+  mutate(frac = n / sum(n)) %>%
+  write_tsv("processed/cryptics_summary_counts_bleedthrough_manual_validation.tsv")
 
-#
+
 # # A tibble: 5 × 3
 # simple_event_type                      n   frac
 # <chr>                              <int>  <dbl>
