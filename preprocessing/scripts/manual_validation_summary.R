@@ -56,6 +56,7 @@ fail_ids <- joined_mv_clean %>% filter(event_manual_validation != "yes") %>% pul
 cryp_summ_f <- filter(cryp_summ, !(le_id %in% fail_ids))
 
 write_tsv(cryp_summ_f, "processed/cryptics_summary_all_events_bleedthrough_manual_validation.tsv")
+write_lines(fail_ids, "processed/cryptics_manual_validation_fail_le_ids.txt")
 
 # number of cryptic events
 n_distinct(cryp_summ_f$le_id)
