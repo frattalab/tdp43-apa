@@ -70,77 +70,90 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
 }
 
 
-
-d3utr_paths <- list.files(path = "processed/iclip_maps/d3utr", full.names = T) 
-spliced_paths <- list.files(path = "processed/iclip_maps/spliced", full.names = T) 
-bleedthrough_paths <- list.files(path = "processed/iclip_maps/bleedthrough", full.names = T) 
-
-# extract coord type & group from filenames
-# split by '.', extract the two elements before '.txt.gz'
-d3utr_nm <- str_split(basename(d3utr_paths), "\\.",simplify = T) %>% 
-  apply(MARGIN = 1,
-        function(x) {paste(c(x[length(x)-3], x[length(x)-2]),
-                           collapse = ".")
-          })
-
-# 
-# 2023-07-04_papa_cryptic_spliced.le_start.flank_500.coverage.bg.txt.gz -> le_start.bg
-spliced_nm <- str_split(basename(spliced_paths), "\\.",simplify = T) %>% 
-  apply(MARGIN = 1,
-        function(x) {paste(c(x[length(x)-5], x[length(x)-2]),
-                           collapse = ".")
-        })
-
-# processed/iclip_maps/bleedthrough/2023-07-04_papa_cryptic_bleedthrough.le_start.flank_500.coverage.bg.txt.gz -> le_start.bg
-bleedthrough_nm <- str_split(basename(bleedthrough_paths), "\\.",simplify = T) %>% 
-  apply(MARGIN = 1,
-        function(x) {paste(c(x[length(x)-5], x[length(x)-2]),
-                           collapse = ".")
-        })
-
-
-# read in coverages
-#' files - assumes a named vector
+#' read in coverages files - assumes a named vector
 get_combined_coverages <- function(files, flank_interval) {
   
   files %>%
-  map(~ parse_coverage(.x, 500)) %>%
+    map(~ parse_coverage(.x, 500)) %>%
     bind_rows(.id = "origin") %>%
     # pull out site type & status
-    separate(origin, into = c("type", "cryptic"), sep = "\\.", remove = T)
+    separate(origin, into = c("background_type", "type", "region_type", "cryptic"), sep = "\\.", remove = T)
   
 }
 
+
+
+# d3utr_paths <- list.files(path = "processed/iclip_maps/d3utr", full.names = T) 
+spliced_paths <- list.files(path = "processed/iclip_maps/coverage/background_shsy5y/spliced", pattern = "\\.txt\\.gz$", recursive = T, full.names = T) 
+bleedthrough_paths <- list.files(path = "processed/iclip_maps/coverage/background_shsy5y/bleedthrough_uniq", pattern = "\\.txt\\.gz$", recursive = T, full.names = T) 
+
+# extract coord type & group from filenames
+# split by '.', extract the two elements before '.txt.gz'
+# d3utr_nm <- str_split(basename(d3utr_paths), "\\.",simplify = T) %>%
+#   apply(MARGIN = 1,
+#         function(x) {paste(c(x[length(x)-3], x[length(x)-2]),
+#                            collapse = ".")
+#           })
+
+
+
+# background_shsy5y/spliced/pas/regions.flank_500.coverage.bg.txt.gz" -> background_shsy5y.spliced.pas.bg
+spliced_nm <- paste(str_remove(str_replace_all(dirname(spliced_paths), "\\/", "."), "processed.iclip_maps.coverage."),
+                    str_extract(basename(spliced_paths), pattern = "bg|cr"),
+                    sep = "."
+                    )
+
+bleedthrough_nm <- paste(str_remove(str_replace_all(dirname(bleedthrough_paths), "\\/", "."), "processed.iclip_maps.coverage."),
+                    str_extract(basename(bleedthrough_paths), pattern = "bg|cr"),
+                    sep = "."
+                    )
+# 
+# # 2023-07-04_papa_cryptic_spliced.le_start.flank_500.coverage.bg.txt.gz -> le_start.bg
+# spliced_nm <- str_split(basename(spliced_paths), "\\.",simplify = T) %>% 
+#   apply(MARGIN = 1,
+#         function(x) {paste(c(x[length(x)-5], x[length(x)-2]),
+#                            collapse = ".")
+#         })
+# 
+# # processed/iclip_maps/bleedthrough/2023-07-04_papa_cryptic_bleedthrough.le_start.flank_500.coverage.bg.txt.gz -> le_start.bg
+# bleedthrough_nm <- str_split(basename(bleedthrough_paths), "\\.",simplify = T) %>% 
+#   apply(MARGIN = 1,
+#         function(x) {paste(c(x[length(x)-5], x[length(x)-2]),
+#                            collapse = ".")
+#         })
+
+
+
 # read in coverages to combined dfs
-d3utr_average_coverage <- get_combined_coverages(set_names(d3utr_paths, d3utr_nm), 500)
+# d3utr_average_coverage <- get_combined_coverages(set_names(d3utr_paths, d3utr_nm), 500)
 spliced_average_coverage <- get_combined_coverages(set_names(spliced_paths, spliced_nm), 500)
 bleedthrough_average_coverage <- get_combined_coverages(set_names(bleedthrough_paths, bleedthrough_nm), 500)
 
 
 # d3utr - group specific tidying for plotting
-d3utr_average_coverage <- d3utr_average_coverage %>%
-  mutate(plot_type = if_else(type == "prox", "Proximal",
-                             "Distal"),
-         plot_type = factor(plot_type, levels = c("Proximal", "Distal")),
-         plot_cryptic = if_else(cryptic == "cr", "Cryptic", "Background"),
-         plot_cryptic = factor(plot_cryptic, levels = c("Background", "Cryptic"))
-         )
+# d3utr_average_coverage <- d3utr_average_coverage %>%
+#   mutate(plot_type = if_else(type == "prox", "Proximal",
+#                              "Distal"),
+#          plot_type = factor(plot_type, levels = c("Proximal", "Distal")),
+#          plot_cryptic = if_else(cryptic == "cr", "Cryptic", "Background"),
+#          plot_cryptic = factor(plot_cryptic, levels = c("Background", "Cryptic"))
+#          )
 
 spliced_average_coverage <- spliced_average_coverage %>%
-  mutate(plot_type = if_else(type == "le_start", "Exon Start", "PAS"),
+  mutate(plot_type = if_else(region_type == "le_start", "Exon Start", "PAS"),
          plot_type = factor(plot_type, levels = c("Exon Start", "PAS")),
          plot_cryptic = if_else(cryptic == "cr", "Cryptic", "Background"),
          plot_cryptic = factor(plot_cryptic, levels = c("Background", "Cryptic")))
 
 bleedthrough_average_coverage <- bleedthrough_average_coverage %>%
-  mutate(plot_type = if_else(type == "le_start", "Exon Start", "PAS"),
+  mutate(plot_type = if_else(region_type == "le_start", "Exon Start", "PAS"),
          plot_type = factor(plot_type, levels = c("Exon Start", "PAS")),
          plot_cryptic = if_else(cryptic == "cr", "Cryptic", "Background"),
          plot_cryptic = factor(plot_cryptic, levels = c("Background", "Cryptic")))
 
 
-
-event_lists <- list("3'UTR-ALE" = d3utr_average_coverage,
+# "3'UTR-ALE" = d3utr_average_coverage,
+event_lists <- list(
                     "AS-ALE" = spliced_average_coverage,
                     "Bleedthrough-ALE" = bleedthrough_average_coverage)
 
@@ -157,26 +170,26 @@ iclip_dfs_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
 
 
 # generate single event type maps (for spliced & bleedthrough)
-
-iclip_maps_single_le_start_1se <- map2(.x = event_lists[2:length(event_lists)],
-                                       .y = names(event_lists)[2:length(event_lists)],
-                                       ~ plot_coverage(filter(.x, type == "le_start"),
+# [2:length(event_lists)]
+iclip_maps_single_le_start_1se <- map2(.x = event_lists,
+                                       .y = names(event_lists),
+                                       ~ plot_coverage(filter(.x, region_type == "le_start"),
                                                        ci_se_mult = 1,
                                                        title_lab = .y)
                                        )
 
-iclip_maps_single_pas_1se <- map2(.x = event_lists[2:length(event_lists)],
-                                  .y = names(event_lists)[2:length(event_lists)],
-                                  ~ plot_coverage(filter(.x, type == "pas"), ci_se_mult = 1, title_lab = .y)
+iclip_maps_single_pas_1se <- map2(.x = event_lists,
+                                  .y = names(event_lists),
+                                  ~ plot_coverage(filter(.x, region_type == "pas"), ci_se_mult = 1, title_lab = .y)
                                   )
 
-# now make single panel plots for 3'UTR-APA
-iclip_maps_single_d3utr_1se <- c("prox", "dist") %>%
-  set_names() %>%
-  map(~ plot_coverage(filter(d3utr_average_coverage, type == .x),
-                      ci_se_mult = 1,
-                      title_lab = "3'UTR-APA")
-      )
+# # now make single panel plots for 3'UTR-APA
+# iclip_maps_single_d3utr_1se <- c("prox", "dist") %>%
+#   set_names() %>%
+#   map(~ plot_coverage(filter(d3utr_average_coverage, type == .x),
+#                       ci_se_mult = 1,
+#                       title_lab = "3'UTR-APA")
+#       )
 
 
 if (!dir.exists("processed/iclip_maps/plots")) { dir.create("processed/iclip_maps/plots", recursive = T)}
@@ -184,7 +197,7 @@ if (!dir.exists("processed/iclip_maps/plots")) { dir.create("processed/iclip_map
 # write to file (PNG and SVG)
 walk2(.x = iclip_maps_1se,
       .y = names(iclip_maps_1se),
-      ~ ggsave(filename = paste("2023-09-26_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
+      ~ ggsave(filename = paste("2023-11-28_background_shsy5y_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".png",
                                 sep = ""),
@@ -199,7 +212,7 @@ walk2(.x = iclip_maps_1se,
 
 walk2(.x = iclip_maps_1se,
       .y = names(iclip_maps_1se),
-      ~ ggsave(filename = paste("2023-09-26_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
+      ~ ggsave(filename = paste("2023-11-28_background_shsy5y_papa_cryptic_iclip_map.horiz_stack.fixed_ylim.1_se_ci.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".svg",
                                 sep = ""),
@@ -216,7 +229,7 @@ walk2(.x = iclip_maps_1se,
 walk2(.x = iclip_dfs_maps_1se,
       .y = names(iclip_dfs_maps_1se),
       ~ write_tsv(.x, 
-                  paste("processed/iclip_maps/plots/2023-09-26_papa_cryptic_iclip_df.horiz_stack.fixed_ylim.1_se_ci.",
+                  paste("processed/iclip_maps/plots/2023-11-28_background_shsy5y_papa_cryptic_iclip_df.horiz_stack.fixed_ylim.1_se_ci.",
                             str_replace_all(.y, "'|-", "_"),
                             ".tsv",
                             sep = ""),
@@ -226,40 +239,40 @@ walk2(.x = iclip_dfs_maps_1se,
 
 
 # write single panel d3'utrs to file
-walk2(.x = iclip_maps_single_d3utr_1se,
-      .y = names(iclip_maps_single_d3utr_1se),
-      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.",
-                                .y,
-                                ".svg",
-                                sep = ""),
-               plot = .x,
-               path = "processed/iclip_maps/plots/",
-               device = svg,
-               height = 7.5,
-               width = 22.5,
-               units = "in",
-               dpi = "retina")
-      )
-
-walk2(.x = iclip_maps_single_d3utr_1se,
-      .y = names(iclip_maps_single_d3utr_1se),
-      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.",
-                                .y,
-                                ".png",
-                                sep = ""),
-               plot = .x,
-               path = "processed/iclip_maps/plots/",
-               device = "png",
-               height = 7.5,
-               width = 22.5,
-               units = "in",
-               dpi = "retina")
-)
+# walk2(.x = iclip_maps_single_d3utr_1se,
+#       .y = names(iclip_maps_single_d3utr_1se),
+#       ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.",
+#                                 .y,
+#                                 ".svg",
+#                                 sep = ""),
+#                plot = .x,
+#                path = "processed/iclip_maps/plots/",
+#                device = svg,
+#                height = 7.5,
+#                width = 22.5,
+#                units = "in",
+#                dpi = "retina")
+#       )
+# 
+# walk2(.x = iclip_maps_single_d3utr_1se,
+#       .y = names(iclip_maps_single_d3utr_1se),
+#       ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.",
+#                                 .y,
+#                                 ".png",
+#                                 sep = ""),
+#                plot = .x,
+#                path = "processed/iclip_maps/plots/",
+#                device = "png",
+#                height = 7.5,
+#                width = 22.5,
+#                units = "in",
+#                dpi = "retina")
+# )
 
 # write single panel le starts to file
 walk2(.x = iclip_maps_single_le_start_1se,
       .y = names(iclip_maps_single_le_start_1se),
-      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.le_start.",
+      ~ ggsave(filename = paste("2023-11-28_background_shsy5y_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.le_start.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".svg",
                                 sep = ""),
@@ -274,7 +287,7 @@ walk2(.x = iclip_maps_single_le_start_1se,
 
 walk2(.x = iclip_maps_single_pas_1se,
       .y = names(iclip_maps_single_pas_1se),
-      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.pas.",
+      ~ ggsave(filename = paste("2023-11-28_background_shsy5y_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.pas.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".svg",
                                 sep = ""),
@@ -290,7 +303,7 @@ walk2(.x = iclip_maps_single_pas_1se,
 
 walk2(.x = iclip_maps_single_le_start_1se,
       .y = names(iclip_maps_single_le_start_1se),
-      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.le_start.",
+      ~ ggsave(filename = paste("2023-11-28_background_shsy5y_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.le_start.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".png",
                                 sep = ""),
@@ -305,7 +318,7 @@ walk2(.x = iclip_maps_single_le_start_1se,
 
 walk2(.x = iclip_maps_single_pas_1se,
       .y = names(iclip_maps_single_pas_1se),
-      ~ ggsave(filename = paste("2023-10-03_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.pas.",
+      ~ ggsave(filename = paste("2023-11-28_background_shsy5y_papa_cryptic_iclip_map.single_panel.fixed_ylim.1_se_ci.pas.",
                                 str_replace_all(.y, "'|-", "_"),
                                 ".png",
                                 sep = ""),
