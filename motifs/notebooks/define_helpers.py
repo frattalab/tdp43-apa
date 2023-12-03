@@ -379,3 +379,40 @@ def select_rep_five_end(gr: pr.PyRanges, id_col: str="le_id") -> pr.PyRanges:
     assert id_col in gr.columns
 
     return gr.apply(lambda df: df.groupby(id_col).apply(_df_select_rep_five_end).reset_index(drop=True))
+
+
+def construct_bed_name(gr: pr.PyRanges, site_type: str, gene_name_col: str = "gene_name_ref", le_id_col: str = "le_id_quant"):
+     '''construct name field of output file - le_id|gene_name|site_type|cryptic_status
+
+     Parameters
+     ----------
+     gr : pr.PyRanges
+         _description_
+     site_type : str
+         _description_
+
+     Returns
+     -------
+     _type_
+         _description_
+     '''
+     # remove genes not assigned to cryptic/background
+     gr = gr.subset(lambda df: df["cryptic_status"].ne("NULL"))
+    
+     # some ref_gene_name entries are duplicated - collapse as appropriate
+     gr = gr.assign(gene_name_col + "_tmp",
+         # list(dict.fromkeys(x.split(","))) - drops duplicates whilst preserving order
+         # some ref_gene_name entries have multiple gene names
+         lambda df: df[gene_name_col].apply(lambda x: ",".join(list(dict.fromkeys(x.split(",")))))
+         )
+
+     # assign temp col of category of event
+     gr = gr.assign("site_type", lambda df: pd.Series([site_type]*len(df.index), index=df.index))
+    
+    # Assign final Name field
+     gr = (gr.assign("Name",
+                    lambda df: df[le_id_col].str.cat(df[[gene_name_col + "_tmp", "site_type", "cryptic_status"]], sep="|"))
+                    .drop(["site_type", gene_name_col + "_tmp"])
+                    )
+
+     return gr
