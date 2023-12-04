@@ -74,79 +74,43 @@ process_cv_cov_kmer <- function(base_dir, kmers, return_paths = FALSE) {
 
 #####
 
-
-# find paths to all kmer distrivution tables for different comparisons
-# commenting out as may be influence by new set up with cv_coverage.smk
-# to be safe, should generate paths for each comparison name found under the given base directory
-# dbrn_paths <- list.files(path = "data/peka_papa/2023-11-16_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0",
-#                          pattern = "_UGUGUG_GUGUGU.tsv$",
-#                          recursive = T,
-#                          full.names = T)
-# dbrn_paths
-# 
-# # get the 'comparison name' from the name of bed file
-# comparison_names <- str_remove(basename(dbrn_paths), "\\.(foreground|background)_genome_20_UGUGUG_GUGUGU.tsv$")
-# # want to go two folders back to whether foreground or background seqs (cv_coverage_<foreground/background>)
-# # then extract whether foreground/background (final field after split by _)
-# region_names <- str_split_i(basename(dirname(dirname(dbrn_paths))), "_", 3)
-# # combine to construct final ID
-# comparison_ids <- paste(comparison_names, region_names, sep = ";")
-# 
-# # read in tables, combine into single df
-# dbrn_tbl <- dbrn_paths %>%
-#   set_names(comparison_ids) %>%
-#   map(~ read_tsv(.x,
-#                  col_names = c("rel_posn", "rel_occur"),
-#                  skip = 1, # skip defined header
-#                  show_col_types = F
-#                  )
-#       ) %>%
-#   bind_rows(.id = "comparison_id")
-# 
-# 
-# 
-# 
-# 
-# # construct comparison name - first element before ;
-# # region type - exonstart / pas / pas_proximal / pas_distal
-# # group = foreground/background
-# dbrn_tbl <- dbrn_tbl %>%
-#   separate(comparison_id, into = c("comparison_name", "group"), sep = ";", remove = F) %>%
-#   mutate(region_type = str_extract(comparison_name,  paste(c("pas$","exonstart", "pas_proximal", "pas_distal"), collapse = "|")),
-#          .after = comparison_name)
-# 
-# if (!dir.exists("processed/peka/papa")) {dir.create("processed/peka/papa", recursive = T)}
-# 
-# write_tsv(dbrn_tbl,
-#           "processed/peka/papa/2023-11-16_papa_cryptics_cvcoverage_window_500.gugugu_ugugug.distribution_genome.tsv",
-#           col_names = T)
-
-
-### Alternative - process groups of motifs
-
-# taken from Halleger et al. 2021
+### Process individual CV coverage outputs for TDP-43  enriched kmers taken from Halleger et al. 2021
 yg_6mers <- c("UGUGUG", "GUGUGU","UGUGCG", "UGCGUG","CGUGUG","GUGUGC")
 ya_6mers <- c("AUGUGU", "GUAUGU", "GUGUAU", "UGUGUA", "UGUAUG", "UGCAUG")
+aa_6mers <- c("GUGUGA", "AAUGAA", "GAAUGA", "UGAAUG", "AUGAAU", "GUGAAU", "GAAUGU", "UUGAAU")
 
-yg_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-11-16_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", yg_6mers) %>%
+yg_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-11-27_papa_cryptics_fixed_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", yg_6mers) %>%
   mutate(kmer_group = "yg_6mer")
-ya_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-11-16_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", ya_6mers) %>%
+ya_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-11-27_papa_cryptics_fixed_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", ya_6mers) %>%
   mutate(kmer_group = "ya_6mer")
+aa_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-11-27_papa_cryptics_fixed_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", aa_6mers) %>%
+  mutate(kmer_group = "aa_6mer")
+
+# remove any previous background types
+yg_6mer_dbrn_tbl <- filter(yg_6mer_dbrn_tbl, str_ends(region_type, "background_shsy5y"))
+ya_6mer_dbrn_tbl <- filter(ya_6mer_dbrn_tbl, str_ends(region_type, "background_shsy5y"))
+aa_6mer_dbrn_tbl <- filter(aa_6mer_dbrn_tbl, str_ends(region_type, "background_shsy5y"))
+
 
 unique(yg_6mer_dbrn_tbl$region_type)
-unique(yg_6mer_dbrn_tbl$kmer)
-unique(yg_6mer_dbrn_tbl$group)
-
 unique(ya_6mer_dbrn_tbl$region_type)
-unique(ya_6mer_dbrn_tbl$kmer)
-unique(ya_6mer_dbrn_tbl$group)
+unique(aa_6mer_dbrn_tbl$region_type)
+
+setdiff(yg_6mers, unique(yg_6mer_dbrn_tbl$kmer))
+setdiff(ya_6mers, unique(ya_6mer_dbrn_tbl$kmer))
+setdiff(aa_6mers, unique(aa_6mer_dbrn_tbl$kmer))
+
 
 if (!dir.exists("processed/peka/papa")) {dir.create("processed/peka/papa", recursive = T)}
 
 write_tsv(yg_6mer_dbrn_tbl,
-         "processed/peka/papa/2023-11-19_papa_cryptics_cvcoverage_window_500.yg_6mers.per_kmer_distribution_genome.tsv",
+         "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.yg_6mers.per_kmer_distribution_genome.tsv",
          col_names = T)
 
 write_tsv(ya_6mer_dbrn_tbl,
-         "processed/peka/papa/2023-11-19_papa_cryptics_cvcoverage_window_500.ya_6mers.per_kmer_distribution_genome.tsv",
+         "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.ya_6mers.per_kmer_distribution_genome.tsv",
          col_names = T)
+
+write_tsv(aa_6mer_dbrn_tbl,
+          "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.aa_6mers.per_kmer_distribution_genome.tsv",
+          col_names = T)
