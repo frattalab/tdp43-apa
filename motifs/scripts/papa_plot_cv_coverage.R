@@ -41,13 +41,14 @@ tdp_motif_groups <- list("YG-containing-motifs" = c("UGUGUG", "GUGUGU","UGUGCG",
                          "AA-containing-motifs" = c("GUGUGA", "AAUGAA", "GAAUGA", "UGAAUG", "AUGAAU", "GUGAAU", "GAAUGU", "UUGAAU")
 )
 
-# read in dfs, add plot labels & covert coverage to % values
+# read in dfs, add plot labels & covert coverage to % values, remove bleedthroughs
 dbrn_tbls <- dbrn_tbl_paths %>%
   map(~ read_tsv(.x, show_col_types = F) %>%
         separate(region_type, into = c("comparison_name", "background_type"), sep = "\\.", remove = F) %>%
         left_join(plot_clean_names, by = "comparison_name") %>%
         mutate(plot_group = if_else(group == "foreground", "Cryptic", "Background"),
-               rel_occur = rel_occur * 100)
+               rel_occur = rel_occur * 100) %>%
+        filter(str_starts(region_type, "bleedthrough", negate = T))
       )
 
 # make dfs with summed occurence within each kmer group
@@ -98,17 +99,51 @@ separate_sum_maps_fixed <-  map2(.x = dbrn_tbls_sum,
                                    theme(legend.position = "top")
 )
 
+separate_sum_maps_freey
 
 # save to PDF, one per page in landscape
 plot_list_to_pdf(separate_sum_maps_freey,
-                 "processed/peka/papa/plots/2023-12-05_papa_all_comparisons_cvcoverage_halleger_motif_groups_summed_map_freey.pdf",
+                 "processed/peka/papa/plots/2023-12-05_papa_no_bleedthrough_cvcoverage_halleger_motif_groups_summed_map_freey.pdf",
                  width = a4_height,
                  height = a4_width)
 
 plot_list_to_pdf(separate_sum_maps_fixed,
-                 "processed/peka/papa/plots/2023-12-05_papa_all_comparisons_cvcoverage_halleger_motif_groups_summed_map_fixedy.pdf",
+                 "processed/peka/papa/plots/2023-12-05_papa_no_bleedthrough_cvcoverage_halleger_motif_groups_summed_map_fixedy.pdf",
                  width = a4_height,
                  height = a4_width)
+
+
+# Also save individual plots to SVG
+walk2(.x = separate_sum_maps_freey,
+      .y = names(separate_sum_maps_freey),
+      ~ ggsave(filename = paste("2023-12-05_papa_no_bleedthrough_cvcoverage.",
+                                .y,
+                                ".summed_map_freey.svg",
+                                sep = ""),
+               plot = .x + labs(title = "", x = "Position"),
+               path = "processed/peka/papa/plots/",
+               device = svg,
+               width = 22.5 / 1.25,
+               height = 7.5 / 1.25,
+               units = "in",
+               dpi = "retina")
+      )
+
+walk2(.x = separate_sum_maps_fixed,
+      .y = names(separate_sum_maps_fixed),
+      ~ ggsave(filename = paste("2023-12-05_papa_no_bleedthrough_cvcoverage.",
+                                .y,
+                                ".summed_map_fixedy.svg",
+                                sep = ""),
+               plot = .x + labs(title = "", x = "Position"),
+               path = "processed/peka/papa/plots/",
+               device = svg,
+               width = 22.5 / 1.25,
+               height = 7.5 / 1.25,
+               units = "in",
+               dpi = "retina")
+)
+
 
 # # map with free scales across y
 # map_freey <- plot_kmer_dbrn(mutate(dbrn_tbl, direction = plot_group),
