@@ -265,8 +265,8 @@ walk2(.x = iclip_maps_single_le_start_1se,
                plot = .x,
                path = "processed/iclip_maps/plots/",
                device = svg,
-               height = 7.5,
-               width = 22.5,
+               height = 6,
+               width = 18,
                units = "in",
                dpi = "retina")
         )
@@ -281,8 +281,8 @@ walk2(.x = iclip_maps_single_pas_1se,
                plot = .x,
                path = "processed/iclip_maps/plots/",
                device = svg,
-               height = 7.5,
-               width = 22.5,
+               height = 6,
+               width = 18,
                units = "in",
                dpi = "retina")
 )
