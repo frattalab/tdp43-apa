@@ -73,7 +73,8 @@ separate_sum_maps_freey <-  map2(.x = dbrn_tbls_sum,
                       n_row = 3,
                       breaks = seq(-500,500,100),
                       rolling_k = 10,
-                      plot_colours = c("#000000", "#d95f02")
+                      plot_colours = c("#000000", "#d95f02"),
+                      base_size = 20
                       ) + 
        labs(title = .y,
             y = "% Coverage",
@@ -91,7 +92,8 @@ separate_sum_maps_fixed <-  map2(.x = dbrn_tbls_sum,
                                                   breaks = seq(-500,500,100),
                                                   rolling_k = 10,
                                                   plot_colours = c("#000000", "#d95f02"),
-                                                  facet_scales = "fixed"
+                                                  facet_scales = "fixed",
+                                                  base_size = 20
                                  ) + 
                                    labs(title = .y,
                                         y = "% Coverage",
@@ -103,12 +105,12 @@ separate_sum_maps_freey
 
 # save to PDF, one per page in landscape
 plot_list_to_pdf(separate_sum_maps_freey,
-                 "processed/peka/papa/plots/2023-12-05_papa_no_bleedthrough_cvcoverage_halleger_motif_groups_summed_map_freey.pdf",
+                 "processed/peka/papa/plots/2023-12-08_papa_no_bleedthrough_cvcoverage_halleger_motif_groups_summed_map_freey.pdf",
                  width = a4_height,
                  height = a4_width)
 
 plot_list_to_pdf(separate_sum_maps_fixed,
-                 "processed/peka/papa/plots/2023-12-05_papa_no_bleedthrough_cvcoverage_halleger_motif_groups_summed_map_fixedy.pdf",
+                 "processed/peka/papa/plots/2023-12-08_papa_no_bleedthrough_cvcoverage_halleger_motif_groups_summed_map_fixedy.pdf",
                  width = a4_height,
                  height = a4_width)
 
@@ -116,30 +118,30 @@ plot_list_to_pdf(separate_sum_maps_fixed,
 # Also save individual plots to SVG
 walk2(.x = separate_sum_maps_freey,
       .y = names(separate_sum_maps_freey),
-      ~ ggsave(filename = paste("2023-12-05_papa_no_bleedthrough_cvcoverage.",
+      ~ ggsave(filename = paste("2023-12-08_papa_no_bleedthrough_cvcoverage.",
                                 .y,
                                 ".summed_map_freey.svg",
                                 sep = ""),
                plot = .x + labs(title = "", x = "Position"),
                path = "processed/peka/papa/plots/",
                device = svg,
-               width = 22.5 / 1.25,
-               height = 7.5 / 1.25,
+               width = 19.5,
+               height = 6.5,
                units = "in",
                dpi = "retina")
       )
 
 walk2(.x = separate_sum_maps_fixed,
       .y = names(separate_sum_maps_fixed),
-      ~ ggsave(filename = paste("2023-12-05_papa_no_bleedthrough_cvcoverage.",
+      ~ ggsave(filename = paste("2023-12-08_papa_no_bleedthrough_cvcoverage.",
                                 .y,
                                 ".summed_map_fixedy.svg",
                                 sep = ""),
                plot = .x + labs(title = "", x = "Position"),
                path = "processed/peka/papa/plots/",
                device = svg,
-               width = 22.5 / 1.25,
-               height = 7.5 / 1.25,
+               width = 18,
+               height = 6,
                units = "in",
                dpi = "retina")
 )
