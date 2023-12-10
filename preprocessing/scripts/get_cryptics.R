@@ -1,7 +1,7 @@
 library(tidyverse)
 
 
-df <- read_tsv("processed/PAPA/2023-05-24_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
+df <- read_tsv("processed/PAPA/2023-12-10_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
 
 
 #
@@ -29,7 +29,7 @@ cryptics_summ
 cryptic_et_exper <- count(cryptics, simple_event_type, experiment_name) %>%
   arrange(simple_event_type, desc(n))
 
-write_tsv(cryptics_summ, "processed/cryptics_summary_all_events.tsv",col_names = T)
+write_tsv(cryptics_summ, "processed/2023-12-10_cryptics_summary_all_events.tsv",col_names = T)
 
 # annotate multiple event types as complex
 cryptics_summ_c <- cryptics_summ %>%
@@ -37,15 +37,17 @@ cryptics_summ_c <- cryptics_summ %>%
                                      "complex",
                                      simple_event_type)) 
 
-cryptics_summ_c %>%
+# count number of events in each category
+cryptics_summ_c_counts <- cryptics_summ_c %>%
   count(simple_event_type)
+
 # A tibble: 4 × 2
 # simple_event_type         n
 # <chr>                 <int>
-#   1 bleedthrough             55
-# 2 complex                  15
-# 3 distal_3utr_extension   104
-# 4 spliced                 119
+#   1 bleedthrough             51
+# 2 complex                   9
+# 3 distal_3utr_extension    86
+# 4 spliced                 112
 
 cryptics_summ_c %>%
   count(simple_event_type, annot_status) %>%
@@ -64,13 +66,15 @@ cryptics_summ_c %>%
 # 9 spliced               novel              58
 
 # write full tsv with complex event type annotation
-write_tsv(cryptics_summ_c, "processed/cryptics_summary_all_events_complex.tsv",col_names = T)
+write_tsv(cryptics_summ_c, "processed/2023-12-10_cryptics_summary_all_events_complex.tsv",col_names = T)
+# write tsv with counts for each event type
+write_tsv(cryptics_summ_c_counts, "processed/2023-12-10_cryptics_summary_all_events_complex_counts.tsv", col_names = T)
 
 # for each event type, write to separate tsv
 for (event_type in unique(cryptics_summ_c$simple_event_type)) {
   
   write_tsv(filter(cryptics_summ_c, simple_event_type == event_type),
-            paste("processed/cryptics_summary_", event_type, ".tsv", sep = ""),
+            paste("processed/2023-12-10_cryptics_summary_", event_type, ".tsv", sep = ""),
             col_names = T
             )
   
@@ -78,7 +82,7 @@ for (event_type in unique(cryptics_summ_c$simple_event_type)) {
 
 # write cryptic filtered PAPA TSV
 write_tsv(cryptics,
-          "processed/PAPA/2023-05-24_cryptics.i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
+          "processed/PAPA/2023-12-10_cryptics.i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
 
 
 
