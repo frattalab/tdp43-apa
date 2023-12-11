@@ -49,30 +49,35 @@ write_tsv(mv_summary, "processed/bleedthrough_summary_counts_manual_validation.t
 
 ## Filter cryptics summary table for events not failing manual validation
 
-cryp_summ <- read_tsv("processed/cryptics_summary_all_events.tsv")
+cryp_summ <- read_tsv("processed/2023-12-10_cryptics_summary_all_events.tsv")
 
 fail_ids <- joined_mv_clean %>% filter(event_manual_validation != "yes") %>% pull(le_id)
 
 cryp_summ_f <- filter(cryp_summ, !(le_id %in% fail_ids))
 
-write_tsv(cryp_summ_f, "processed/cryptics_summary_all_events_bleedthrough_manual_validation.tsv")
+write_tsv(cryp_summ_f, "processed/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation.tsv")
+write_lines(fail_ids, "processed/2023-12-10_cryptics_manual_validation_fail_le_ids.txt")
+
+# annotate multiple event types as complex
+cryp_summ_f_c <- cryp_summ_f %>%
+  mutate(simple_event_type = if_else(str_detect(simple_event_type, ","),
+                                     "complex",
+                                     simple_event_type)) 
+
+write_tsv(cryp_summ_f, "processed/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation_complex.tsv")
 
 # number of cryptic events
 n_distinct(cryp_summ_f$le_id)
-# [1] 259
+# [1] 227
 
 # number for each category
 cryp_summ_f %>%
   count(simple_event_type, sort = T) %>%
   mutate(frac = n / sum(n)) %>%
-  write_tsv("processed/cryptics_summary_counts_bleedthrough_manual_validation.tsv")
+  write_tsv("processed/2023-12-10_cryptics_summary_counts_bleedthrough_manual_validation.tsv")
 
+cryp_summ_f_c %>%
+  count(simple_event_type, sort = T) %>%
+  mutate(frac = n / sum(n)) %>%
+  write_tsv("processed/2023-12-10_cryptics_summary_counts_complex_bleedthrough_manual_validation.tsv")
 
-# # A tibble: 5 × 3
-# simple_event_type                      n   frac
-# <chr>                              <int>  <dbl>
-#   1 spliced                              119 0.459 
-# 2 distal_3utr_extension                104 0.402 
-# 3 bleedthrough                          21 0.0811
-# 4 bleedthrough,spliced                  12 0.0463
-# 5 bleedthrough,distal_3utr_extension     3 0.0116

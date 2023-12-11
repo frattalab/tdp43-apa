@@ -1,7 +1,7 @@
 library(tidyverse)
 library(patchwork)
 library(fgsea)
-load("processed/ferguson_hela/hela_ko_tf_activity_gsea.Rdata")
+load("processed/ferguson_hela/2023-11-29_hela_ko_tf_activity_gsea.Rdata")
 
 
 find_cross_0_idx <- function(x) {
@@ -107,7 +107,7 @@ tmp_trgt_list <- rep(elk1_target_list, 2)
 tmp_trgt_list <- tmp_trgt_list[order(names(tmp_trgt_list))]
 names(tmp_trgt_list)
 
-gsea_enrichplots_ferguson_all <- pmap(list(x = rep(ferguson_deseq_ranks, 4),
+gsea_enrichplots_ferguson_all <- pmap(list(x = rep(ferguson_deseq_ranks, 8),
                                                  y = gsea_pway_grpd,
                                                  z = names(gsea_pway_grpd),
                                                  t = tmp_trgt_list),
@@ -116,6 +116,8 @@ gsea_enrichplots_ferguson_all <- pmap(list(x = rep(ferguson_deseq_ranks, 4),
                                                                                 plot_title = z,
                                                                                 zero_line = T)
 )
+
+gsea_enrichplots_ferguson_all
 
 # finally for spliced remvoed, should make a function...
 tmp_grpd <- gsea_ferguson_nospl_all %>%
@@ -133,7 +135,7 @@ tmp_trgt_list <- rep(elk1_target_list, 2)
 tmp_trgt_list <- tmp_trgt_list[order(names(tmp_trgt_list))]
 names(tmp_trgt_list)
 
-gsea_enrichplots_ferguson_all_nospl <- pmap(list(x = rep(ferguson_deseq_ranks, 4),
+gsea_enrichplots_ferguson_all_nospl <- pmap(list(x = rep(ferguson_deseq_ranks, 8),
                                            y = gsea_pway_grpd,
                                            z = names(gsea_pway_grpd),
                                            t = tmp_trgt_list),
@@ -160,7 +162,7 @@ gsea_enrichplots_ferguson_comb_all <- map2(.x = gsea_enrichplots_ferguson_all,
 
 if (!dir.exists("processed/ferguson_hela")) {dir.create("processed/ferguson_hela", recursive = T)}
 
-ggsave(filename = "2023-11-17_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_stat.png",
+ggsave(filename = "2023-11-29_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_stat.png",
        plot = gsea_enrichplots_ferguson_comb_stat,
        device = "png",
        path = "processed/ferguson_hela/",
@@ -170,7 +172,7 @@ ggsave(filename = "2023-11-17_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_st
        dpi = "retina")
 
 
-ggsave(filename = "2023-11-17_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_signedp.png",
+ggsave(filename = "2023-11-29_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_signedp.png",
        plot = gsea_enrichplots_ferguson_comb_signedp,
        device = "png",
        path = "processed/ferguson_hela/",
@@ -186,7 +188,7 @@ ggsave(filename = "2023-11-17_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_si
 a4_width <- 8.27
 a4_height <- 11.69
 
-pdf("processed/ferguson_hela/2023-11-17_ferguson_hela_all_targets_gsea_enrichplot_spl_nospl.pdf",
+pdf("processed/ferguson_hela/2023-11-29_ferguson_hela_all_targets_gsea_enrichplot_spl_nospl.pdf",
     width = a4_height, height = a4_width )
 
 # Loop through each ggplot object and print it to the PDF file

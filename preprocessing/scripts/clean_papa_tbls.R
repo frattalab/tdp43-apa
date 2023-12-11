@@ -108,6 +108,32 @@ dapa_comb <- dapa_paths %>%
   ) %>%
   bind_rows(.id = "experiment_name")
 
+unique(dapa_comb$experiment_name)
+# [1] "brown_i3_cortical"                                              "brown_shsy5y"                                                  
+# [3] "brown_skndz"                                                    "humphrey_i3_cortical"                                          
+# [5] "klim_i3_motor"                                                  "seddighi_i3_cortical"                                          
+# [7] "zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl" "zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl"                        
+# [9] "zanovello_shsy5y_curve_00125"                                   "zanovello_shsy5y_curve_00187"                                  
+# [11] "zanovello_shsy5y_curve_0021"                                    "zanovello_shsy5y_curve_0025"                                   
+# [13] "zanovello_shsy5y_curve_0075"                                    "zanovello_skndz_curve_002"                                     
+# [15] "zanovello_skndz_curve_003"                                      "zanovello_skndz_curve_004"                                     
+# [17] "zanovello_skndz_curve_005"                                      "zanovello_skndz_curve_0075"                                    
+# [19] "zanovello_skndz_curve_01"                                       "zanovello_skndz_curve_1"  
+
+# remove some of the intermediate depletion curve datasets (i.e. keep highest KD only)
+# zanovello_skndz_curve_1
+# zanovello_shsy5y_curve_0075
+exp_to_keep <- unique(dapa_comb$experiment_name)[str_detect(unique(dapa_comb$experiment_name), "_curve_",negate = T) | 
+                                            unique(dapa_comb$experiment_name) %in% c("zanovello_skndz_curve_1", "zanovello_shsy5y_curve_0075")]
+
+dapa_comb <- filter(dapa_comb, experiment_name %in% exp_to_keep)
+
+unique(dapa_comb$experiment_name)
+# [1] "brown_i3_cortical"                                              "brown_shsy5y"                                                  
+# [3] "brown_skndz"                                                    "humphrey_i3_cortical"                                          
+# [5] "klim_i3_motor"                                                  "seddighi_i3_cortical"                                          
+# [7] "zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl" "zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl"                        
+# [9] "zanovello_shsy5y_curve_0075"                                    "zanovello_skndz_curve_1"  
 
 # Sometimes gene names have duplicate values separated by commas (WHY SAM)
 # Will drop to unique values and recombine if necessary
@@ -148,7 +174,7 @@ if (!dir.exists("processed/PAPA/")) { dir.create("processed/PAPA/", recursive = 
 
 # write combined TSV
 write_tsv(dapa_comb,
-          file = "processed/PAPA/2023-05-24_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv",
+          file = "processed/PAPA/2023-12-10_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv",
           col_names = T )
 
 
@@ -158,7 +184,7 @@ for (experiment in unique(dapa_comb$experiment_name)) {
   dapa_comb %>%
     filter(experiment_name == experiment) %>%
     write_tsv(.,
-              file = paste("processed/PAPA/2023-05-24_i3_cortical_zanovello.",
+              file = paste("processed/PAPA/2023-12-10_i3_cortical_zanovello.",
                            experiment,
                            ".dexseq_apa.results.processed.cleaned.tsv",
                            sep = ""),
