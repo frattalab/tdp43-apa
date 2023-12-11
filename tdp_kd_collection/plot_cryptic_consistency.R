@@ -27,28 +27,9 @@ facet_heatmap <- function(df,
 }
 
 
-df <- read_tsv("data/2023-05-24_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
+df <- read_tsv("data/2023-12-10_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
 mv_df <- read_tsv("data/bleedthrough_manual_validation.tsv")
-
-# remove some of the intermediate depletion curve datasets (i.e. keep highest KD only)
-# zanovello_skndz_curve_1
-# zanovello_shsy5y_curve_0075
-
-exp_to_keep <- unique(df$experiment_name)[str_detect(unique(df$experiment_name), "_curve_",negate = T) | 
-                                            unique(df$experiment_name) %in% c("zanovello_skndz_curve_1", "zanovello_shsy5y_curve_0075")]
-
-df <- filter(df, experiment_name %in% exp_to_keep)
-# experiment_name = factor(experiment_name, levels = c("humphrey_i3_cortical",
-#                                                      "brown_i3_cortical",
-#                                                      "seddighi_i3_cortical",
-#                                                      "klim_i3_motor",
-#                                                      "zanovello_shsy5y_curve_0075",
-#                                                      "zanovello_shsy5y_chx_kd_only",
-#                                                      "brown_shsy5y",
-#                                                      "zanovello_skndz_curve_1",
-#                                                      "brown_skndz",
-#                                                      "appocher_skndz"
-# )
+cryptics_df <- read_tsv("data/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation_complex.tsv")
 
 
 # remove manually validated isoforms
@@ -56,11 +37,11 @@ mv_fail_ids <- filter(mv_df, event_manual_validation != "yes") %>% pull(le_id)
 df <- filter(df, !le_id %in% mv_fail_ids)
 
 # annotate cryptic events (any dataset)
-df <- mutate(df, cryptic_any = padj < 0.05 & mean_PPAU_base < 0.1 & delta_PPAU_treatment_control > 0.1)
+df <- mutate(df, cryptic_any = le_id %in% unique(cryptics_df$le_id))
 
 #1. number of datasets cryptic, regulated, expressed/evaluated (and fractions)
 
-# annotate regulated, cryptic & expressed for each event
+# annotate regulated, cryptic & expressed for each event + dataset
 df <- df %>%
   mutate(cryptic = padj < 0.05 & mean_PPAU_base < 0.1 & delta_PPAU_treatment_control > 0.1,
          regulated = !cryptic & padj < 0.05,
@@ -80,7 +61,14 @@ le_exper_summ_counts <- df_all_combos %>%
   summarise(n_cryptic = sum(cryptic),
             n_regulated = sum(regulated),
             n_evaluated = sum(evaluated),
-            n_experiments = n())
+            n_experiments = n()) %>%
+  ungroup()
+
+# double check number of cryptic events is the same
+le_exper_summ_counts %>%
+  filter(n_cryptic > 0) %>%
+  nrow()
+# [1] 227
   
 plot_cryptic_vs_expressed_counts <- le_exper_summ_counts %>%
   filter(n_cryptic > 0 & n_evaluated > 0) %>%
@@ -206,11 +194,11 @@ plot_df <- df %>%
   mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score_norm),
          experiment_name_simple = plot_exper_name_simple[experiment_name],
          experiment_name_simple = factor(experiment_name_simple, levels = plot_exper_name_simple),
-         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "Bleedthrough-ALE",
-                                     simple_event_type == "distal_3utr_extension" ~ "3'UTR-ALE",
-                                     simple_event_type == "spliced" ~ "AS-ALE",
+         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "IPA",
+                                     simple_event_type == "distal_3utr_extension" ~ "3'Ext",
+                                     simple_event_type == "spliced" ~ "ALE",
                                      T ~ ""),
-         plot_event_type = factor(plot_event_type, levels = c("AS-ALE", "Bleedthrough-ALE", "3'UTR-ALE"))
+         plot_event_type = factor(plot_event_type, levels = c("ALE", "IPA", "3'Ext"))
          )
 
 # normalised score plot df
@@ -258,45 +246,42 @@ cryptics_sum_score_sort_heatmap_nolab
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot.png",
+ggsave(filename = "2023-12-11_ndatasets_cryptic_vs_expressed_binplot.png",
        plot = plot_cryptic_vs_expressed_counts,
               path = "processed",
-              width = 12,
-              height = 12,
+              width = 10,
+              height = 10,
               units = "in",
               dpi = "retina")
 
-ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot.svg",
+ggsave(filename = "2023-12-11_ndatasets_cryptic_vs_expressed_binplot.svg",
        plot = plot_cryptic_vs_expressed_counts,
        device = svg,
        path = "processed",
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
-
-ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.png",
+ggsave(filename = "2023-12-11_ndatasets_cryptic_vs_expressed_binplot_notitle.png",
        plot = plot_cryptic_vs_expressed_counts_notitle,
        path = "processed",
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.svg",
+ggsave(filename = "2023-12-11_ndatasets_cryptic_vs_expressed_binplot_notitle.svg",
        plot = plot_cryptic_vs_expressed_counts_notitle,
        device = svg,
        path = "processed",
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
 
-
-
-ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2023-12-11_cryptics_normed_regn_score_sort_facet_heatmap.png",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -304,7 +289,7 @@ ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.png"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2023-12-11_cryptics_sum_regn_score_sort_facet_heatmap.png",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -312,7 +297,7 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.svg",
+ggsave(filename = "2023-12-11_cryptics_normed_regn_score_sort_facet_heatmap.svg",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        device = svg,
@@ -321,7 +306,7 @@ ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.svg"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.svg",
+ggsave(filename = "2023-12-11_cryptics_sum_regn_score_sort_facet_heatmap.svg",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
        device = svg,
@@ -330,7 +315,7 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.svg",
+ggsave(filename = "2023-12-11_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.svg",
        plot = cryptics_sum_score_sort_heatmap_nolab,
        path = "processed",
        device = svg,
@@ -339,7 +324,7 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.pdf",
+ggsave(filename = "2023-12-11_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.pdf",
        plot = cryptics_sum_score_sort_heatmap_nolab,
        path = "processed",
        device = "pdf",
@@ -351,7 +336,15 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
 
 
 # write enrichment scores to tsv (summarised)
-write_tsv(regn_score_sum, "processed/2023-09-18_last_exon_regulation_scores.tsv", col_names = T)
+write_tsv(regn_score_sum, "processed/2023-12-11_last_exon_regulation_scores.tsv", col_names = T)
+
+# write df with cryptic, detected and regulated counts across datasets for each event
+le_exper_summ_counts <- le_exper_summ_counts %>%
+  left_join(distinct(df, le_id, gene_name)) %>%
+  relocate(gene_name, .after = le_id) %>%
+  arrange(desc(n_cryptic), desc(n_regulated), desc(n_evaluated))
+
+write_tsv(le_exper_summ_counts, "processed/2023-12-11_last_exon_dataset_regulation_summary_counts.tsv", col_names = T)
 
 # save to Rdata
 regn_score_all <- working_df
