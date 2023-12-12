@@ -24,7 +24,9 @@ p_tx2le <- "processed/2023-06-22_cryptics_plus_decoys.decoys_full_fix_tx2le.tx2l
 # just in case new annotation changes le_id assignment, will use this to map back to cryptic exons called with standard approach
 p_input_tx2le <- "processed/2023-06-22_cryptics_plus_decoys.decoys_full_fix_tx2le.input_tx2le.tsv"
 
-p_dexseq <- "data/PAPA/2023-05-24_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv"
+# use final definition of cryptic events
+p_cryp <- "../preprocessing/processed/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation.tsv"
+
 p_orig_tx2le <- "data/PAPA/novel_ref_combined.tx2le.tsv"
 
 p_le2name <- "processed/2023-06-22_cryptics_plus_decoys.decoys_full_fix_tx2le.le2name.tsv"
@@ -49,13 +51,13 @@ event_type_complex_mc <- read_tsv(p_event_type_complex_mc)
 
 
 ## 
-dexseq <- read_tsv(p_dexseq)
+cryp <- read_tsv(p_cryp)
 orig_tx2le <- read_tsv(p_orig_tx2le)
-dexseq_cryp <- dexseq %>% filter(padj < 0.05 & mean_PPAU_base < 0.1 & delta_PPAU_treatment_control > 0.1)
+
 
 # get tx_ids of cryptic le_ids
 orig_tx_cryp <- orig_tx2le %>% 
-  filter(le_id %in% dexseq_cryp$le_id) %>%
+  filter(le_id %in% cryp$le_id) %>%
   pull(transcript_id)
 
 # get a vector of cryptic last exon IDs (for current annotation)
@@ -65,11 +67,9 @@ cryp_le_ids <- tx2le %>%
   pull()
 
 # extract event type annotation
-le2event <- dexseq %>%
-  distinct(le_id, simple_event_type, gene_name) %>%
-  group_by(gene_name, le_id) %>%
-  summarise(simple_event_type = paste(unique(sort(simple_event_type)), collapse = ",")) %>%
-  ungroup()
+le2event <- cryp %>%
+  select(gene_name, le_id, simple_event_type)
+  
 
 # add plot_le_id
 le2event <- mutate(le2event, plot_le_id = paste(gene_name, str_split_i(le_id, "_", 2), sep = "_"))
@@ -197,25 +197,25 @@ if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 # output median & mean pairwise delta_PPAU tables
 ppau_delta_paired_median_all %>%
   filter(cryptic_status) %>%
-  write_tsv("processed/2023-09-11_liu_facs_decoys_delta_ppau.all_samples.cryptics.tsv", col_names = T)
+  write_tsv("processed/2023-12-12_liu_facs_decoys_delta_ppau.all_samples.cryptics.tsv", col_names = T)
 
 ppau_delta_paired_median_all %>%
-  write_tsv("processed/2023-09-11_liu_facs_decoys_delta_ppau.all_samples.all_ales.tsv.gz", col_names = T)
+  write_tsv("processed/2023-12-12_liu_facs_decoys_delta_ppau.all_samples.all_ales.tsv.gz", col_names = T)
 
 ppau_delta_paired_median_disease %>%
   filter(cryptic_status) %>%
-  write_tsv("processed/2023-09-11_liu_facs_decoys_delta_ppau.subtype_split.cryptics.tsv", col_names = T)
+  write_tsv("processed/2023-12-12_liu_facs_decoys_delta_ppau.subtype_split.cryptics.tsv", col_names = T)
 
 ppau_delta_paired_median_disease %>%
-  write_tsv("processed/2023-09-11_liu_facs_decoys_delta_ppau.subtype_split.all_ales.tsv.gz", col_names = T)
+  write_tsv("processed/2023-12-12_liu_facs_decoys_delta_ppau.subtype_split.all_ales.tsv.gz", col_names = T)
 
 # output per sample
 ppau_delta_paired %>%
   filter(cryptic_status) %>%
-  write_tsv("processed/2023-09-11_liu_facs_decoys_per_sample_delta_ppau.cryptics.tsv", col_names = T)
+  write_tsv("processed/2023-12-12_liu_facs_decoys_per_sample_delta_ppau.cryptics.tsv", col_names = T)
 
 ppau_delta_paired %>%
-  write_tsv("processed/2023-09-11_liu_facs_decoys_per_sample_delta_ppau.all_ales.tsv.gz", col_names = T)
+  write_tsv("processed/2023-12-12_liu_facs_decoys_per_sample_delta_ppau.all_ales.tsv.gz", col_names = T)
 
 
   
