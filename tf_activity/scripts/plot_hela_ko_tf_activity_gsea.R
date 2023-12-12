@@ -100,14 +100,26 @@ tmp_grpd <- gsea_ferguson_all %>%
 gsea_pway_grpd <- group_split(tmp_grpd) %>%
   set_names(group_keys(tmp_grpd) %>% mutate(id = paste(plot_pathway, score_type, sep = " - ")) %>% pull())
 
-names(gsea_pway_grpd)
-
 # need 1 set of target lists for each statistic
-tmp_trgt_list <- rep(elk1_target_list, 2)
-tmp_trgt_list <- tmp_trgt_list[order(names(tmp_trgt_list))]
-names(tmp_trgt_list)
+# first match up target lists with those present in GSEA results
+gsea_targets_bool <- !names(elk1_target_list) %in% setdiff(names(elk1_target_list), unique(gsea_ferguson_all$pathway))
 
-gsea_enrichplots_ferguson_all <- pmap(list(x = rep(ferguson_deseq_ranks, 8),
+
+tmp_trgt_list <- rep(elk1_target_list[gsea_targets_bool],
+                     2)
+# make sure sort oreder matches the gsea pathway order
+tmp_trgt_list <- tmp_trgt_list[group_keys(tmp_grpd) %>% pull(plot_pathway)]
+
+# names(gsea_pway_grpd)
+# names(tmp_trgt_list)
+ 
+# for (i in seq(1,24)) {
+#   
+#   print(paste(names(gsea_pway_grpd)[i], names(tmp_trgt_list)[i], sep = " | "))
+# 
+# }
+
+gsea_enrichplots_ferguson_all <- pmap(list(x = rep(ferguson_deseq_ranks, 12),
                                                  y = gsea_pway_grpd,
                                                  z = names(gsea_pway_grpd),
                                                  t = tmp_trgt_list),
@@ -115,9 +127,10 @@ gsea_enrichplots_ferguson_all <- pmap(list(x = rep(ferguson_deseq_ranks, 8),
                                                                                 x, y$NES, y$padj, 
                                                                                 plot_title = z,
                                                                                 zero_line = T)
-)
+) %>%
+  set_names(names(gsea_pway_grpd))
 
-gsea_enrichplots_ferguson_all
+# gsea_enrichplots_ferguson_all
 
 # finally for spliced remvoed, should make a function...
 tmp_grpd <- gsea_ferguson_nospl_all %>%
@@ -131,18 +144,23 @@ gsea_pway_grpd <- group_split(tmp_grpd) %>%
 names(gsea_pway_grpd)
 
 # need 1 set of target lists for each statistic
-tmp_trgt_list <- rep(elk1_target_list, 2)
-tmp_trgt_list <- tmp_trgt_list[order(names(tmp_trgt_list))]
-names(tmp_trgt_list)
+gsea_targets_bool <- !names(elk1_target_list) %in% setdiff(names(elk1_target_list), unique(gsea_ferguson_nospl_all$pathway))
 
-gsea_enrichplots_ferguson_all_nospl <- pmap(list(x = rep(ferguson_deseq_ranks, 8),
+tmp_trgt_list <- rep(elk1_target_list[gsea_targets_bool],
+                     2)
+# make sure sort oreder matches the gsea pathway order
+tmp_trgt_list <- tmp_trgt_list[group_keys(tmp_grpd) %>% pull(plot_pathway)]
+
+
+gsea_enrichplots_ferguson_all_nospl <- pmap(list(x = rep(ferguson_deseq_ranks, 12),
                                            y = gsea_pway_grpd,
                                            z = names(gsea_pway_grpd),
                                            t = tmp_trgt_list),
                                       function(x, y, z, t) plot_gsea_line(t,
                                                                        x, y$NES, y$padj, plot_title = paste(z, "nospl", sep = " - "),
                                                                        zero_line = T)
-)
+                                      ) %>%
+  set_names(names(gsea_pway_grpd))
 
 # gsea_enrichplots_ferguson_chipseq
 # gsea_enrichplots_ferguson_chipseq_nopsl
@@ -160,9 +178,9 @@ gsea_enrichplots_ferguson_comb_all <- map2(.x = gsea_enrichplots_ferguson_all,
 # gsea_enrichplots_ferguson_comb_signedp
 # gsea_enrichplots_ferguson_comb_all
 
-if (!dir.exists("processed/ferguson_hela")) {dir.create("processed/ferguson_hela", recursive = T)}
+if (!dir.exists("processed/ferguson_hela/svgs")) {dir.create("processed/ferguson_hela/svgs", recursive = T)}
 
-ggsave(filename = "2023-11-29_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_stat.png",
+ggsave(filename = "2023-12-12_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_stat.png",
        plot = gsea_enrichplots_ferguson_comb_stat,
        device = "png",
        path = "processed/ferguson_hela/",
@@ -172,7 +190,7 @@ ggsave(filename = "2023-11-29_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_st
        dpi = "retina")
 
 
-ggsave(filename = "2023-11-29_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_signedp.png",
+ggsave(filename = "2023-12-12_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_signedp.png",
        plot = gsea_enrichplots_ferguson_comb_signedp,
        device = "png",
        path = "processed/ferguson_hela/",
@@ -188,7 +206,7 @@ ggsave(filename = "2023-11-29_ferguson_hela_chipseq_gsea_enrichplot_spl_nospl_si
 a4_width <- 8.27
 a4_height <- 11.69
 
-pdf("processed/ferguson_hela/2023-11-29_ferguson_hela_all_targets_gsea_enrichplot_spl_nospl.pdf",
+pdf("processed/ferguson_hela/2023-12-12_ferguson_hela_all_targets_gsea_enrichplot_spl_nospl.pdf",
     width = a4_height, height = a4_width )
 
 # Loop through each ggplot object and print it to the PDF file
@@ -199,3 +217,46 @@ for (i in seq_along(gsea_enrichplots_ferguson_comb_all)) {
 # Close the PDF file
 dev.off()
 
+# construct SVGs for each plot
+# first for spl included only
+walk2(.x = gsea_enrichplots_ferguson_all,
+      .y = str_replace_all(names(gsea_enrichplots_ferguson_all), " - ", "."),
+      ~ ggsave(filename = paste("2023-12-12_gsea_enrichplot_spl", .y, "svg",sep = "."),
+               plot = .x,
+               device = svg,
+               path = "processed/ferguson_hela/svgs",
+               height = 5,
+               width = 15,
+               dpi = "retina"
+               ),
+      .progress = T
+      )
+     
+
+# next for no spl removed
+walk2(.x = gsea_enrichplots_ferguson_all_nospl,
+      .y = str_replace_all(names(gsea_enrichplots_ferguson_all_nospl), " - ", "."),
+      ~ ggsave(filename = paste("2023-12-12_gsea_enrichplot_nospl", .y, "svg",sep = "."),
+               plot = .x,
+               device = svg,
+               path = "processed/ferguson_hela/svgs",
+               height = 5,
+               width = 15,
+               dpi = "retina"
+               ),
+      .progress = T
+      )
+
+# next for both combined
+walk2(.x = gsea_enrichplots_ferguson_comb_all,
+      .y = str_replace_all(names(gsea_enrichplots_ferguson_comb_all), " - ", "."),
+      ~ ggsave(filename = paste("2023-12-12_gsea_enrichplot_both", .y, "svg",sep = "."),
+               plot = .x,
+               device = svg,
+               path = "processed/ferguson_hela/svgs",
+               height = 7.5,
+               width = 15,
+               dpi = "retina"
+      ),
+      .progress = T
+)
