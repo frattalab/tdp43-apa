@@ -210,19 +210,22 @@ plot_df_cryp_volc <- deseq_res_df %>%
   #3. label gene name if Ribo-seq is significant and a cryptic ALE gene
   #4. shrink extremely small padj values for plotting
   mutate(simple_event_type = if_else(is.na(simple_event_type), "other", simple_event_type),
-         plot_alpha = case_when(simple_event_type != "other" ~ 1,
-                                padj < 0.05 ~ 0.5,
+         plot_alpha = case_when(simple_event_type != "other" & padj < 0.05 ~ 1,
+                                simple_event_type != "other" ~ 0.25,
+                                padj < 0.05 ~ 0.25,
                                 TRUE ~ 0.00001
          ),
          plot_label = if_else(simple_event_type != "other" & padj < 0.05,
                               gene_name,
                               ""),
          plot_padj = if_else(-log10(padj) > 10, 10, -log10(padj)),
-         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "Bleedthrough-ALE",
+         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "IPA",
                                      simple_event_type == "complex" ~ "Complex",
-                                     simple_event_type == "distal_3utr_extension" ~ "3'UTR-ALE",
-                                     simple_event_type == "other" ~ "No ALE",
-                                     simple_event_type == "spliced" ~ "AS-ALE")
+                                     simple_event_type == "distal_3utr_extension" ~ "3'Ext",
+                                     # simple_event_type == "proximal_3utr_extension" ~ "Prox 3'Ext",
+                                     simple_event_type == "other" ~ "None",
+                                     simple_event_type == "spliced" ~ "ALE"),
+         plot_event_type = factor(plot_event_type, levels = c("3'Ext", "ALE", "IPA", "Complex", "None"))
   ) 
 
 # volcabno plot with cryptic ALE genes annotated
@@ -241,24 +244,24 @@ base_volcano <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
                      breaks = seq(-4,4,1)) +
   scale_y_continuous(limits = c(0,10.5),
                      breaks = seq(0,10,1)) +
-  scale_colour_manual(values = c("#d95f02", "#1f78b4", "#33a02c", "#a6cee3", "#bdbdbd")) +
+  scale_colour_manual(values = c("#d95f02","#1f78b4","#a6cee3", "#33a02c", "#bdbdbd")) +
   theme_bw(base_size = 20) +
   guides(alpha = "none") +
   labs(x = "Log2FoldChange (KD / WT)",
        y = "-log10(padj)",
-       colour = "Event type") +
+       colour = "Event Type") +
   theme(legend.position = "top")
 
 base_volcano
 
-ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn.png",
+ggsave("processed/2023-12-12_riboseq_ale_events_volcano_clean_no_gn.png",
        height = 8,
        width = 8,
        units = "in",
        dpi = "retina"
 )
 
-ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn.svg",
+ggsave("processed/2023-12-12_riboseq_ale_events_volcano_clean_no_gn.svg",
        height = 8,
        width = 8,
        units = "in",
@@ -269,14 +272,14 @@ ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn.svg",
 # volcano with no colour legend
 base_volcano + guides(colour = "none")
 
-ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn_no_leg.png",
+ggsave("processed/2023-12-12_riboseq_ale_events_volcano_clean_no_gn_no_leg.png",
        height = 8,
        width = 8,
        units = "in",
        dpi = "retina"
 )
 
-ggsave("processed/2023-10-10_riboseq_ale_events_volcano_clean_no_gn_no_leg.svg",
+ggsave("processed/2023-12-12_riboseq_ale_events_volcano_clean_no_gn_no_leg.svg",
        height = 8,
        width = 8,
        units = "in",
@@ -294,16 +297,16 @@ base_volcano +
                   seed = 123
   )
 
-ggsave("processed/2023-09-26_riboseq_ale_events_volcano_clean_gn.png",
+ggsave("processed/2023-12-12_riboseq_ale_events_volcano_clean_gn.png",
        height = 8,
-       width = 12,
+       width = 8,
        units = "in",
        dpi = "retina"
 )
 
-ggsave("processed/2023-09-26_riboseq_ale_events_volcano_clean_gn.svg",
+ggsave("processed/2023-12-12_riboseq_ale_events_volcano_clean_gn.svg",
        height = 8,
-       width = 12,
+       width = 8,
        units = "in",
        dpi = "retina",
        device = svg
