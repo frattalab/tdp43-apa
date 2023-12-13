@@ -91,7 +91,7 @@ ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
 
 ## Volcano plot labelling all diff translated genes (from ribo-seq) on RNA levels
 riboseq <- read_tsv("data/2023-10-18_i3_cryptic_genes_riboseq_deseq_summary.tsv")
-riboseq_sig <- filter(riboseq, diff_translated)
+riboseq_sig <- filter(riboseq, diff_translated & !(gene_name %in% mv_fail_gn))
 
 
 # df specifying plot criteria - labels for diff translated genes containing cryptics
@@ -105,10 +105,10 @@ plot_seddighi_cryp_all <- seddighi_df %>%
                                 plot_padj > -log10(0.05) ~ 0.1,
                                 TRUE ~ 0.01
          ),
-         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "Bleedthrough-ALE",
-                                     simple_event_type == "distal_3utr_extension" ~ "3'UTR-ALE",
-                                     simple_event_type == "spliced" ~ "AS-ALE"),
-         plot_event_type = factor(plot_event_type, levels = c("AS-ALE","Bleedthrough-ALE","3'UTR-ALE"))
+         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "IPA",
+                                     simple_event_type == "distal_3utr_extension" ~ "3'Ext",
+                                     simple_event_type == "spliced" ~ "ALE"),
+         plot_event_type = factor(plot_event_type, levels = c("ALE","IPA","3'Ext"))
          # plot_colour = if_else(plot_label %in% highlight_genes, "3'UTR-ALE cryptics", "other")
   ) %>%
   arrange(desc(diff_translated))
@@ -145,21 +145,21 @@ all_gn_ev_type_volc <- base_ev_type_volc +
                 seed = 123
 ) 
 
-# VOLOUR ALL event types but just label the 3'UTR-ALEs
+# COLOUR ALL event types but just label the 3'UTR-ALEs
 utr3_gn_ev_type_volc <- base_ev_type_volc +
   geom_text_repel(data = filter(plot_seddighi_cryp_all, diff_translated & gene_name %in% highlight_genes),
                   max.overlaps = 1000,
                   force = 10,
                   size = rel(8),
                   seed = 123
-  ) 
+  )
 
 base_ev_type_volc
 all_gn_ev_type_volc
 utr3_gn_ev_type_volc
 
 # base plot, no labels
-ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_no_lab.png",
+ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_no_lab.png",
        plot = base_ev_type_volc,
        device = "png",
        height = 8,
@@ -167,7 +167,7 @@ ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_no_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_no_lab.svg",
+ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_no_lab.svg",
        plot = base_ev_type_volc,
        device = svg,
        height = 8,
@@ -176,7 +176,7 @@ ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_no_lab.svg",
        units = "in")
 
 # all labelled
-ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_all_lab.png",
+ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_all_lab.png",
        plot = all_gn_ev_type_volc,
        device = "png",
        height = 8,
@@ -184,7 +184,7 @@ ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_all_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_all_lab.svg",
+ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_all_lab.svg",
        plot = all_gn_ev_type_volc,
        device = svg,
        height = 8,
@@ -193,7 +193,7 @@ ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_all_lab.svg",
        units = "in")
 
 # only increased 3'UTRs up
-ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
+ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
        plot = utr3_gn_ev_type_volc,
        device = "png",
        height = 8,
@@ -201,7 +201,7 @@ ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-10-31_seddighi_rna_de_volcano_cryptic_3utr_lab.svg",
+ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_3utr_lab.svg",
        plot = utr3_gn_ev_type_volc,
        device = svg,
        height = 8,
