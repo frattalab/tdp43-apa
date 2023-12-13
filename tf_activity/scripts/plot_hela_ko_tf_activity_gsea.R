@@ -19,7 +19,7 @@ find_cross_0_idx <- function(x) {
 # find_cross_0_idx(c(10, 8, 6, 3, 2, 0, -1, -3, -5, -7)) # should return 6 (0)
 # find_cross_0_idx(c(5, 3, 2, -1, -3, -5)) # should return 3.5 (2 = 3rd, -1 = 4th idx)
 
-plot_gsea_line <- function(gene_list, ranks, nes, padj, plot_title = "", round_digits = 6, zero_line = FALSE) {
+plot_gsea_line <- function(gene_list, ranks, nes, padj, plot_title = "", round_digits = 6, zero_line = FALSE, plot_size = rel(1.5)) {
 
   # base plot   
   p <- plotEnrichment(gene_list,
@@ -28,8 +28,8 @@ plot_gsea_line <- function(gene_list, ranks, nes, padj, plot_title = "", round_d
          subtitle = glue::glue("NES = {round(nes, round_digits)}, padj = {round(padj, round_digits)}"),
          x = "Gene Ranks",
          y = "Enrichment Score") +
-    theme(title = element_text(size = rel(1.5)),
-          axis.text = element_text(size = rel(1.5))
+    theme(title = element_text(size = plot_size),
+          axis.text = element_text(size = plot_size)
     )
   
   if (zero_line) {
@@ -221,12 +221,12 @@ dev.off()
 # first for spl included only
 walk2(.x = gsea_enrichplots_ferguson_all,
       .y = str_replace_all(names(gsea_enrichplots_ferguson_all), " - ", "."),
-      ~ ggsave(filename = paste("2023-12-12_gsea_enrichplot_spl", .y, "svg",sep = "."),
+      ~ ggsave(filename = paste("2023-12-13_gsea_enrichplot_spl", .y, "svg",sep = "."),
                plot = .x,
                device = svg,
                path = "processed/ferguson_hela/svgs",
-               height = 5,
-               width = 15,
+               height = 4,
+               width = 12,
                dpi = "retina"
                ),
       .progress = T
@@ -236,12 +236,12 @@ walk2(.x = gsea_enrichplots_ferguson_all,
 # next for no spl removed
 walk2(.x = gsea_enrichplots_ferguson_all_nospl,
       .y = str_replace_all(names(gsea_enrichplots_ferguson_all_nospl), " - ", "."),
-      ~ ggsave(filename = paste("2023-12-12_gsea_enrichplot_nospl", .y, "svg",sep = "."),
+      ~ ggsave(filename = paste("2023-12-13_gsea_enrichplot_nospl", .y, "svg",sep = "."),
                plot = .x,
                device = svg,
                path = "processed/ferguson_hela/svgs",
-               height = 5,
-               width = 15,
+               height = 4,
+               width = 12,
                dpi = "retina"
                ),
       .progress = T
