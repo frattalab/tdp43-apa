@@ -64,7 +64,8 @@ cryptics_summ_c <- cryptics_summ %>%
                                      "complex",
                                      simple_event_type)) 
 
-cryptics_summ_c %>%
+# count number of events in each category
+cryptics_summ_c_counts <- cryptics_summ_c %>%
   count(simple_event_type)
 # simple_event_type           n
 # <chr>                   <int>
@@ -94,6 +95,8 @@ cryptics_summ_c %>%
 
 # write full tsv with complex event type annotation
 write_tsv(cryptics_summ_c, "processed/2023-12-10_cryptics_summary_all_events_complex.tsv",col_names = T)
+# write tsv with counts for each event type
+write_tsv(cryptics_summ_c_counts, "processed/2023-12-10_cryptics_summary_all_events_complex_counts.tsv", col_names = T)
 
 # for each event type, write to separate tsv
 for (event_type in unique(cryptics_summ_c$simple_event_type)) {

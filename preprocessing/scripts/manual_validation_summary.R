@@ -55,20 +55,26 @@ fail_ids <- joined_mv_clean %>% filter(event_manual_validation != "yes") %>% pul
 
 cryp_summ_f <- filter(cryp_summ, !(le_id %in% fail_ids))
 
+write_tsv(cryp_summ_f, "processed/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation.tsv")
+write_lines(fail_ids, "processed/2023-12-10_cryptics_manual_validation_fail_le_ids.txt")
+
+# annotate multiple event types as complex
+cryp_summ_f_c <- cryp_summ_f %>%
+  mutate(simple_event_type = if_else(str_detect(simple_event_type, ","),
+                                     "complex",
+                                     simple_event_type)) 
+
+write_tsv(cryp_summ_f, "processed/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation_complex.tsv")
+
 # number of cryptic events
 n_distinct(cryp_summ_f$le_id)
 # [1] 227
-
-write_tsv(cryp_summ_f, "processed/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation.tsv")
-
-
 
 # number for each category
 cryp_summ_f %>%
   count(simple_event_type, sort = T) %>%
   mutate(frac = n / sum(n)) %>%
   write_tsv("processed/2023-12-10_cryptics_summary_counts_bleedthrough_manual_validation.tsv")
-
 # A tibble: 5 × 3
 # simple_event_type           n   frac
 # <chr>                   <int>  <dbl>
@@ -77,4 +83,9 @@ cryp_summ_f %>%
 # 3 bleedthrough               20 0.0881
 # 4 proximal_3utr_extension    20 0.0881
 # 5 bleedthrough,spliced        9 0.0396
+
+cryp_summ_f_c %>%
+  count(simple_event_type, sort = T) %>%
+  mutate(frac = n / sum(n)) %>%
+  write_tsv("processed/2023-12-10_cryptics_summary_counts_complex_bleedthrough_manual_validation.tsv")
 

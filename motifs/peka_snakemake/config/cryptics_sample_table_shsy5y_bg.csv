@@ -1,0 +1,7 @@
+comparison_name,regions_bed,foreground_key
+bleedthrough_exonstart.background_shsy5y,data/2023-11-24_papa_cryptic_bleedthrough_uniq.background_shsy5y.le_start.bed,cryptic
+bleedthrough_pas.background_shsy5y,data/2023-11-24_papa_cryptic_bleedthrough_uniq.background_shsy5y.pas.bed,cryptic
+spliced_exonstart.background_shsy5y,data/2023-11-24_papa_cryptic_spliced.background_shsy5y.le_start.bed,cryptic
+spliced_pas.background_shsy5y,data/2023-11-24_papa_cryptic_spliced.background_shsy5y.pas.bed,cryptic
+d3utr_pas_proximal.background_shsy5y,data/2023-12-03_papa_cryptic_d3utr.background_shsy5y.pas.proximal.bed,cryptic
+d3utr_pas_distal.background_shsy5y,data/2023-12-03_papa_cryptic_d3utr.background_shsy5y.pas.distal.bed,cryptic

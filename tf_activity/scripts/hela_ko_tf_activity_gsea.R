@@ -40,11 +40,39 @@ hela_targets_elk1 <- chipatlas_elk1 %>%
 hela_targets_elk1_both <- hela_targets_elk1 %>%
   filter(!!sym(cols_hela[1]) != 0 & !!sym(cols_hela[2]) != 0) 
 
-# define a list of target gene IDs for use with fgsea
-chipseq_hela_target_lists <- list(chipseq_all_elk1 = pull(chipatlas_elk1, Target_genes),
-                                  chipseq_hela_elk1 = pull(hela_targets_elk1, Target_genes),
-                                  chipseq_hela_both_elk1 = pull(hela_targets_elk1_both, Target_genes))
 
+
+
+# ELK4
+chipatlas_elk4 <- read_tsv("data/chip_atlas/2023-11-29_chipatlas_tss_1kb_ELK4.tsv")
+cols_hela_elk4 <- colnames(chipatlas_elk4)[str_detect(colnames(chipatlas_elk4), "HeLa")]
+
+# targets where number of datasets
+elk4_num_datasets <- chipatlas_elk4 %>%
+  select(target = Target_genes, ends_with("HeLa")) %>%
+  pivot_longer(cols = ends_with("HeLa"), names_to = "dataset") %>%
+  group_by(target) %>%
+  summarise(n_datasets = sum(value != 0))
+
+
+hela_targets_elk4_all <- filter(chipatlas_elk4, Target_genes %in% pull(filter(elk4_num_datasets, n_datasets == 3), target))
+
+
+# get overlapping and unique targets
+hela_targets_elk1_elk4_shared <- intersect(hela_targets_elk1_both$Target_genes, hela_targets_elk4_all$Target_genes)
+hela_targets_elk1_unique <- setdiff(hela_targets_elk1_both$Target_genes, hela_targets_elk1_elk4_shared)
+hela_targets_elk4_unique <- setdiff(hela_targets_elk4_all$Target_genes, hela_targets_elk1_elk4_shared)
+
+length(hela_targets_elk1_elk4_shared) / length(hela_targets_elk1_both$Target_genes)
+length(hela_targets_elk1_elk4_shared) / length(hela_targets_elk4_all$Target_genes)
+
+
+# define a list of target gene IDs for use with fgsea
+chipseq_hela_target_lists <- list(chipseq_hela_both_elk1 = pull(hela_targets_elk1_both, Target_genes),
+                                  chipseq_hela_elk1_elk4 = hela_targets_elk1_elk4_shared,
+                                  chipseq_hela_unique_elk1 = hela_targets_elk1_unique,
+                                  chipseq_hela_unique_elk4 = hela_targets_elk4_unique,
+                                  chipseq_hela_all_elk4 = pull(hela_targets_elk4_all, Target_genes) )
 
 # remove genes with NA padj value, keep one row per gene name
 ferguson_deseq <- clean_deseq_df(ferguson_deseq)
@@ -132,8 +160,26 @@ dorothea_elk1_target_list_abs <- dorothea_hs %>%
   filter(tf == "ELK1") %>%
   dorothea_to_gsea(split_by_mor = F)
 
+
+# Subset Dorothea to ELK1 HeLA CHIP-seq tagrets (so have expected mode of regulation for these genes)
+dorothea_chip_elk1_target_list <- hela_targets_elk1 %>%
+  select(target = Target_genes) %>%
+  mutate(tf = "ELK1") %>%
+  inner_join(dorothea::dorothea_hs, by = c("tf", "target")) %>%
+  dorothea_to_gsea()
+
+
+dorothea_chip_elk4_target_list <- hela_targets_elk4_all %>%
+  select(target = Target_genes) %>%
+  mutate(tf = "ELK4") %>%
+  inner_join(dorothea::dorothea_hs, by = c("tf", "target")) %>%
+  dorothea_to_gsea()
+
+
 names(dorothea_elk1_target_list) <- paste("dorothea", names(dorothea_elk1_target_list), sep = "_")
 names(dorothea_elk1_target_list_abs) <- paste("dorothea", names(dorothea_elk1_target_list_abs), sep = "_")
+names(dorothea_chip_elk1_target_list) <- paste("dorothea_chipseq", names(dorothea_chip_elk1_target_list), sep = "_")
+names(dorothea_chip_elk4_target_list) <- paste("dorothea_chipseq", names(dorothea_chip_elk4_target_list), sep = "_")
 
 # repeat for collectri
 collectri_elk1_target_list <- collectri_hs %>%
@@ -146,26 +192,49 @@ collectri_elk1_target_list_abs <- collectri_hs %>%
   rename(tf = source) %>%
   dorothea_to_gsea(split_by_mor = F)
 
+
+collectri_chip_elk1_target_list <- hela_targets_elk1 %>%
+  select(target = Target_genes) %>%
+  mutate(source = "ELK1") %>%
+  inner_join(collectri_hs, by = c("source", "target")) %>%
+  rename(tf = source) %>%
+  dorothea_to_gsea()
+  
+  
+collectri_chip_elk4_target_list <- hela_targets_elk4_all %>%
+  select(target = Target_genes) %>%
+  mutate(source = "ELK4") %>%
+  inner_join(collectri_hs, by = c("source", "target")) %>%
+  rename(tf = source) %>%
+    dorothea_to_gsea()
+
 names(collectri_elk1_target_list) <- paste("collectri", names(collectri_elk1_target_list), sep = "_")
 names(collectri_elk1_target_list_abs) <- paste("collectri", names(collectri_elk1_target_list_abs), sep = "_")
+names(collectri_chip_elk1_target_list) <- paste("collectri_chipseq", names(collectri_chip_elk1_target_list), sep = "_")
+names(collectri_chip_elk4_target_list) <- paste("collectri_chipseq", names(collectri_chip_elk4_target_list), sep = "_")
 
 # final combined list of all targets
 elk1_target_list <- c(dorothea_elk1_target_list,
                       collectri_elk1_target_list,
-                      chipseq_hela_target_lists["chipseq_hela_both_elk1"]
+                      chipseq_hela_target_lists,
+                      collectri_chip_elk1_target_list,
+                      collectri_chip_elk4_target_list,
+                      dorothea_chip_elk1_target_list,
+                      dorothea_chip_elk4_target_list
                       )
 
 elk1_target_list_abs <- c(dorothea_elk1_target_list_abs,
-                      collectri_elk1_target_list_abs,
-                      chipseq_hela_target_lists["chipseq_hela_both_elk1"]
-)
+                          collectri_elk1_target_list_abs,
+                          chipseq_hela_target_lists
+                          )
 
 
 # run for final gene-sets
 gsea_ferguson_all <- map(ferguson_deseq_ranks,
                          ~ fgsea(pathways = elk1_target_list,
                                  stats = .x,
-                                 eps = 0),
+                                 eps = 0,
+                                 minSize = 3),
                          .progress = T
 ) %>%
   bind_rows(.id = "score_type")
@@ -173,7 +242,8 @@ gsea_ferguson_all <- map(ferguson_deseq_ranks,
 gsea_ferguson_nospl_all <- map(ferguson_deseq_ranks_nospl,
                          ~ fgsea(pathways = elk1_target_list,
                                  stats = .x,
-                                 eps = 0),
+                                 eps = 0,
+                                 minSize = 3),
                          .progress = T
 ) %>%
   bind_rows(.id = "score_type")
@@ -182,6 +252,7 @@ gsea_ferguson_all_abs <- map(ferguson_deseq_ranks,
                          ~ fgsea(pathways = elk1_target_list_abs,
                                  stats = .x,
                                  eps = 0,
+                                 minSize = 3,
                                  scoreType = "pos"),
                          .progress = T
 ) %>%
@@ -191,6 +262,7 @@ gsea_ferguson_nospl_all_abs <- map(ferguson_deseq_ranks_nospl,
                                ~ fgsea(pathways = elk1_target_list_abs,
                                        stats = .x,
                                        eps = 0,
+                                       minSize = 3,
                                        scoreType = "pos"),
                                .progress = T
 ) %>%
@@ -213,4 +285,4 @@ gsea_ferguson_nospl_all_abs <- map(ferguson_deseq_ranks_nospl,
 # repeat, but remove differentially spliced
 if (!dir.exists("processed/ferguson_hela")) {dir.create("processed/ferguson_hela", recursive = T)}
 
-save.image("processed/ferguson_hela/hela_ko_tf_activity_gsea.Rdata")
+save.image("processed/ferguson_hela/2023-11-29_hela_ko_tf_activity_gsea.Rdata")
