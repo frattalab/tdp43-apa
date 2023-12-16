@@ -134,7 +134,7 @@ plot_ratio_prox <- plot_df_ratio_prox %>%
   scale_y_continuous(limits = c(0,2.25),
                      breaks = seq(0,2, 0.5)) +
   # pval df doesn't have replicate aesthetic, so add to plot first before plotting the values
-  ggprism::add_pvalue(plot_df_ratio_prox_pval, y.position = 2.25, tip.length = 0,label.size = 7) +
+  ggprism::add_pvalue(plot_df_ratio_prox_pval, label = "p.adj", y.position = 2.1, tip.length = 0,label.size = 7) +
   geom_point(aes(x = condition, y= extranuc_nuc_ratio, shape = replicate),
              data = plot_df_ratio_prox,
              position = position_dodge(width = 0.3),
@@ -156,7 +156,7 @@ plot_ratio_prox_1
 
 if (!dir.exists("processed/")) {dir.create("processed")}
 
-ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet.png",
+ggsave("2023-12-16_fish_probe_count_ratio_all_cell_facet.png",
        plot = plot_counts_all,
        path = "processed/",
        device = "png",
@@ -165,7 +165,7 @@ ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet.svg",
+ggsave("2023-12-16_fish_probe_count_ratio_all_cell_facet.svg",
        plot = plot_counts_all,
        path = "processed/",
        device = svg,
@@ -174,7 +174,7 @@ ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet.svg",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-18_fish_prox_subcell_ratio.png",
+ggsave("2023-12-16_fish_prox_subcell_ratio.png",
        plot = plot_ratio_prox,
        path = "processed/",
        device = "png",
@@ -183,7 +183,7 @@ ggsave("2023-10-18_fish_prox_subcell_ratio.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-18_fish_prox_subcell_ratio.svg",
+ggsave("2023-12-16_fish_prox_subcell_ratio.svg",
        plot = plot_ratio_prox,
        path = "processed/",
        device = svg,
@@ -192,7 +192,7 @@ ggsave("2023-10-18_fish_prox_subcell_ratio.svg",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet_start1.png",
+ggsave("2023-12-16_fish_probe_count_ratio_all_cell_facet_start1.png",
        plot = plot_counts_all_1,
        path = "processed/",
        device = "png",
@@ -201,7 +201,7 @@ ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet_start1.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet_start1.svg",
+ggsave("2023-12-16_fish_probe_count_ratio_all_cell_facet_start1.svg",
        plot = plot_counts_all_1,
        path = "processed/",
        device = svg,
@@ -211,7 +211,7 @@ ggsave("2023-10-18_fish_probe_count_ratio_all_cell_facet_start1.svg",
        dpi = "retina")
 
 
-ggsave("2023-10-18_fish_prox_subcell_ratio_start1.png",
+ggsave("2023-12-16_fish_prox_subcell_ratio_start1.png",
        plot = plot_ratio_prox_1,
        path = "processed/",
        device = "png",
@@ -220,7 +220,7 @@ ggsave("2023-10-18_fish_prox_subcell_ratio_start1.png",
        width = 8,
        dpi = "retina")
 
-ggsave("2023-10-18_fish_prox_subcell_ratio_start1.svg",
+ggsave("2023-12-16_fish_prox_subcell_ratio_start1.svg",
        plot = plot_ratio_prox_1,
        path = "processed/",
        device = svg,
