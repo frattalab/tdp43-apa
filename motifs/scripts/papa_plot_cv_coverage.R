@@ -20,17 +20,17 @@ a4_width <- 8.27
 a4_height <- 11.69
 
 # paths to different processed kmer distribution tbls
-dbrn_tbl_paths <- list("YG-containing-motifs" = "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.yg_6mers.per_kmer_distribution_genome.tsv",
-                   "YA-containing-motifs" = "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.ya_6mers.per_kmer_distribution_genome.tsv",
-                   "AA-containing-motifs" = "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.aa_6mers.per_kmer_distribution_genome.tsv")
+dbrn_tbl_paths <- list("YG-containing-motifs" = "processed/peka/papa/2023-12-15_papa_cryptics_cvcoverage_window_500.yg_6mers.per_kmer_distribution_genome.tsv",
+                   "YA-containing-motifs" = "processed/peka/papa/2023-12-15_papa_cryptics_cvcoverage_window_500.ya_6mers.per_kmer_distribution_genome.tsv",
+                   "AA-containing-motifs" = "processed/peka/papa/2023-12-15_papa_cryptics_cvcoverage_window_500.aa_6mers.per_kmer_distribution_genome.tsv")
 
 # dbrn_tbl <- read_tsv("processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.yg_6mers.per_kmer_distribution_genome.tsv")
 
 # map comparison names to cleaned event types & region types
-plot_clean_names <- tibble(comparison_name = c("bleedthrough_exonstart", "bleedthrough_pas", "spliced_exonstart", "spliced_pas", "d3utr_pas_proximal", "d3utr_pas_distal"),
-                           plot_event_type = c("Bleedthrough-ALE", "Bleedthrough-ALE", "AS-ALE", "AS-ALE", "3'UTR-ALE", "3'UTR-ALE"),
-                           plot_region_type = factor(c("Exon Start", "PAS", "Exon Start", "PAS", "Proximal", "Distal"),
-                                                     levels = c("Exon Start", "PAS", "Proximal", "Distal")
+plot_clean_names <- tibble(comparison_name = c("bleedthrough_exonstart", "bleedthrough_pas", "spliced_exonstart", "spliced_pas", "d3utr_pas_proximal", "d3utr_pas_distal", "proximald3utr_pas_proximal", "proximald3utr_pas_distal"),
+                           plot_event_type = c("IPA", "IPA", "ALE", "ALE", "3'Ext", "3'Ext", "3'Ext Proximal", "3'Ext Proximal"),
+                           plot_region_type = factor(c("Intron Start", "PAS", "Exon Start", "PAS", "Proximal", "Distal", "Proximal", "Distal"),
+                                                     levels = c("Intron Start","Exon Start", "PAS", "Proximal", "Distal")
                            )
 )
 
@@ -47,8 +47,8 @@ dbrn_tbls <- dbrn_tbl_paths %>%
         separate(region_type, into = c("comparison_name", "background_type"), sep = "\\.", remove = F) %>%
         left_join(plot_clean_names, by = "comparison_name") %>%
         mutate(plot_group = if_else(group == "foreground", "Cryptic", "Background"),
-               rel_occur = rel_occur * 100) %>%
-        filter(str_starts(region_type, "bleedthrough", negate = T))
+               rel_occur = rel_occur * 100) # %>%
+        # filter(str_starts(region_type, "bleedthrough", negate = T))
       )
 
 # make dfs with summed occurence within each kmer group
@@ -70,9 +70,9 @@ separate_sum_maps_freey <-  map2(.x = dbrn_tbls_sum,
                       rolling_mean = T,
                       facet_w = "plot_event_type ~ plot_region_type",
                       n_col = 2,
-                      n_row = 3,
+                      n_row = 4,
                       breaks = seq(-500,500,100),
-                      rolling_k = 10,
+                      rolling_k = 12,
                       plot_colours = c("#000000", "#d95f02"),
                       base_size = 20
                       ) + 
@@ -88,9 +88,9 @@ separate_sum_maps_fixed <-  map2(.x = dbrn_tbls_sum,
                                                   rolling_mean = T,
                                                   facet_w = "plot_event_type ~ plot_region_type",
                                                   n_col = 2,
-                                                  n_row = 3,
+                                                  n_row = 4,
                                                   breaks = seq(-500,500,100),
-                                                  rolling_k = 10,
+                                                  rolling_k = 12,
                                                   plot_colours = c("#000000", "#d95f02"),
                                                   facet_scales = "fixed",
                                                   base_size = 20
@@ -105,12 +105,12 @@ separate_sum_maps_freey
 
 # save to PDF, one per page in landscape
 plot_list_to_pdf(separate_sum_maps_freey,
-                 "processed/peka/papa/plots/2023-12-08_papa_no_bleedthrough_cvcoverage_halleger_motif_groups_summed_map_freey.pdf",
+                 "processed/peka/papa/plots/2023-12-17_papa_cvcoverage_halleger_motif_groups_summed_map_freey.pdf",
                  width = a4_height,
                  height = a4_width)
 
 plot_list_to_pdf(separate_sum_maps_fixed,
-                 "processed/peka/papa/plots/2023-12-08_papa_no_bleedthrough_cvcoverage_halleger_motif_groups_summed_map_fixedy.pdf",
+                 "processed/peka/papa/plots/2023-12-17_papa_cvcoverage_halleger_motif_groups_summed_map_fixedy.pdf",
                  width = a4_height,
                  height = a4_width)
 
@@ -118,7 +118,7 @@ plot_list_to_pdf(separate_sum_maps_fixed,
 # Also save individual plots to SVG
 walk2(.x = separate_sum_maps_freey,
       .y = names(separate_sum_maps_freey),
-      ~ ggsave(filename = paste("2023-12-08_papa_no_bleedthrough_cvcoverage.",
+      ~ ggsave(filename = paste("2023-12-17_papa_cvcoverage.",
                                 .y,
                                 ".summed_map_freey.svg",
                                 sep = ""),
@@ -126,22 +126,22 @@ walk2(.x = separate_sum_maps_freey,
                path = "processed/peka/papa/plots/",
                device = svg,
                width = 19.5,
-               height = 6.5,
+               height = 6.5*2,
                units = "in",
                dpi = "retina")
       )
 
 walk2(.x = separate_sum_maps_fixed,
       .y = names(separate_sum_maps_fixed),
-      ~ ggsave(filename = paste("2023-12-08_papa_no_bleedthrough_cvcoverage.",
+      ~ ggsave(filename = paste("2023-12-17_papa_cvcoverage.",
                                 .y,
                                 ".summed_map_fixedy.svg",
                                 sep = ""),
                plot = .x + labs(title = "", x = "Position"),
                path = "processed/peka/papa/plots/",
                device = svg,
-               width = 18,
-               height = 6,
+               width = 19.5,
+               height = 6.5*2,
                units = "in",
                dpi = "retina")
 )
@@ -154,7 +154,7 @@ walk2(.x = separate_sum_maps_fixed,
 #                n_col = 2,
 #                n_row = 3,
 #                breaks = seq(-500,500,100),
-#                rolling_k = 10,
+#                rolling_k = 12,
 #                plot_colours = c("#000000", "#d95f02")
 #                ) + 
 #   labs(y = "% Coverage",
@@ -168,7 +168,7 @@ walk2(.x = separate_sum_maps_fixed,
 #                n_col = 2,
 #                n_row = 3,
 #                breaks = seq(-500,500,100),
-#                rolling_k = 10,
+#                rolling_k = 12,
 #                plot_colours = c("#000000", "#d95f02"),
 #                facet_scales = "fixed") + 
 #   labs(y = "% Coverage",
@@ -237,7 +237,7 @@ walk2(.x = separate_sum_maps_fixed,
 #                                              n_col = 2,
 #                                              n_row = 3,
 #                                              breaks = seq(-500,500,100),
-#                                              rolling_k = 10,
+#                                              rolling_k = 12,
 #                                              plot_colours = c("#000000", "#d95f02")
 #                             ) + 
 #                               labs(title = paste(.y, collapse = ","),
@@ -255,7 +255,7 @@ walk2(.x = separate_sum_maps_fixed,
 #                                              n_col = 2,
 #                                              n_row = 3,
 #                                              breaks = seq(-500,500,100),
-#                                              rolling_k = 10,
+#                                              rolling_k = 12,
 #                                              plot_colours = c("#000000", "#d95f02"),
 #                                              facet_scales = "fixed"
 #                             ) + 
@@ -311,7 +311,7 @@ walk2(.x = separate_sum_maps_fixed,
 #                                              n_col = 2,
 #                                              n_row = 3,
 #                                              breaks = seq(-500,500,100),
-#                                              rolling_k = 10,
+#                                              rolling_k = 12,
 #                                              plot_colours = c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02'),
 #                             ) + 
 #                               labs(title = paste(.y, collapse = ","),
