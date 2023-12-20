@@ -15,6 +15,78 @@ plot_list_to_pdf <- function(plot_list, path, width, height) {
   
 }
 
+
+#' go from cv coverage df with % occurrence for each event to a mean count + se confidence interval
+#' Assume right now that comparison_name corresponds to the region type, group cryptic/bg
+#' FOR SAFETY, ASSUME THAT ONLY ONE UNIQUE COMPARISON NAME value is allowed/works
+cv_coverage_to_cis <- function(coverage_df, counts_df, join_cols = c("comparison_name", "group"),
+                               ci_se_mult = 1.96) {
+  
+  # add number of events as columns for each position
+  joined <- left_join(coverage_df, counts_df, by = join_cols)
+  
+  # Calculate number of events that have binding from % occurrence
+  
+  
+  # so can generate the distribution of 1s and 0s for each group
+  #then can calculate sd and confidence intervals properly
+  groupcols <- c(join_cols, "rel_posn")
+  joined_summ <- joined %>%
+    group_by(across(all_of(groupcols))) %>%
+    summarise(occur = (rel_occur / 100) * count,
+              rel_occur_est = occur / count,
+              rel_occur_orig = unique(rel_occur),
+              count_orig = unique(count)) %>%
+    ungroup()
+  
+  # create a df containing each position replicated for the number of events in each group
+  # get n rows for number of events in each group
+  posns <- joined_summ %>% 
+    select(all_of(c(groupcols, "count_orig"))) %>%
+    # duplicate rows according to value in count_orig column (number of events)
+    uncount(count_orig) %>%
+    group_by(across(all_of(groupcols))) %>%
+    mutate(row_n = row_number()) %>%
+    ungroup()
+  
+  # create a df containing each position replicated for the number of events with matches in each group
+  occur_dbrn <- joined_summ %>%
+    select(all_of(c(groupcols, "occur"))) %>%
+    mutate(occur = round(occur)) %>%
+    # remove rows with no matches
+    filter(occur != 0) %>%
+    # duplicate the rows/positions based on number of events with match 
+    uncount(occur) %>%
+    # set dummy value for a match
+    mutate(occur = 1) %>%
+    group_by(across(all_of(groupcols))) %>%
+    # assign ID for matching with total number of events
+    mutate(row_n = row_number()) %>%
+    ungroup()
+  
+  
+  # combine two, so join and set occur to 1 where matches, otherwise fill with 0 (full dbrn)
+  join_cols_dbrn <- c(groupcols, "row_n")
+  posns_occur <- left_join(posns, occur_dbrn, by = join_cols_dbrn) %>%
+    replace_na(list(occur = 0))
+  
+  # now calculate confidence intervals based on SEs
+  posns_occur %>%
+    group_by(across(all_of(groupcols))) %>%
+    summarize(avg_coverage = mean(occur),
+              se = sd(occur) / sqrt(n()),
+              # 95 % confidence intervals
+              lwr = avg_coverage - 1.96*se,
+              upr = avg_coverage + 1.96*se,
+              n_overlaps = sum(occur),
+              n_events = n(),
+              frac_overlaps = n_overlaps / n_events) %>%
+    ungroup()
+  
+}
+
+
+
 # Set the A4 paper size dimensions in inches
 a4_width <- 8.27
 a4_height <- 11.69
@@ -156,66 +228,29 @@ event_counts_bld <- event_counts %>%
   mutate(comparison_name = "bleedthrough_pas") %>%
   select(comparison_name, group = reg_status, count)
 
+# subset to splice
+event_counts_spliced <- event_counts %>%
+  filter(event_type == "spliced_shsy5y_background") %>%
+  mutate(comparison_name = "spliced_exonstart") %>%
+  select(comparison_name, group = reg_status, count)
 
 
-# Plots with confidence intervals 
-df <- dbrn_tbls_sum$`YG-containing-motifs` %>%
+
+# test cv coverage function
+dbrn_tbls_sum$`YG-containing-motifs` %>%
   # filter() %>% str_starts(comparison_name, "^bleedthrough")
-  filter(comparison_name == "bleedthrough_pas") %>%
+  filter(comparison_name == "spliced_exonstart") %>%
   mutate(group = if_else(group == "foreground", "cryptic", group)) %>%
-  left_join(event_counts_bld, by = c("comparison_name", "group")) %>%
-  group_by(comparison_name, group, rel_posn) %>%
-  # need to know number of events that have binding, so can generate the distribution of 1s and 0s for each group
-  # then can calculate sd and confidence intervals properly
-  summarise(occur = (rel_occur / 100) * count,
-          rel_occur_est = occur / count,
-          rel_occur_orig = unique(rel_occur),
-          count_orig = unique(count)) %>%
-  ungroup()
-
-
-
-
-# get n rows for number of events in each group
-posns <- df %>% 
-select(comparison_name, group, rel_posn, count_orig) %>%
-  uncount(count_orig) %>%
-  group_by(comparison_name, group, rel_posn) %>%
-  mutate(row_n = row_number()) %>%
-  ungroup()
-
-# make the individual counts (1 row per event)
-occur_dbrn <- df %>%
-  # group_by(comparison_name, group, rel_posn) %>%
-  select(comparison_name, group, rel_posn, occur) %>%
-  mutate(occur = round(occur)) %>%
-  filter(occur != 0) %>%
-  # duplicate the rows base 
-  uncount(occur) %>%
-  # these 
-  mutate(occur = 1) %>%
-  group_by(comparison_name, group, rel_posn) %>%
-  mutate(row_n = row_number()) %>%
-  ungroup()
-
-# combine two, so join and set occur to 1 where matches, otherwise fill with 0 (full dbrn)
-posns_occur <- left_join(posns, occur_dbrn, by = c("comparison_name", "group", "rel_posn", "row_n")) %>%
-  replace_na(list(occur = 0))
-
-# no calculate intervals
-summarised_dbrn <- posns_occur %>%
-  group_by(comparison_name, group, rel_posn) %>%
-  summarize(avg_coverage = mean(occur),
-            se = sd(occur) / sqrt(n()),
-            # 95 % confidence intervals
-            lwr = avg_coverage - 1.96*se,
-            upr = avg_coverage + 1.96*se,
-            n_overlaps = sum(occur),
-            n_events = n(),
-            frac_overlaps = n_overlaps / n_events) %>%
-  ungroup()
+  cv_coverage_to_cis(., event_counts_spliced, ci_se_mult = 1) %>%
+  rename(position = rel_posn) %>%
+  mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
+         plot_type = "Exon Start",
+         position = position + 500
+  ) %>%
+  plot_coverage(ci_se_mult = 1)
   
-  
+
+
 
 plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "plot_cryptic", facet_ncol = 2, fill_colours = c("#000000", "#d95f02"), line_colours = c("#000000", "#d95f02"), fill_lab = "", colour_lab = "", title_lab = "") {
   
@@ -236,7 +271,7 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
       breaks = seq(0,1000,100),
       labels = as.character(seq(-500,500,100))
     ) +
-    scale_y_continuous(limits = c(NA, 0.5),
+    scale_y_continuous(limits = c(0, 1),
                        breaks = seq(0, 0.5, 0.05)) +
     scale_fill_manual(values = fill_colours) +
     scale_color_manual(values = line_colours) +
@@ -252,7 +287,7 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
 }
 
 
-plot_coverage_df <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "plot_cryptic") {
+plot_coverage_df <- function(df, ci_se_mult = 1, event_col = "plot_type", group_col = "plot_cryptic") {
   
   group_cols <- c(event_col, group_col)
   
@@ -267,203 +302,5 @@ plot_coverage_df <- function(df, ci_se_mult = 1.96, event_col = "plot_type", gro
   
 }
 
-rename(summarised_dbrn, position = rel_posn) %>%
-  mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
-         plot_type = "PAS",
-         position = position + 500
-  ) %>%
-  plot_coverage(ci_se_mult = 1)
 
 
-
-rename(summarised_dbrn, position = rel_posn) %>%
-  mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
-         plot_type = "PAS",
-         position = position + 500
-         ) %>%
-plot_coverage(ci_se_mult = 1) +
-  geom_line(colour = "blue")
-
-rename(summarised_dbrn, position = rel_posn) %>%
-  mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
-         plot_type = "PAS",
-         position = position + 500
-  ) %>%
-  plot_coverage_df(ci_se_mult = 1) %>%
-  View()
-
-# # map with free scales across y
-# map_freey <- plot_kmer_dbrn(mutate(dbrn_tbl, direction = plot_group),
-#                rolling_mean = T,
-#                facet_w = "plot_event_type ~ plot_region_type",
-#                n_col = 2,
-#                n_row = 3,
-#                breaks = seq(-500,500,100),
-#                rolling_k = 12,
-#                plot_colours = c("#000000", "#d95f02")
-#                ) + 
-#   labs(y = "% Coverage",
-#        colour = "") +
-#   theme(legend.position = "top")
-# 
-# # map with fixed scales across events
-# map_fixed <- plot_kmer_dbrn(mutate(dbrn_tbl, direction = plot_group),
-#                rolling_mean = T,
-#                facet_w = "plot_event_type ~ plot_region_type",
-#                n_col = 2,
-#                n_row = 3,
-#                breaks = seq(-500,500,100),
-#                rolling_k = 12,
-#                plot_colours = c("#000000", "#d95f02"),
-#                facet_scales = "fixed") + 
-#   labs(y = "% Coverage",
-#        colour = "") +
-#   theme(legend.position = "top")
-
-# map_freey
-# map_fixed
-# 
-
-# 
-# # save each plot as 1 page per a4
-# # Create a multi-page PDF file for each group of plots
-# if (!dir.exists("processed/peka/papa/plots/")) { dir.create("processed/peka/papa/plots/", recursive = T)}
-# 
-# plots_ug_list <- list(map_freey, map_fixed)
-# pdf("processed/peka/papa/plots/2023-11-16_papa_all_comparisons_cvcoverage_gu_ug_map.pdf",
-#     width = a4_height, height = a4_width )
-# 
-# # Loop through each ggplot object and print it to the PDF file
-# 
-# for (i in seq_along(plots_ug_list)) {
-#   print(plots_ug_list[[i]])
-# }
-# 
-# # Close the PDF file
-# dev.off()
-
-# #  repeat for Halleger et al motif groups
-# yg_dbrn_tbl <- read_tsv("processed/peka/papa/2023-11-19_papa_cryptics_cvcoverage_window_500.yg_6mers.per_kmer_distribution_genome.tsv")
-# ya_dbrn_tbl <- read_tsv("processed/peka/papa/2023-11-19_papa_cryptics_cvcoverage_window_500.ya_6mers.per_kmer_distribution_genome.tsv")
-# yg_6mers <- c("UGUGUG", "GUGUGU","UGUGCG", "UGCGUG","CGUGUG","GUGUGC")
-# ya_6mers <- c("AUGUGU", "GUAUGU", "GUGUAU", "UGUGUA", "UGUAUG", "UGCAUG")
-# 
-# # Sum occurrence of kmers across the yg groups
-# yg_sum_dbrn_tbl <-  yg_dbrn_tbl %>%
-#   group_by(region_type, group, rel_posn) %>%
-#   summarise(rel_occur = sum(rel_occur)) %>%
-#   ungroup()
-# 
-# ya_sum_dbrn_tbl <-  ya_dbrn_tbl %>%
-#   group_by(region_type, group, rel_posn) %>%
-#   summarise(rel_occur = sum(rel_occur)) %>%
-#   ungroup()
-# 
-# # prepare for ploitting - column names, cryptic/not etc. 
-# 
-# yg_sum_dbrn_tbl <- yg_sum_dbrn_tbl %>%
-#   rename(comparison_name = region_type) %>%
-#   left_join(plot_clean_names, by = "comparison_name") %>%
-#   mutate(plot_group = if_else(group == "foreground", "Cryptic", "Background"),
-#          rel_occur = rel_occur * 100)
-# 
-# ya_sum_dbrn_tbl <- ya_sum_dbrn_tbl %>%
-#   rename(comparison_name = region_type) %>%
-#   left_join(plot_clean_names, by = "comparison_name") %>%
-#   mutate(plot_group = if_else(group == "foreground", "Cryptic", "Background"),
-#          rel_occur = rel_occur * 100)
-# 
-# # maps with free scales across y
-# yg_ya_sum_map_freey <- map2(.x = list(YG_group = yg_sum_dbrn_tbl, YA_group = ya_sum_dbrn_tbl),
-#                             .y = list(YG_group = yg_6mers, YA_group = ya_6mers),
-#                             ~ plot_kmer_dbrn(mutate(.x, direction = plot_group),
-#                                              rolling_mean = T,
-#                                              facet_w = "plot_event_type ~ plot_region_type",
-#                                              n_col = 2,
-#                                              n_row = 3,
-#                                              breaks = seq(-500,500,100),
-#                                              rolling_k = 12,
-#                                              plot_colours = c("#000000", "#d95f02")
-#                             ) + 
-#                               labs(title = paste(.y, collapse = ","),
-#                                    y = "% Coverage",
-#                                    colour = "") +
-#                               theme(legend.position = "top")
-# )
-# 
-# # maps with fixed scales across y
-# yg_ya_sum_map_fixed <- map2(.x = list(YG_group = yg_sum_dbrn_tbl, YA_group = ya_sum_dbrn_tbl),
-#                             .y = list(YG_group = yg_6mers, YA_group = ya_6mers),
-#                             ~ plot_kmer_dbrn(mutate(.x, direction = plot_group),
-#                                              rolling_mean = T,
-#                                              facet_w = "plot_event_type ~ plot_region_type",
-#                                              n_col = 2,
-#                                              n_row = 3,
-#                                              breaks = seq(-500,500,100),
-#                                              rolling_k = 12,
-#                                              plot_colours = c("#000000", "#d95f02"),
-#                                              facet_scales = "fixed"
-#                             ) + 
-#                               labs(title = paste(.y, collapse = ","),
-#                                    y = "% Coverage",
-#                                    colour = "") +
-#                               theme(legend.position = "top")
-# )
-# 
-# # save to PDF, one per page in landscape
-# plot_list_to_pdf(yg_ya_sum_map_freey,
-#                  "processed/peka/papa/plots/2023-11-20_papa_all_comparisons_cvcoverage_halleger_yg_map_freey.pdf",
-#                  width = a4_height,
-#                  height = a4_width)
-# 
-# plot_list_to_pdf(yg_ya_sum_map_fixed,
-#                  "processed/peka/papa/plots/2023-11-20_papa_all_comparisons_cvcoverage_halleger_yg_map_fixedy.pdf",
-#                  width = a4_height,
-#                  height = a4_width)
-
-
-# What about all groups on one plot, separated 
-
-
-
-### repeat for per-motif (attempted, but cancelling as want split by background/cryptic still)
-# line-type to split cryptic vs background?
-# 
-
-# clean up dfs ready for plotting
-# yg_dbrn_tbl <- yg_dbrn_tbl %>%
-# rename(comparison_name = region_type) %>%
-#   left_join(plot_clean_names, by = "comparison_name") %>%
-#   mutate(plot_group = if_else(group == "foreground", "Cryptic", "Background"),
-#          rel_occur = rel_occur * 100,
-#          direction = kmer)
-# 
-# ya_dbrn_tbl <- ya_dbrn_tbl %>%
-#   rename(comparison_name = region_type) %>%
-#   left_join(plot_clean_names, by = "comparison_name") %>%
-#   mutate(plot_group = if_else(group == "foreground", "Cryptic", "Background"),
-#          rel_occur = rel_occur * 100,
-#          direction = kmer)
-# 
-# 
-# 
-# # maps with fixed scales across y
-# yg_ya_perk_map_fixed <- map2(.x = list(YG_group = yg_dbrn_tbl, YA_group = ya_dbrn_tbl),
-#                             .y = list(YG_group = yg_6mers, YA_group = ya_6mers),
-#                             ~ plot_kmer_dbrn(.x,
-#                                              rolling_mean = T,
-#                                              facet_w = "plot_event_type ~ plot_region_type",
-#                                              n_col = 2,
-#                                              n_row = 3,
-#                                              breaks = seq(-500,500,100),
-#                                              rolling_k = 12,
-#                                              plot_colours = c('#1b9e77','#d95f02','#7570b3','#e7298a','#66a61e','#e6ab02'),
-#                             ) + 
-#                               labs(title = paste(.y, collapse = ","),
-#                                    y = "% Coverage",
-#                                    colour = "") +
-#                               theme(legend.position = "top")
-# )
-# 
-# yg_ya_perk_map_fixed$YG_group
-# yg_ya_perk_map_fixed$YA_group
