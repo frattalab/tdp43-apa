@@ -20,7 +20,9 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
                           line_colours = c("#000000", "#d95f02"),
                           y_scales = scale_y_continuous(limits = c(0, 0.1),
                                                         breaks = seq(0, 0.1, 0.02)),
-                          fill_lab = "", colour_lab = "", title_lab = "") {
+                          fill_lab = "", colour_lab = "", title_lab = "",
+                          facet_scales = "fixed",
+                          theme_base_size = 20) {
   
   # generate confidence interval values
   plot_df <- plot_coverage_df(df, ci_se_mult, event_col, group_col, loess_span)
@@ -33,7 +35,7 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
     xlab("Position") +
     ylab("Average Coverage") +
     geom_vline(xintercept = 500, linetype = "dashed", alpha = 0.5) +
-    facet_wrap(event_col, ncol = facet_ncol, scales = "fixed") +
+    facet_wrap(event_col, ncol = facet_ncol, scales = facet_scales) +
     scale_x_continuous(
       limits = c(0, 1001),
       breaks = seq(0,1000,100),
@@ -42,11 +44,11 @@ plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_
     y_scales +
     scale_fill_manual(values = fill_colours) +
     scale_color_manual(values = line_colours) +
-    theme_bw(base_size = 20) +
+    theme_bw(base_size = theme_base_size) +
     theme(legend.position = "top",
-          axis.text = element_text(size = rel(1.25)),
-          axis.title = element_text(size = rel(1.25)),
-          strip.text = element_text(size = rel(1.25))
+          # axis.text = element_text(size = rel(1.25)),
+          # axis.title = element_text(size = rel(1.25)),
+          # strip.text = element_text(size = rel(1.25))
     ) +
     labs(fill = fill_lab, colour = colour_lab, title = title_lab)
   

@@ -107,6 +107,17 @@ plot_clean_names <- tibble(comparison_name = c("bleedthrough_exonstart", "bleedt
                            )
 )
 
+# add cleaned comparison name for simpler iCLIP style maps
+plot_clean_names <- plot_clean_names %>%
+  mutate(plot_comparison_name = paste(plot_event_type, plot_region_type, sep = " - "),
+         plot_comparison_name = factor(plot_comparison_name,
+                                       levels = c("ALE - Exon Start", "ALE - PAS",
+                                                  "IPA - Intron Start", "IPA - PAS",
+                                                  "3'Ext - Proximal", "3'Ext - Distal",
+                                                  "3'Ext Proximal - Proximal", "3'Ext Proximal - Distal")
+                                       )
+         )
+
 # 6mer groups enriched in Halleger et al. TDP-43 + CTD MUT iCLIP
 # Create list ready for use with fgsea
 tdp_motif_groups <- list("YG-containing-motifs" = c("UGUGUG", "GUGUGU","UGUGCG", "UGCGUG","CGUGUG","GUGUGC"),
@@ -222,59 +233,115 @@ walk2(.x = separate_sum_maps_fixed,
 
 ####
 
-event_counts <- read_tsv("processed/iclip_regions/2023-12-14_papa_bleedthrough_spliced.event_counts.tsv")
-# subset to bleedtrhoughs
-event_counts_bld <- event_counts %>%
-  filter(event_type == "bleed_out_bed_shsy5y_all") %>%
-  mutate(comparison_name = "bleedthrough_pas") %>%
-  select(comparison_name, group = reg_status, count)
+event_counts_ale <- read_tsv("processed/iclip_regions/2023-12-14_papa_bleedthrough_spliced.event_counts.tsv")
+event_counts_d3utr <- read_tsv("processed/iclip_regions/2023-12-15_papa_d3utr.event_counts.tsv")
 
-# subset to splice
-event_counts_spliced <- event_counts %>%
-  filter(event_type == "spliced_shsy5y_background") %>%
-  mutate(comparison_name = "spliced_exonstart") %>%
-  select(comparison_name, group = reg_status, count)
+event_counts_ale %>%
+  filter(str_ends(event_type, "all_background$", negate = T))
 
-
-
-# test cv coverage function
-dbrn_tbls_sum$`YG-containing-motifs` %>%
-  # filter() %>% str_starts(comparison_name, "^bleedthrough")
-  filter(comparison_name == "spliced_exonstart") %>%
-  mutate(group = if_else(group == "foreground", "cryptic", group)) %>%
-  cv_coverage_to_cis(., event_counts_spliced, ci_se_mult = 1) %>%
-  rename(position = rel_posn) %>%
-  mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
-         plot_type = "Exon Start",
-         position = position + 500
-  ) %>%
-  plot_coverage(ci_se_mult = 1,loess_span = 0.1, y_scales = scale_y_continuous(limits = c(NA,0.4),
-                                                                               breaks = seq(0,0.4,0.05)))
-  
-
-event_counts_spliced_all <- c("spliced_exonstart", "spliced_pas") %>%
+# subset to bleedtrhoughs, annotating for each bleedthrough category
+event_counts_bld <- c("bleedthrough_exonstart", "bleedthrough_pas") %>%
   set_names() %>%
-  map(~  event_counts %>%
-  filter(event_type == "spliced_shsy5y_background") %>%
-  # mutate(comparison_name = "spliced_exonstart") %>%
-  select(group = reg_status, count)) %>%
+  map(~  event_counts_ale %>%
+        filter(event_type == "bleed_out_bed_shsy5y_all") %>%
+        select(group = reg_status, count)) %>%
   bind_rows(.id = "comparison_name")
 
-# test 
-dbrn_tbls_sum$`YG-containing-motifs` %>%
-  # filter() %>% str_starts(comparison_name, "^bleedthrough")
-  filter(str_starts(comparison_name, "^spliced")) %>%
-  mutate(group = if_else(group == "foreground", "cryptic", group)) %>%
-  cv_coverage_to_cis(., event_counts_spliced_all, ci_se_mult = 1) %>%
+# subset to spliced, annotating for each category
+event_counts_spliced <- c("spliced_exonstart", "spliced_pas") %>%
+  set_names() %>%
+  map(~  event_counts_ale %>%
+        filter(event_type == "spliced_shsy5y_background") %>%
+        select(group = reg_status, count)) %>%
+  bind_rows(.id = "comparison_name")
+
+# subset to 3'exts, annotating for each comparison 
+event_counts_d3utr <- c("d3utr_pas_proximal", "d3utr_pas_distal") %>%
+  set_names() %>%
+  map(~ event_counts_d3utr %>%
+        select(group = reg_status, count) %>%
+        distinct(.keep_all = T)
+      ) %>%
+  bind_rows(.id = "comparison_name")
+
+# TODO: proximal 3'UTR extensions are currently missing, need to extract event counts from scropt
+# BUT as know identical background and cryptic n = 20, can construct for now
+
+event_counts_d3utrprox <- tibble("comparison_name" = c(rep("proximald3utr_pas_proximal", 2), rep("proximald3utr_pas_distal",2)),
+                                 "group" = rep(c("background", "cryptic"), 2),
+                                 "count" = rep(c(798, 20), 2)
+                                 )
+
+# combine all event counts dfs
+event_counts_all <- bind_rows(event_counts_spliced, event_counts_bld, event_counts_d3utr, event_counts_d3utrprox)
+
+# porcess cv coverage tables to format compatible with iCLIP maps (i.e. mean coverage + calculate standard errors)
+dbrn_tbls_sum_ci <- map(dbrn_tbls_sum,
+    ~ .x %>%
+      mutate(group = if_else(group == "foreground", "cryptic", group)) %>%
+      cv_coverage_to_cis(., event_counts_all, ci_se_mult = 1) %>%
+      left_join(plot_clean_names, by = "comparison_name")
+    )
+
+
+# Make combined map of all comparisons on a single plot, separately for each motif group
+separate_sum_maps_freey_ci <- map2(.x = dbrn_tbls_sum_ci,
+     .y = names(dbrn_tbls_sum_ci),
+    ~ .x %>%
+      rename(position = rel_posn) %>%
+      mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
+             plot_type = plot_comparison_name,
+             position = position + 500
+             ) %>%
+      plot_coverage(ci_se_mult = 1,
+                    loess_span = 0.1,
+                    y_scales = scale_y_continuous(),
+                    title_lab = .y,
+                    facet_scales = "free_y")
+    )
+
+
+# save to PDF, one per page in landscape
+plot_list_to_pdf(separate_sum_maps_freey_ci,
+                 "processed/peka/papa/plots/2023-12-20_papa_cvcoverage_halleger_motif_groups_summed_map_freey_ci.pdf",
+                 width = a4_height,
+                 height = a4_width)
+
+# generate single panel plots per region for YG group
+per_region_yg_group_sum_maps_freey_ci <- unique(dbrn_tbls_sum_ci$`YG-containing-motifs`$comparison_name) %>%
+  set_names() %>%
+  map(  ~ dbrn_tbls_sum_ci$`YG-containing-motifs` %>%
+  filter(comparison_name == .x) %>%
   rename(position = rel_posn) %>%
   mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
-         plot_type = comparison_name,
+         plot_type = plot_region_type,
          position = position + 500
   ) %>%
   plot_coverage(ci_se_mult = 1,
                 loess_span = 0.1,
-                y_scales = scale_y_continuous(limits = c(NA,0.4),
-                                              breaks = seq(0,0.4,0.05)))
+                y_scales = scale_y_continuous(),
+                facet_scales = "free_y")
+  )
+
+# save to SVG
+walk2(.x = per_region_yg_group_sum_maps_freey_ci,
+      .y = names(per_region_yg_group_sum_maps_freey_ci),
+      ~ ggsave(filename = paste("2023-12-20_papa_cvcoverage.yg_group_summed_map.",
+                                .y,
+                                ".ci_freey.svg",
+                                sep = ""),
+               plot = .x,
+               path = "processed/peka/papa/plots/",
+                              device = svg,
+                              height = 6*0.8,
+                              width = 18*0.8,
+                              units = "in",
+                              dpi = "retina")
+        
+        
+      )
+
+
 
 
 
