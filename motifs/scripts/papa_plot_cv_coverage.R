@@ -1,5 +1,6 @@
 library(tidyverse)
 source("scripts/fncs_plot_peka.R")
+source("scripts/fncs_plot_iclip.R")
 
 #' Save a list of ggplots to pdf file, with one plot per page
 plot_list_to_pdf <- function(plot_list, path, width, height) {
@@ -18,7 +19,7 @@ plot_list_to_pdf <- function(plot_list, path, width, height) {
 
 #' go from cv coverage df with % occurrence for each event to a mean count + se confidence interval
 #' Assume right now that comparison_name corresponds to the region type, group cryptic/bg
-#' FOR SAFETY, ASSUME THAT ONLY ONE UNIQUE COMPARISON NAME value is allowed/works
+#' Multiple comparison_names/groups appear to work, but no checks made to ensure counts_df and coverage df match properly 
 cv_coverage_to_cis <- function(coverage_df, counts_df, join_cols = c("comparison_name", "group"),
                                ci_se_mult = 1.96) {
   
@@ -247,60 +248,35 @@ dbrn_tbls_sum$`YG-containing-motifs` %>%
          plot_type = "Exon Start",
          position = position + 500
   ) %>%
-  plot_coverage(ci_se_mult = 1)
+  plot_coverage(ci_se_mult = 1,loess_span = 0.1, y_scales = scale_y_continuous(limits = c(NA,0.4),
+                                                                               breaks = seq(0,0.4,0.05)))
   
 
+event_counts_spliced_all <- c("spliced_exonstart", "spliced_pas") %>%
+  set_names() %>%
+  map(~  event_counts %>%
+  filter(event_type == "spliced_shsy5y_background") %>%
+  # mutate(comparison_name = "spliced_exonstart") %>%
+  select(group = reg_status, count)) %>%
+  bind_rows(.id = "comparison_name")
+
+# test 
+dbrn_tbls_sum$`YG-containing-motifs` %>%
+  # filter() %>% str_starts(comparison_name, "^bleedthrough")
+  filter(str_starts(comparison_name, "^spliced")) %>%
+  mutate(group = if_else(group == "foreground", "cryptic", group)) %>%
+  cv_coverage_to_cis(., event_counts_spliced_all, ci_se_mult = 1) %>%
+  rename(position = rel_posn) %>%
+  mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
+         plot_type = comparison_name,
+         position = position + 500
+  ) %>%
+  plot_coverage(ci_se_mult = 1,
+                loess_span = 0.1,
+                y_scales = scale_y_continuous(limits = c(NA,0.4),
+                                              breaks = seq(0,0.4,0.05)))
 
 
-plot_coverage <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "plot_cryptic", facet_ncol = 2, fill_colours = c("#000000", "#d95f02"), line_colours = c("#000000", "#d95f02"), fill_lab = "", colour_lab = "", title_lab = "") {
-  
-  # generate confidence interval values
-  plot_df <- plot_coverage_df(df, ci_se_mult, event_col, group_col)
-  
-  plot_df %>%
-    ggplot(aes(x = position, y = avg_coverage, color=!!sym(group_col), fill=!!sym(group_col))) +
-    geom_smooth(method = "loess", span=0.2, se = F) +
-    geom_ribbon(aes(ymin = ymin_smooth,  ymax = ymax_smooth, fill = !!sym(group_col)),
-                alpha = 0.31) +
-    xlab("Position") +
-    ylab("Average Coverage") +
-    geom_vline(xintercept = 500, linetype = "dashed", alpha = 0.5) +
-    facet_wrap(event_col, ncol = facet_ncol, scales = "fixed") +
-    scale_x_continuous(
-      limits = c(0, 1001),
-      breaks = seq(0,1000,100),
-      labels = as.character(seq(-500,500,100))
-    ) +
-    scale_y_continuous(limits = c(0, 1),
-                       breaks = seq(0, 0.5, 0.05)) +
-    scale_fill_manual(values = fill_colours) +
-    scale_color_manual(values = line_colours) +
-    theme_bw(base_size = 20) +
-    theme(legend.position = "top",
-          axis.text = element_text(size = rel(1.25)),
-          axis.title = element_text(size = rel(1.25)),
-          strip.text = element_text(size = rel(1.25))
-    ) +
-    labs(fill = fill_lab, colour = colour_lab, title = title_lab)
-  
-  
-}
-
-
-plot_coverage_df <- function(df, ci_se_mult = 1, event_col = "plot_type", group_col = "plot_cryptic") {
-  
-  group_cols <- c(event_col, group_col)
-  
-  # generate confidence interval values
-  df %>%
-    mutate(plot_ymin = avg_coverage - (ci_se_mult*se),
-           plot_ymax = avg_coverage + (ci_se_mult*se)) %>%
-    group_by(across(all_of(group_cols))) %>%
-    mutate(ymin_smooth = stats::predict(loess(plot_ymin~position, span=0.2)),
-           ymax_smooth = stats::predict(loess(plot_ymax~position, span=0.2))) %>%
-    ungroup()
-  
-}
 
 
 
