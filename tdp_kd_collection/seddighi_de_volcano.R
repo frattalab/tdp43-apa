@@ -18,15 +18,116 @@ seddighi_df <- read_csv("data/seddighi.ipscCortical_neuron.DESEQ2_results.csv")
 
 # manual curation
 bleedthrough_mv <- read_tsv("../preprocessing/processed/bleedthrough_manual_validation.tsv")
-event_type_complex_mc <- read_tsv("../postmortem/data/cryptics_summary_complex_manual_curation.tsv")
+# event_type_complex_mc <- read_tsv("../postmortem/data/cryptics_summary_complex_manual_curation.tsv")
 
-# mv fail genes
+# use final definition of cryptic events
+cryp_df <- read_tsv("../preprocessing/processed/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation.tsv")
+
+
+
+
+# genes with le_ids that fail manual validation
 bleedthrough_mv_f_nm <- bleedthrough_mv %>% filter(event_manual_validation != "yes") %>% pull(gene_name)
-event_type_complex_mc_f_nm <- event_type_complex_mc %>% filter(event_manual_validation != "yes") %>% pull(gene_name)
-mv_fail_gn <- c(bleedthrough_mv_f_nm, event_type_complex_mc_f_nm)
+# event_type_complex_mc_f_nm <- event_type_complex_mc %>% filter(event_manual_validation != "yes") %>% pull(gene_name)
+# mv_fail_gn <- c(bleedthrough_mv_f_nm, event_type_complex_mc_f_nm)
 
 
 seddighi_df <- clean_deseq_df(seddighi_df)
+
+
+# add in information about whether a cryptic containing gene
+seddighi_df_all <- cryp_df %>%
+  # subset for i3 cortical cryptics only
+  filter(str_detect(experiment_name, "i3_cortical")) %>%
+  distinct(gene_name, simple_event_type) %>%
+  left_join(seddighi_df, ., by = "gene_name")
+
+seddighi_df <- cryp_df %>%
+  # subset for seddighi i3 cortical cryptics only
+  filter(str_detect(experiment_name, "seddighi_i3_cortical")) %>%
+  distinct(gene_name, simple_event_type) %>%
+  left_join(seddighi_df, ., by = "gene_name")
+
+# annotate as cryptic containing, sig diff exprn + direction
+seddighi_df <- seddighi_df %>%
+  mutate(cryptic = !is.na(simple_event_type),
+         sig = padj < 0.05,
+         dirn = sign(log2FoldChange)) 
+
+seddighi_df_all <- seddighi_df_all %>%
+  mutate(cryptic = !is.na(simple_event_type),
+         sig = padj < 0.05,
+         dirn = sign(log2FoldChange)) 
+
+# get number of ALE containing genes that are up/downregulated
+de_cryptics_gene_counts <- seddighi_df %>%
+  filter(cryptic) %>%
+  count(sig, dirn)
+
+de_cryptics_all_gene_counts <- seddighi_df_all %>%
+  filter(cryptic) %>%
+  count(sig, dirn)
+
+# get differentially expressed gene counts split by cryptic type
+de_cryptics_gene_counts_event <- seddighi_df %>%
+  filter(cryptic & sig) %>%
+  count(simple_event_type, sig, dirn)
+
+
+de_cryptics_all_gene_counts_event <- seddighi_df_all %>%
+  filter(cryptic & sig) %>%
+  count(simple_event_type, sig, dirn)
+
+write_tsv(de_cryptics_gene_counts, "processed/2023-12-22_seddighi_cryptic_seddighi_diff_expressed_gene_counts.tsv")
+write_tsv(de_cryptics_all_gene_counts, "processed/2023-12-22_i3_cryptic_seddighi_diff_expressed_gene_counts.tsv")
+write_tsv(de_cryptics_gene_counts_event, "processed/2023-12-22_seddighi_cryptic_seddighi_diff_expressed_gene_counts_event_type.tsv",col_names = T)
+write_tsv(de_cryptics_all_gene_counts_event, "processed/2023-12-22_i3_cryptic_seddighi_diff_expressed_gene_counts_event_type.tsv",col_names = T)
+
+
+
+
+# RNA volcano with all APA genes highlighted
+plot_seddighi_df_all <- seddighi_df_all %>%
+  mutate(plot_padj = if_else(-log10(padj) > 50, 50, -log10(padj)),
+         plot_alpha = case_when(cryptic & sig ~ 1,
+                                cryptic ~ 0.3,
+                                plot_padj > -log10(0.05) ~ 0.1,
+                                TRUE ~ 0.01
+                                ),
+         plot_event_type = case_when(simple_event_type == "distal_3utr_extension" ~ "3'Ext",
+                                     simple_event_type == "bleedthrough" ~ "IPA",
+                                     simple_event_type == "spliced" ~ "ALE",
+                                     T ~ "Other"),
+         plot_event_type = factor(plot_event_type, levels = c("ALE", "IPA", "3'Ext", "Other"))
+         ) 
+
+
+seddighi_volcano_cryptic_all <- ggplot(filter(plot_seddighi_df_all, plot_event_type == "Other"),
+       aes(x = log2FoldChange,
+           y = plot_padj,
+           colour = plot_event_type,
+           alpha=plot_alpha)) +
+  geom_point() +
+  geom_point(data = filter(plot_seddighi_df_all, plot_event_type != "Other"), size = 2) +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", "alpha" = 0.5) +
+  scale_colour_manual(values = c("#d95f02","#1f78b4", "#33a02c", "#bdbdbd")) +
+  theme_bw(base_size = 20) +
+  scale_x_continuous(limits = c(-5,5),
+                     breaks = seq(-10,10,1)) +
+  guides(alpha = "none") +
+  labs(colour = "Event Type",
+       x = "Log2FoldChange (KD / WT)",
+       y = "-log10(padj)") +
+  theme(legend.position = "top")
+
+seddighi_volcano_cryptic_all
+
+ggsave("processed/2023-12-22_seddighi_rna_de_volcano_all_apa_colour_nolab.svg",
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
 
 
 # volcano with specific genes highlighted
