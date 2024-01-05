@@ -454,9 +454,9 @@ ggsave("processed/2023-10-31_riboseq_d3utr_all_labels_big_larger_points.png",
 
 # generate dot plot of GSEA results - gene sets, NES as x-y, size of dot indicates significance
 plot_df_gsea_riboseq <- gsea_riboseq_cryp_df %>%
-  mutate(plot_pathway = case_when(pathway == "spliced" ~ "AS-ALE",
-                                  pathway == "distal_3utr_extension" ~ "3'UTR-ALE",
-                                  pathway == "bleedthrough" ~ "Bleedthrough-ALE")) %>%
+  mutate(plot_pathway = case_when(pathway == "spliced" ~ "ALE",
+                                  pathway == "distal_3utr_extension" ~ "3'Ext",
+                                  pathway == "bleedthrough" ~ "IPA")) %>%
   mutate(sig = padj < 0.05,
          plot_pathway = fct_reorder(plot_pathway, -log10(padj)),
          plot_size = -log10(padj)
@@ -476,20 +476,20 @@ plot_df_gsea_riboseq %>%
        size = "-log10(padj)") +
   theme(legend.position = "top")
 
-ggsave("processed/2023-10-20_gsea_cryptics_dotplot.png",
+ggsave("processed/2024-01-05_gsea_cryptics_dotplot.png",
        height = 8,
        width = 8,
        units = "in",
        dpi = "retina")
 
-ggsave("processed/2023-10-20_gsea_cryptics_dotplot.svg",
+ggsave("processed/2024-01-05_gsea_cryptics_dotplot.svg",
        height = 8,
        width = 8,
        units = "in",
        dpi = "retina",
        device = svg)
 
-ggsave("processed/2023-10-20_gsea_cryptics_dotplot_wide.svg",
+ggsave("processed/2024-01-05_gsea_cryptics_dotplot_wide.svg",
        height = 5.33,
        width = 8,
        units = "in",
