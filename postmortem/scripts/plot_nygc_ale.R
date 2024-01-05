@@ -150,7 +150,7 @@ sel_bar_jnc_gn <- path_summ_comb %>%
 sel_bar_gn <- path_summ_comb %>%
   filter(selective) %>%
   ggplot(aes(x = fraction_path * 100, y = plot_name_simple, fill = event_type)) +
-  geom_col() +
+  geom_col(colour = "black") +
   scale_fill_manual(values = c("#d95f02", "#7570b3")) +
   theme_bw(base_size = 20) +
   labs(title = "Selective ALE junctions",
@@ -165,13 +165,16 @@ sel_bar_gn_simple <- sel_bar_gn +
   labs(title = "",
        subtitle = "",
        y = "")
+
+# sel_bar_gn
+# sel_bar_gn_simple
   
 dir.create("processed/nygc/selective_jncs/ale/svg", recursive = T)
 dir.create("processed/nygc/selective_jncs/ale/png", recursive = T)
 dir.create("processed/nygc/enriched_jncs/ale/svg", recursive = T)
 dir.create("processed/nygc/enriched_jncs/ale/png", recursive = T)
 
-ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_jnc_gn_bar.png",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.png",
        plot = sel_bar_jnc_gn,
        path = "processed/nygc/",
        width = 12,
@@ -179,7 +182,7 @@ ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_jnc_gn_bar.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar.png",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.png",
        plot = sel_bar_gn,
        path = "processed/nygc/",
        width = 12,
@@ -187,7 +190,7 @@ ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
        device = svg,
        plot = sel_bar_jnc_gn,
        path = "processed/nygc/",
@@ -196,7 +199,7 @@ ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar.svg",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
        plot = sel_bar_gn,
        device = svg,
        path = "processed/nygc/",
@@ -206,7 +209,7 @@ ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar.svg",
        dpi = "retina")
 
 
-ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar.svg",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
        plot = sel_bar_gn,
        device = svg,
        path = "processed/nygc/",
@@ -215,7 +218,7 @@ ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar_simple.png",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.png",
        plot = sel_bar_gn_simple,
        path = "processed/nygc/",
        width = 7.5,
@@ -224,7 +227,7 @@ ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar_simple.png",
        dpi = "retina")
 
 
-ggsave(filename = "2023-12-17_nygc_papa_seddighi_selective_gn_bar_simple.svg",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.svg",
        plot = sel_bar_gn_simple,
        device = svg,
        path = "processed/nygc/",
