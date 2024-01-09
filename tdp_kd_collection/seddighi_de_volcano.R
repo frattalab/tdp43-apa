@@ -1,5 +1,6 @@
 library(tidyverse)
 library(ggrepel)
+library(ggrastr)
 set.seed(123)
 
 #' Tidy up DESeq2 results table for analyses of enrichment
@@ -84,7 +85,10 @@ write_tsv(de_cryptics_gene_counts_event, "processed/2023-12-22_seddighi_cryptic_
 write_tsv(de_cryptics_all_gene_counts_event, "processed/2023-12-22_i3_cryptic_seddighi_diff_expressed_gene_counts_event_type.tsv",col_names = T)
 
 
-
+# Also output diff expression results for APA genes only
+seddighi_df %>%
+  filter(cryptic) %>%
+  write_tsv("processed/2024-01-09_seddighi_papa_deseq_results.tsv", col_names = T)
 
 # RNA volcano with all APA genes highlighted
 plot_seddighi_df_all <- seddighi_df_all %>%
@@ -116,13 +120,26 @@ seddighi_volcano_cryptic_all <- ggplot(filter(plot_seddighi_df_all, plot_event_t
                      breaks = seq(-10,10,1)) +
   guides(alpha = "none") +
   labs(colour = "Event Type",
-       x = "Log2FoldChange (KD / WT)",
+       x = "Log2FoldChange (TDP43KD / CTRL)",
        y = "-log10(padj)") +
   theme(legend.position = "top")
 
 seddighi_volcano_cryptic_all
 
-ggsave("processed/2023-12-22_seddighi_rna_de_volcano_all_apa_colour_nolab.svg",
+seddighi_volcano_cryptic_all_rast <- rasterise(seddighi_volcano_cryptic_all, layers = 'Point', dpi = 300)
+
+seddighi_volcano_cryptic_all_rast
+
+ggsave("processed/2024-01-09_seddighi_rna_de_volcano_all_apa_colour_nolab.svg",
+       plot = seddighi_volcano_cryptic_all,
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+ggsave("processed/2024-01-09_seddighi_rna_de_volcano_all_apa_colour_nolab_rast.svg", 
+       plot = seddighi_volcano_cryptic_all_rast,
        device = svg,
        height = 8,
        width = 8,
@@ -150,7 +167,7 @@ min(plot_seddighi_cryp_3utr$log2FoldChange)
 max(plot_seddighi_cryp_3utr$log2FoldChange)
 
 
-ggplot(filter(plot_seddighi_cryp_3utr, plot_colour == "other"),
+seddighi_volcano_cryptic_3utr_lab <- ggplot(filter(plot_seddighi_cryp_3utr, plot_colour == "other"),
          aes(x = log2FoldChange,
              y = plot_padj,
              colour = plot_colour,
@@ -171,10 +188,15 @@ ggplot(filter(plot_seddighi_cryp_3utr, plot_colour == "other"),
                      breaks = seq(-10,10,1)) +
   guides(alpha = "none", colour = "none") +
   labs(
-       x = "Log2FoldChange (KD / WT)",
+       x = "Log2FoldChange (TDP43KD / CTRL)",
        y = "-log10(padj)")
 
+seddighi_volcano_cryptic_3utr_lab
+
+seddighi_volcano_cryptic_3utr_lab_rast <- rasterise(seddighi_volcano_cryptic_3utr_lab, layers = 'Point', dpi = 300)
+
 ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.png",
+       plot = seddighi_volcano_cryptic_3utr_lab,
        device = "png",
        height = 8,
        width = 8,
@@ -182,6 +204,15 @@ ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.png",
        units = "in")
 
 ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
+       plot = seddighi_volcano_cryptic_3utr_lab,
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab_rast.svg",
+       plot = seddighi_volcano_cryptic_3utr_lab_rast,
        device = svg,
        height = 8,
        width = 8,
@@ -192,20 +223,21 @@ ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
 
 ## Volcano plot labelling all diff translated genes (from ribo-seq) on RNA levels
 riboseq <- read_tsv("data/2023-10-18_i3_cryptic_genes_riboseq_deseq_summary.tsv")
-riboseq_sig <- filter(riboseq, diff_translated & !(gene_name %in% mv_fail_gn))
+riboseq_sig <- filter(riboseq, diff_translated & !(gene_name %in% bleedthrough_mv_f_nm))
 
 
 # df specifying plot criteria - labels for diff translated genes containing cryptics
 plot_seddighi_cryp_all <- seddighi_df %>%
+  select(-simple_event_type) %>%
   left_join(select(riboseq_sig, gene_name, simple_event_type, diff_translated), by = "gene_name") %>%
-  mutate(plot_label = if_else(diff_translated & padj < 0.05 & !(gene_name %in% mv_fail_gn),
+  mutate(plot_label = if_else(diff_translated & padj < 0.05 & !(gene_name %in% bleedthrough_mv_f_nm),
                               gene_name,
                               ""),
          plot_padj = if_else(-log10(padj) > 50, 50, -log10(padj)),
-         plot_alpha = case_when(diff_translated & !(gene_name %in% mv_fail_gn) ~ 5,
+         plot_alpha = case_when(diff_translated & !(gene_name %in% bleedthrough_mv_f_nm) ~ 5,
                                 plot_padj > -log10(0.05) ~ 0.1,
                                 TRUE ~ 0.01
-         ),
+                                ),
          plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "IPA",
                                      simple_event_type == "distal_3utr_extension" ~ "3'Ext",
                                      simple_event_type == "spliced" ~ "ALE"),
@@ -231,11 +263,11 @@ base_ev_type_volc <- ggplot(filter(plot_seddighi_cryp_all, is.na(diff_translated
   theme_bw(base_size = 20) +
   guides(alpha = "none", label = "none") +
   labs(
-    x = "Log2FoldChange (KD / WT)",
+    x = "Log2FoldChange (TDP43KD / CTRL)",
     y = "-log10(padj)") +
   theme(legend.position = "top")
 
-base_ev_type_volc
+# base_ev_type_volc
 
 # colour all event types, label all genes
 all_gn_ev_type_volc <- base_ev_type_volc +
@@ -259,8 +291,12 @@ base_ev_type_volc
 all_gn_ev_type_volc
 utr3_gn_ev_type_volc
 
+base_ev_type_volc_rast <- rasterise(base_ev_type_volc, layers = 'Point', dpi = 300)
+all_gn_ev_type_volc_rast <- rasterise(all_gn_ev_type_volc, layers = 'Point', dpi = 300)
+utr3_gn_ev_type_volc_rast <- rasterise(utr3_gn_ev_type_volc, layers = 'Point', dpi = 300)
+
 # base plot, no labels
-ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_no_lab.png",
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab.png",
        plot = base_ev_type_volc,
        device = "png",
        height = 8,
@@ -268,7 +304,7 @@ ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_no_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_no_lab.svg",
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab.svg",
        plot = base_ev_type_volc,
        device = svg,
        height = 8,
@@ -276,8 +312,17 @@ ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_no_lab.svg",
        dpi = "retina",
        units = "in")
 
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab_rast.svg",
+       plot = base_ev_type_volc_rast,
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+
 # all labelled
-ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_all_lab.png",
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab.png",
        plot = all_gn_ev_type_volc,
        device = "png",
        height = 8,
@@ -285,8 +330,16 @@ ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_all_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_all_lab.svg",
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab.svg",
        plot = all_gn_ev_type_volc,
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab_rast.svg",
+       plot = all_gn_ev_type_volc_rast,
        device = svg,
        height = 8,
        width = 8,
@@ -294,7 +347,7 @@ ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_all_lab.svg",
        units = "in")
 
 # only increased 3'UTRs up
-ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
        plot = utr3_gn_ev_type_volc,
        device = "png",
        height = 8,
@@ -302,8 +355,16 @@ ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-12-13_seddighi_rna_de_volcano_cryptic_3utr_lab.svg",
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_3utr_lab.svg",
        plot = utr3_gn_ev_type_volc,
+       device = svg,
+       height = 8,
+       width = 8,
+       dpi = "retina",
+       units = "in")
+
+ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_3utr_lab_rast.svg",
+       plot = utr3_gn_ev_type_volc_rast,
        device = svg,
        height = 8,
        width = 8,
