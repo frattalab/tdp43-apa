@@ -1,5 +1,5 @@
 library(tidyverse)
-
+library(writexl)
 
 datasets <- read_tsv("data/2023-11-22_paper_tdp43_collection_library_statistics.tsv")
 
@@ -113,7 +113,25 @@ cryptics_summary_clean <- select(cryptics_summary_clean, -all_of(c("chromosome",
 
 
 # HeLa target genes
+hela_chipseq_targets <- read_tsv("data/2024-01-09_ferguson_hela_chipseq_target_gene_lists.tsv")
 
 
+suppl_list <- list("Supplementary_Table_1" = datasets,
+                   "Supplementary_Table_2" = cryptics_summary_clean,
+                   "Supplementary_Table_3" = nygc_ale_all_cleaned,
+                   "Supplementary_Table_4" = riboseq_ale_clean,
+                   "Supplementary_Table_5" = hela_chipseq_targets)
 
+if (!dir.exists("processed")) {dir.create("processed")}
 
+write_xlsx(suppl_list,
+           path = "processed/2024-09-01_supplementary_tables.xlsx", col_names = T, format_headers = T)
+
+walk2(.x = suppl_list,
+      .y = names(suppl_list),
+      ~ write_tsv(.x, 
+                  file = paste("processed/", "2024-09-01_", .y, ".tsv", sep = ""),
+                  col_names = T,
+                  na = ""
+                  )
+      )
