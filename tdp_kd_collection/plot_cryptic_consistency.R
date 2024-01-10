@@ -251,7 +251,7 @@ cryptics_sum_score_sort_heatmap_nolab
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2023-01-10_ndatasets_cryptic_vs_expressed_binplot.png",
+ggsave(filename = "2024-01-10_ndatasets_cryptic_vs_expressed_binplot.png",
        plot = plot_cryptic_vs_expressed_counts,
               path = "processed",
               width = 10,
@@ -259,7 +259,7 @@ ggsave(filename = "2023-01-10_ndatasets_cryptic_vs_expressed_binplot.png",
               units = "in",
               dpi = "retina")
 
-ggsave(filename = "2023-01-10_ndatasets_cryptic_vs_expressed_binplot.svg",
+ggsave(filename = "2024-01-10_ndatasets_cryptic_vs_expressed_binplot.svg",
        plot = plot_cryptic_vs_expressed_counts,
        device = svg,
        path = "processed",
@@ -268,7 +268,7 @@ ggsave(filename = "2023-01-10_ndatasets_cryptic_vs_expressed_binplot.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-01-10_ndatasets_cryptic_vs_expressed_binplot_notitle.png",
+ggsave(filename = "2024-01-10_ndatasets_cryptic_vs_expressed_binplot_notitle.png",
        plot = plot_cryptic_vs_expressed_counts_notitle,
        path = "processed",
        width = 10,
@@ -276,7 +276,7 @@ ggsave(filename = "2023-01-10_ndatasets_cryptic_vs_expressed_binplot_notitle.png
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-01-10_ndatasets_cryptic_vs_expressed_binplot_notitle.svg",
+ggsave(filename = "2024-01-10_ndatasets_cryptic_vs_expressed_binplot_notitle.svg",
        plot = plot_cryptic_vs_expressed_counts_notitle,
        device = svg,
        path = "processed",
@@ -286,7 +286,7 @@ ggsave(filename = "2023-01-10_ndatasets_cryptic_vs_expressed_binplot_notitle.svg
        dpi = "retina")
 
 
-ggsave(filename = "2023-01-10_cryptics_normed_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2024-01-10_cryptics_normed_regn_score_sort_facet_heatmap.png",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -294,7 +294,7 @@ ggsave(filename = "2023-01-10_cryptics_normed_regn_score_sort_facet_heatmap.png"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-01-10_cryptics_sum_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2024-01-10_cryptics_sum_regn_score_sort_facet_heatmap.png",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -302,7 +302,7 @@ ggsave(filename = "2023-01-10_cryptics_sum_regn_score_sort_facet_heatmap.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-01-10_cryptics_normed_regn_score_sort_facet_heatmap.svg",
+ggsave(filename = "2024-01-10_cryptics_normed_regn_score_sort_facet_heatmap.svg",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        device = svg,
@@ -311,7 +311,7 @@ ggsave(filename = "2023-01-10_cryptics_normed_regn_score_sort_facet_heatmap.svg"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-01-10_cryptics_sum_regn_score_sort_facet_heatmap.svg",
+ggsave(filename = "2024-01-10_cryptics_sum_regn_score_sort_facet_heatmap.svg",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
        device = svg,
@@ -320,7 +320,7 @@ ggsave(filename = "2023-01-10_cryptics_sum_regn_score_sort_facet_heatmap.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-01-10_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.svg",
+ggsave(filename = "2024-01-10_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.svg",
        plot = cryptics_sum_score_sort_heatmap_nolab,
        path = "processed",
        device = svg,
@@ -329,7 +329,7 @@ ggsave(filename = "2023-01-10_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-01-10_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.pdf",
+ggsave(filename = "2024-01-10_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.pdf",
        plot = cryptics_sum_score_sort_heatmap_nolab,
        path = "processed",
        device = "pdf",
@@ -340,7 +340,7 @@ ggsave(filename = "2023-01-10_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
 
 
 # write enrichment scores to tsv (summarised)
-write_tsv(regn_score_sum, "processed/2023-01-10_last_exon_regulation_scores.tsv", col_names = T)
+write_tsv(regn_score_sum, "processed/2024-01-10_last_exon_regulation_scores.tsv", col_names = T)
 
 # write df with cryptic, detected and regulated counts across datasets for each event
 le_exper_summ_counts <- le_exper_summ_counts %>%
@@ -348,7 +348,7 @@ le_exper_summ_counts <- le_exper_summ_counts %>%
   relocate(gene_name, .after = le_id) %>%
   arrange(desc(n_cryptic), desc(n_regulated), desc(n_evaluated))
 
-write_tsv(le_exper_summ_counts, "processed/2023-01-10_last_exon_dataset_regulation_summary_counts.tsv", col_names = T)
+write_tsv(le_exper_summ_counts, "processed/2024-01-10_last_exon_dataset_regulation_summary_counts.tsv", col_names = T)
 
 # save to Rdata
 regn_score_all <- working_df
