@@ -146,8 +146,8 @@ med_scatter <- plot_med_df %>%
   scale_x_continuous(breaks = seq(0,100,10)) + 
   scale_y_continuous(limits = c(-100,100),
                      breaks = seq(-100,100,10)) +
-  labs(x = "Median of CTL mean PAS usage %",
-       y = "Median of change in usage (TDP-43 KD - CTL)") +
+  labs(x = "Median of CTRL mean PAS usage %",
+       y = "Median of change in usage (TDP43KD - CTRL)") +
   theme_bw(base_size = 20) + 
   guides(alpha = "none",
          colour = "none") #+
@@ -213,8 +213,8 @@ med_scatter_lab_1dataset <- ggplot(filter(x, !cryptic_any & !cryptic_med), aes(x
   scale_x_continuous(breaks = seq(0,100,10)) + 
   scale_y_continuous(limits = c(-100,100),
                      breaks = seq(-100,100,10)) +
-  labs(x = "Median of CTL mean PAS usage %",
-       y = "Median of change in usage (TDP-43 KD - CTL)",
+  labs(x = "Median of CTRL mean PAS usage %",
+       y = "Median of change in usage (TDP43KD - CTRL)",
        colour = "") +
   theme_bw(base_size = 20) + 
   guides(alpha = "none"
@@ -232,7 +232,7 @@ med_scatter_lab_1dataset
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2023-12-11_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
        plot = med_scatter,
        path = "processed",
        width = 10,
@@ -240,7 +240,7 @@ ggsave(filename = "2023-12-11_tdp_kd_collection_cryptics_scatter_colour_medians_
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-12-11_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.svg",
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.svg",
        plot = med_scatter,
        path = "processed",
        device = svg,
@@ -249,7 +249,7 @@ ggsave(filename = "2023-12-11_tdp_kd_collection_cryptics_scatter_colour_medians_
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-12-11_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
        plot = med_scatter_lab_1dataset,
        path = "processed",
        width = 10,
@@ -257,7 +257,7 @@ ggsave(filename = "2023-12-11_tdp_kd_collection_cryptics_scatter_colour_any_cryp
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-12-11_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.svg",
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.svg",
        plot = med_scatter_lab_1dataset,
        path = "processed",
        device = svg,
@@ -270,21 +270,21 @@ ggsave(filename = "2023-12-11_tdp_kd_collection_cryptics_scatter_colour_any_cryp
 # write tsv of median values for each cryptic/regulated evetn
 plot_med_df %>%
   select(le_id, groupID, gene_name, contains("median"), contains("cryptic"), simple_event_type, contains("plot")) %>%
-  write_tsv("processed/2023-12-11_cryptics_scatter_standard_plot_tbl.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptics_scatter_standard_plot_tbl.tsv", col_names = T)
 
 cryp_any_not_med_df %>%
-  write_tsv("processed/2023-12-11_cryptics_1dataset_not_median_base_delta_tbl.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptics_1dataset_not_median_base_delta_tbl.tsv", col_names = T)
 
 cryp_type_med_df %>%
-  write_tsv("processed/2023-12-11_cryptic_median_exprn_category_tbl.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptic_median_exprn_category_tbl.tsv", col_names = T)
 
 cryp_type_med_df_counts %>%
-  write_tsv("processed/2023-12-11_cryptic_median_exprn_category_counts.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptic_median_exprn_category_counts.tsv", col_names = T)
 
 # write counts by cryptic category
 cryp_any_med_df %>%
   count(cryptic_any, cryptic_med) %>%
-  write_tsv("processed/2023-12-11_cryptics_median_category_summary_counts.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptics_median_category_summary_counts.tsv", col_names = T)
 
 
 # save to Rdata
