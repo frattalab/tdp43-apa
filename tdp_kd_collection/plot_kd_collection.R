@@ -1,5 +1,6 @@
 library(tidyverse)
 library(ggrepel)
+library(ggrastr)
 # library(ggupset)
 set.seed(123)
 
@@ -265,6 +266,34 @@ ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_any_cryp
        height = 10,
        units = "in",
        dpi = "retina")
+
+
+# rasterise scatter plots & save (smaller files)
+
+med_scatter_rast <- rasterise(med_scatter, layers = 'Point', dpi = 200)
+med_scatter_lab_1dataset_rast <- rasterise(med_scatter_lab_1dataset, layers = 'Point', dpi = 200) # slightly lower res vs others to reduce size - at 300 bigger than SVG?
+
+# save to svg
+
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_rast.svg",
+       plot = med_scatter_rast,
+       path = "processed",
+       device = svg,
+       width = 10,
+       height = 10,
+       units = "in",
+       dpi = "retina")
+
+
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name_rast.svg",
+       plot = med_scatter_lab_1dataset_rast,
+       path = "processed",
+       device = svg,
+       width = 10,
+       height = 10,
+       units = "in",
+       dpi = "retina")
+
 
 
 # write tsv of median values for each cryptic/regulated evetn
