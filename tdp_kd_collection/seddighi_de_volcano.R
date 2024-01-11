@@ -120,7 +120,7 @@ seddighi_volcano_cryptic_all <- ggplot(filter(plot_seddighi_df_all, plot_event_t
                      breaks = seq(-10,10,1)) +
   guides(alpha = "none") +
   labs(colour = "Event Type",
-       x = "Log2FoldChange (TDP43KD / CTRL)",
+       x = "RNA-seq Log2FoldChange (TDP43KD / CTRL)",
        y = "-log10(padj)") +
   theme(legend.position = "top")
 
@@ -188,14 +188,14 @@ seddighi_volcano_cryptic_3utr_lab <- ggplot(filter(plot_seddighi_cryp_3utr, plot
                      breaks = seq(-10,10,1)) +
   guides(alpha = "none", colour = "none") +
   labs(
-       x = "Log2FoldChange (TDP43KD / CTRL)",
+       x = "RNA-seq Log2FoldChange (TDP43KD / CTRL)",
        y = "-log10(padj)")
 
 seddighi_volcano_cryptic_3utr_lab
 
 seddighi_volcano_cryptic_3utr_lab_rast <- rasterise(seddighi_volcano_cryptic_3utr_lab, layers = 'Point', dpi = 300)
 
-ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.png",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_3utrs_lab.png",
        plot = seddighi_volcano_cryptic_3utr_lab,
        device = "png",
        height = 8,
@@ -203,7 +203,7 @@ ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
        plot = seddighi_volcano_cryptic_3utr_lab,
        device = svg,
        height = 8,
@@ -211,7 +211,7 @@ ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab.svg",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-10-10_seddighi_rna_de_volcano_cryptic_3utrs_lab_rast.svg",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_3utrs_lab_rast.svg",
        plot = seddighi_volcano_cryptic_3utr_lab_rast,
        device = svg,
        height = 8,
@@ -263,7 +263,7 @@ base_ev_type_volc <- ggplot(filter(plot_seddighi_cryp_all, is.na(diff_translated
   theme_bw(base_size = 20) +
   guides(alpha = "none", label = "none") +
   labs(
-    x = "Log2FoldChange (TDP43KD / CTRL)",
+    x = "RNA-seq Log2FoldChange (TDP43KD / CTRL)",
     y = "-log10(padj)") +
   theme(legend.position = "top")
 
@@ -296,7 +296,7 @@ all_gn_ev_type_volc_rast <- rasterise(all_gn_ev_type_volc, layers = 'Point', dpi
 utr3_gn_ev_type_volc_rast <- rasterise(utr3_gn_ev_type_volc, layers = 'Point', dpi = 300)
 
 # base plot, no labels
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab.png",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_no_lab.png",
        plot = base_ev_type_volc,
        device = "png",
        height = 8,
@@ -304,7 +304,7 @@ ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab.svg",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_no_lab.svg",
        plot = base_ev_type_volc,
        device = svg,
        height = 8,
@@ -312,7 +312,7 @@ ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab.svg",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab_rast.svg",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_no_lab_rast.svg",
        plot = base_ev_type_volc_rast,
        device = svg,
        height = 8,
@@ -322,7 +322,7 @@ ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_no_lab_rast.svg",
 
 
 # all labelled
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab.png",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_all_lab.png",
        plot = all_gn_ev_type_volc,
        device = "png",
        height = 8,
@@ -330,7 +330,7 @@ ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab.svg",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_all_lab.svg",
        plot = all_gn_ev_type_volc,
        device = svg,
        height = 8,
@@ -338,7 +338,7 @@ ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab.svg",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab_rast.svg",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_all_lab_rast.svg",
        plot = all_gn_ev_type_volc_rast,
        device = svg,
        height = 8,
@@ -347,7 +347,7 @@ ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_all_lab_rast.svg",
        units = "in")
 
 # only increased 3'UTRs up
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
        plot = utr3_gn_ev_type_volc,
        device = "png",
        height = 8,
@@ -355,7 +355,7 @@ ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_3utr_lab.png",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_3utr_lab.svg",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_3utr_lab.svg",
        plot = utr3_gn_ev_type_volc,
        device = svg,
        height = 8,
@@ -363,7 +363,7 @@ ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_3utr_lab.svg",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2023-01-09_seddighi_rna_de_volcano_cryptic_3utr_lab_rast.svg",
+ggsave("processed/2023-01-11_seddighi_rna_de_volcano_cryptic_3utr_lab_rast.svg",
        plot = utr3_gn_ev_type_volc_rast,
        device = svg,
        height = 8,
