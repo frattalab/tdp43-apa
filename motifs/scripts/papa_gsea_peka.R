@@ -11,7 +11,7 @@ dbrn_tbl <- filter(dbrn_tbl, str_starts(comparison_name, "bleedthrough", negate 
 
 # map comparison names to cleaned event types & region types
 plot_clean_names <- tibble(comparison_name = c("bleedthrough_exonstart", "bleedthrough_pas", "spliced_exonstart", "spliced_pas", "d3utr_pas_proximal", "d3utr_pas_distal"),
-                           plot_event_type = c("Bleedthrough-ALE", "Bleedthrough-ALE", "AS-ALE", "AS-ALE", "3'UTR-ALE", "3'UTR-ALE"),
+                           plot_event_type = c("IPA", "IPA", "ALE", "ALE", "3'Ext", "3'Ext"),
                            plot_region_type = factor(c("Intron Start", "PAS", "Exon Start", "PAS", "Proximal", "Distal"),
                                                      levels = c("Intron Start", "Exon Start", "PAS", "Proximal", "Distal")
                            )
@@ -123,6 +123,7 @@ duplicated_peka_density <- duplicated_kmer_ranks %>%
   theme(legend.position = "top")
 
 duplicated_peka_density
+
 # generally have similar normal-like shape to distribution, perhaps slightly narrower around 0
 # Exception is distal 3'UTRs where sharp peak around 0, which is group that has considerably most duplicated values
 
@@ -133,8 +134,6 @@ duplicated_kmer_ranks %>%
          zero_artxn = artxn == 0,
          zero_aroxn = aroxn == 0) %>%
   count(comparison_name, na_extn, zero_artxn, zero_aroxn)
-
-
 
 # All have some occurrence in background regions (aroxn)
 # Many not found once in cryptic regions (artxn), bias strongest for distal pas
@@ -166,7 +165,9 @@ duplicated_kmer_ranks %>%
 # make a dot plot of the NES scores for each motif group
 dotplot_gsea <- gsea_comparisons %>% 
   left_join(plot_clean_names, by = "comparison_name") %>%
-  mutate(plot_pathway = factor(pathway, levels = c("combined-motifs", "YG-containing-motifs", "YA-containing-motifs", "AA-containing-motifs")),
+  mutate(plot_pathway = if_else(pathway == "combined-motifs", true = "Combined motifs", false = pathway),
+         plot_pathway = str_replace_all(plot_pathway, "-motifs$", " motifs"),
+         plot_pathway = factor(plot_pathway, levels = c("Combined motifs", "YG-containing motifs", "YA-containing motifs", "AA-containing motifs")),
          plot_size = -log10(padj.all),
          sig = padj < 0.05) %>%
   ggplot(aes(x = NES, y = plot_pathway, colour = sig, size = plot_size * 5)) +
@@ -184,7 +185,7 @@ dotplot_gsea <- gsea_comparisons %>%
 
 dotplot_gsea
 
-ggsave("2023-12-05_peka_cryptics_halleger_motif_groups_gsea_dotplot.png",
+ggsave("2024-01-11_peka_cryptics_halleger_motif_groups_gsea_dotplot.png",
        plot = dotplot_gsea,
        path = "processed/peka/papa/plots/",
        device = "png",
@@ -194,7 +195,7 @@ ggsave("2023-12-05_peka_cryptics_halleger_motif_groups_gsea_dotplot.png",
        dpi = "retina"
        )
 
-ggsave("2023-12-05_peka_cryptics_halleger_motif_groups_gsea_dotplot.svg",
+ggsave("2024-01-11_peka_cryptics_halleger_motif_groups_gsea_dotplot.svg",
        plot = dotplot_gsea,
        path = "processed/peka/papa/plots/",
        device = svg,
