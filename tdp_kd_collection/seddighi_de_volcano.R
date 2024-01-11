@@ -88,7 +88,7 @@ write_tsv(de_cryptics_all_gene_counts_event, "processed/2023-12-22_i3_cryptic_se
 # Also output diff expression results for APA genes only
 seddighi_df %>%
   filter(cryptic) %>%
-  write_tsv("processed/2024-01-09_seddighi_papa_deseq_results.tsv", col_names = T)
+  write_tsv("processed/2024-01-11_seddighi_papa_deseq_results.tsv", col_names = T)
 
 # RNA volcano with all APA genes highlighted
 plot_seddighi_df_all <- seddighi_df_all %>%
@@ -130,7 +130,7 @@ seddighi_volcano_cryptic_all_rast <- rasterise(seddighi_volcano_cryptic_all, lay
 
 seddighi_volcano_cryptic_all_rast
 
-ggsave("processed/2024-01-09_seddighi_rna_de_volcano_all_apa_colour_nolab.svg",
+ggsave("processed/2024-01-11_seddighi_rna_de_volcano_all_apa_colour_nolab.svg",
        plot = seddighi_volcano_cryptic_all,
        device = svg,
        height = 8,
@@ -138,7 +138,7 @@ ggsave("processed/2024-01-09_seddighi_rna_de_volcano_all_apa_colour_nolab.svg",
        dpi = "retina",
        units = "in")
 
-ggsave("processed/2024-01-09_seddighi_rna_de_volcano_all_apa_colour_nolab_rast.svg", 
+ggsave("processed/2024-01-11_seddighi_rna_de_volcano_all_apa_colour_nolab_rast.svg", 
        plot = seddighi_volcano_cryptic_all_rast,
        device = svg,
        height = 8,
