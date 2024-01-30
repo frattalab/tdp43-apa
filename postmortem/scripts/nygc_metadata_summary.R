@@ -3,10 +3,52 @@ library(tidyverse)
 # read in formatted NYGC metdata used for analysis, plotting
 nygc_metadata <- read_tsv("processed/nygc/NYGC_all_RNA_samples_support_formatted.tsv")
 
+# raw metdata (for )
+raw_nygc_metadata <- read_tsv("data/nygc/NYGC_all_RNA_samples_support.tsv")
+
+# extract gender for each individual
+indiv_gender <- raw_nygc_metadata %>%
+  select(individual, sex) %>%
+  distinct(.keep_all = T)
+
+# add a simple categorisation of disease
+nygc_metadata <- nygc_metadata %>%
+  mutate(simple_disease = case_when(str_detect(disease,"^ALS") ~ "ALS",
+                                    str_detect(disease, "^FTD") ~ "FTD",
+                                    TRUE ~ "Control"))
+
+# add sex to metadata
+nygc_metadata <- left_join(nygc_metadata, indiv_gender, by = "individual")
+
 # Get a table of the number of samples and individuals across dataset
 n_individuals <- n_distinct(nygc_metadata$individual)
 n_samples <- n_distinct(nygc_metadata$sample)
 dataset_wide_counts <- tibble( type = c("individuals", "samples"), n = c(n_individuals, n_samples))
+
+# number of indivuals split by sex
+nygc_metadata %>%
+  distinct(individual, .keep_all = T) %>%
+  count(sex)
+
+# number of indivuals for each disease subcategory
+nygc_metadata %>%
+  distinct(individual, .keep_all = T) %>%
+  count(simple_disease)
+
+# number of indivuals for each disease subcategory and sex
+nygc_metadata %>%
+  distinct(individual, .keep_all = T) %>%
+  count(simple_disease, sex)
+
+
+nygc_metadata %>%
+  distinct(individual, .keep_all = T) %>%
+  group_by(simple_disease) %>%
+  summarise(median_age = median(age, na.rm=T),
+            iqr_age = IQR(age, na.rm = T))
+
+  count(simple_disease)
+
 
 # get a table with sample counts by TDP path subtype
 dataset_wide_counts_path <- count(nygc_metadata, tdp_path)
