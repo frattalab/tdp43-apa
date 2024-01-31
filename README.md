@@ -53,7 +53,7 @@ Every individual subdirectory has its own [RStudio project](https://support.posi
 
 ## Assorted notes
 
-- Subdirectories contain a mix of essential and WIP/experimental scripts. Check the **README** in each subdirectory for a description of the scripts required to reproduce analyses in the main manuscript.
+- Subdirectories contain a mix of essential and WIP/experimental scripts. Check the **README** in each subdirectory for a description of the scripts required to reproduce analyses in the main manuscript. Assume any other scripts not listed in the README are non-essential (clean-up is on the to-do list...).
 - The input dependencies of each script are not well documented (apologies). Generally, should assume that will need to run `preprocessing` scripts first to generate minimal outputs for other steps, and `misc` subdirectory contains scripts that should be run last (to generate supplementary tables). Eventual plan is to produce a Snakemake pipeline to automate running different steps (and document the required running order).
 - Minimal data to reproduce analysis is still a work in progress (again apologies). Eventual plan is to integrate with Zenodo (possibly using SciDataFlow).
 - Scripts have varying levels of generalisability. If you'd like to adapt some of the code to your inputs, please do get in touch and I'll do my best to give you some advice/help out.
