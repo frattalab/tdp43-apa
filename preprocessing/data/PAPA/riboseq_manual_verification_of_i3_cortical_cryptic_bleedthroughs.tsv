@@ -1,0 +1,41 @@
+gene_name	le_id	exper_cryp	chromosome	strand	start	end	event_manual_validation	cryptic_riboseq_reads	riboseq_downstream_change	notes		
+ACER3	ENSG00000078124.13_1	brown_i3_cortical,seddighi_i3_cortical	chr11	+	7686811976868117e40	768690507686945e41	yes	few reads	unclear	coverage quite low, but reads consistently up in cryptic		
+ADCY8	ENSG00000155897.10_1	humphrey_i3_cortical	chr8	-	13089985713090163e19	13090404213090404e19	yes	no	no	seddighi - event looks real but v lowly expressed. Very clean in humphrey i3		
+ANKRD27	ENSG00000105186.16_3	brown_i3_cortical,humphrey_i3_cortical,seddighi_i3_cortical	chr19	-	32635458	32639488	yes	yes	yes			
+ASPHD1	ENSG00000174939.11_1	humphrey_i3_cortical	chr16	+	2990578729905786e16	2990641629906054e16	no	no	no	Overlapping transcripts on annotation. bleedthrough mixed with longer tx. Appears more likely to be IR. Unlikely IR in seddighi i3s (looks like real last exon) but not differentially regulated		
+BBS7	ENSG00000138686.10_4	humphrey_i3_cortical	chr4	-	121826264	121828269	no	no	no	Definitely IR mixed with last exon. But actual event called as cryptic is long extension, which doesn't appear cryptic and corresponds to most of retained intron		
+BCL9	ENSG00000116128.12_2	brown_i3_cortical	chr1	+	14762227014762228e10	14762370114762273e10	no	no	no	intron retention, very lowly expressed isoform overall. coverage does drop in intron so could be real, but unlikely given depth		
+CCDC169	ENSG00000242715.8_6	humphrey_i3_cortical	chr13	-	3622744236229618e16	3623129236231292e16	no	no	no	intron retention. Also lowly expressed		
+CDH24	ENSG00000139880.21_1	seddighi_i3_cortical	chr14	-	230516132305158e9	23052083230520836e7	no	NA	NA	intron retention		
+CDON	ENSG00000064309.16_2	brown_i3_cortical,seddighi_i3_cortical	chr11	-	125982109125982080	125984093125984080	no	yes	unclear	intron retention, ribo-seq reads over junction		
+CEP76	ENSG00000101624.11_3	brown_i3_cortical	chr18	-	1267262412673096	1267350312673503	yes	no	no	looks like real 3'UTR, but unclear whether cryptic from coverage trace. Unlikely cryptic in Humphrey i3s		
+CNPY3	ENSG00000137161.18_1	humphrey_i3_cortical,seddighi_i3_cortical	chr6	+	4293557342935575e40	42936378429363784e39	yes	yes	unclear	reads in cryptic also downstream of stops in any frame		
+CTBS	ENSG00000117151.13_1	humphrey_i3_cortical	chr1	-	84561927	84563418	yes	no	no	genuine bleedthrough, not particularly cryptic looking though		
+DLEU7	ENSG00000186047.11_2	humphrey_i3_cortical	chr13	-	5.08E+15	5.08E+15	yes	no	no			
+DLG5	ENSG00000151208.17_3	brown_i3_cortical,seddighi_i3_cortical	chr10	-	77793543	77794117	no	yes	unclear	intron retention (annotated). overall translation up in KD		
+FBXO38-DT	ENSG00000247199.6_1	humphrey_i3_cortical	chr5	-	14837758814837758e28	14837884514837882e28	yes	no	no	very lowly expressed		
+FIRRE	ENSG00000213468.7_1	brown_i3_cortical	chrX	-	131823775131823760	131825365131825360	yes	no	no	lncRNA. Looks real but lowly expressed		
+H4C14	ENSG00000270882.3_2	humphrey_i3_cortical	chr1	+	149834134	149835093	no	no	no	upreglated but cassette exon extension not last		
+HECW1	ENSG00000002746.15_3	brown_i3_cortical	chr7	+	4344421743444214e8	43448981434460334e7	yes	no	no	definitely upregulated but also basal IR. Event looks real but unchanged in humphrey i3s		
+LIPA	ENSG00000107798.18_2	humphrey_i3_cortical	chr10	-	8933099689330997e32	8933553489335537e32	yes			genuine event but not cryptic (overlapping txs but judging by SJ)		
+MNAT1	ENSG00000020426.11_2	seddighi_i3_cortical	chr14	+	60808324	60809015	no	yes	no	intron retention (annotated), total RNA goes down		
+NBPF3	ENSG00000142794.19_3	humphrey_i3_cortical	chr1	+	21453372	21457150	yes	unclear	unclear	expressed in ctls but likely cryptic by ratio (just)		
+NSMCE4A	ENSG00000107672.15_3	seddighi_i3_cortical	chr10	-	121959917	121960406	no	few reads	no	intron retention (annotated)		
+NTAN1	ENSG00000157045.9_1	seddighi_i3_cortical	chr16	-	1504742715047215	1.50E+15	no	NA	NA	intron retention (annotated). Possibly also bleedthrough as coverage drops a bit downstream in seddighi i3, but not convincing in humphrey i3s		
+NYAP2	ENSG00000144460.13_2	humphrey_i3_cortical	chr2	+	225651431	225658565	yes	no	no	expression in ctls, likely cryptic by ratio (expression seems to go down). low ribo-seq coverage		
+PCDH11X	ENSG00000102290.23_3	humphrey_i3_cortical	chrX	+	91882906	91891321	yes	no	no	lowly included. Whole exon is cryptic (novel SJ)		
+PFKP	ENSG00000067057.18_1	humphrey_i3_cortical	chr10	+	3119891311989131e5	3121682312168231e5	no	no	no	intron retention. Present in CTL & KD (likely cryptic because other utr downregulated - independent transcripts?)		
+PLPBP	ENSG00000147471.12_1	humphrey_i3_cortical	chr8	+	37766481	37767739	yes	no	no	extension of ALE		
+PLPBP	ENSG00000147471.12_1	humphrey_i3_cortical	chr8	+	37766481	37766716	yes	no	no			
+PLPBP	ENSG00000147471.12_1	humphrey_i3_cortical	chr8	+	37766279	37766741	yes	few reads	no	IR from upstream exon through to bleedthrough		
+RANBP17	ENSG00000204764.14_10	seddighi_i3_cortical	chr5	+	171271150	171272579	yes?	no	no	riboseq coverage v low. Event definitely cryptic (extension of annotated internal last exon). Unusual basal IR at 3'end of overlapping intron in seddighi i3s & humphrey i3s, but discontinuous coverage over intron body		
+RFTN2	ENSG00000162944.11_1	humphrey_i3_cortical	chr2	-	197630635197630400	197631220197631200	yes	no	no	very clean, obvious downreg of RNA downstream. no ribo-seq reads at all		
+SIN3B	ENSG00000127511.10_2	brown_i3_cortical,humphrey_i3_cortical,seddighi_i3_cortical	chr19	+	16854142	16857420	yes	no	yes	cryptic CDS terminates 1 codon downstream of SJ		
+TENM3-AS1	ENSG00000177822.9_1	seddighi_i3_cortical	chr4	-	1821416491821281e20	18214354518214315e19	no	no	no	RNAseq coverage very low, doesn't look cryptic		
+TIAL1	ENSG00000151923.18_1	brown_i3_cortical	chr10	-	1195812221195812e20	119582009119582e21	no	unclear	no	likely to be IR (drop in cov downstream of end but similar coverage at ends of introns. Looks more IR-like in humphrey i3s		
+TMED4	ENSG00000158604.15_1	humphrey_i3_cortical	chr7	-	4457989644579903	4458123944581239	yes	yes	yes	annotated, also low level basal IR		
+USP31	ENSG00000103404.15_1	humphrey_i3_cortical	chr16	-	23079037230792992e47	23080171230801712e47	yes	no	unclear			
+												
+											yes count	21
+											no count	14
+											yes? count	1
