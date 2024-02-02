@@ -23,7 +23,7 @@ cd data/iCLIP
 cat tardbp-shsy5y-1-20210701-mh_mapped_to_genome_single_peaks.bed tardbp-shsy5y-2-20210701-mh_mapped_to_genome_single_peaks.bed | sort -k1,1 -k2,2n | bedtools merge -s -c 5 -o sum > tardbp-shsy5y.concat.sort.chr.bed
 ```
 
-## bleedthrough_iclip_coverage.sh and d3utr_iclip_coverage.sh
+## spliced_iclip_coverage.sh, bleedthrough_iclip_coverage.sh and d3utr_iclip_coverage.sh
 
 Wrapper scripts to run bedtools coverage on input BED files to get iCLIP coverage for positions relative to genomic landmarks. Requires BED files produced by jupyter notebooks and the combined BED file of iCLIP peaks as input. Calls `scripts/cl_iclip_coverage.R` under the hood.
 
