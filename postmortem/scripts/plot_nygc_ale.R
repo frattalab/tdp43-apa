@@ -145,7 +145,7 @@ sel_bar_jnc_gn <- path_summ_comb %>%
          subtitle = "Non path detected fraction < 0.005, path detected > 0.01. Min spliced reads = 2",
          x = "% of TDP-43 pathological tissues cryptic detected",
          y = "Junction|Gene name",
-         fill = "Event type")
+         fill = "Event Type")
 
 sel_bar_gn <- path_summ_comb %>%
   filter(selective) %>%
@@ -155,9 +155,9 @@ sel_bar_gn <- path_summ_comb %>%
   theme_bw(base_size = 20) +
   labs(title = "Selective ALE junctions",
        subtitle = "Non path detected fraction < 0.005, path detected > 0.01. Min spliced reads = 2",
-       x = "% of TDP-43 pathological tissues cryptic detected",
+       x = "% of TDP-43 proteinopathy samples detected",
        y = "Event ID",
-       fill = "Event type")
+       fill = "Event Type")
 
 # remove unnecessary axis labels + legends
 sel_bar_gn_simple <- sel_bar_gn +
@@ -166,15 +166,56 @@ sel_bar_gn_simple <- sel_bar_gn +
        subtitle = "",
        y = "")
 
-# sel_bar_gn
-# sel_bar_gn_simple
+# remove axis labels, but keep legend (and move to top)
+sel_bar_gn_simple_leg <- sel_bar_gn +
+  labs(title = "",
+       subtitle = "",
+       y = "") +
+  theme(legend.position = "top")
+
+
+sel_bar_gn
+sel_bar_gn_simple
+sel_bar_gn_simple_leg
+
+# Also make a plot with 1. just selective ALEs & 2. selective ALEs + notable cryptic SJs
+sel_bar_gn_simple_leg_ales <- path_summ_comb %>%
+  filter(selective & event_type == "ALE") %>%
+  ggplot(aes(x = fraction_path * 100, y = plot_name_simple, fill = event_type)) +
+  geom_col(colour = "black") +
+  scale_fill_manual(values = c("#d95f02")) +
+  theme_bw(base_size = 20) +
+  labs(x = "% of TDP-43 proteinopathy samples detected",
+       y = "",
+       fill = "Event Type") +
+  theme(legend.position = "top")
+
+
+# Define a list of notable cryptics SJs
+selected_sjs_gn <- c("AARS1", "ELAVL3", "HDGFL2", "KCNQ2", "UNC13A")
+
+# plot with selective ALEs & representative cryptic SJs
+sel_bar_gn_simple_leg_ales_repsjs <- path_summ_comb %>%
+  filter((selective & event_type == "ALE") | (selective & gene_name %in% selected_sjs_gn)) %>%
+  ggplot(aes(x = fraction_path * 100, y = plot_name_simple, fill = event_type)) +
+  geom_col(colour = "black") +
+  scale_fill_manual(values = c("#d95f02", "#7570b3")) +
+  theme_bw(base_size = 20) +
+  labs(x = "% of TDP-43 proteinopathy samples detected",
+       y = "",
+       fill = "Event Type") +
+  theme(legend.position = "top")
   
+sel_bar_gn_simple_leg_ales
+sel_bar_gn_simple_leg_ales_repsjs
+
+
 dir.create("processed/nygc/selective_jncs/ale/svg", recursive = T)
 dir.create("processed/nygc/selective_jncs/ale/png", recursive = T)
 dir.create("processed/nygc/enriched_jncs/ale/svg", recursive = T)
 dir.create("processed/nygc/enriched_jncs/ale/png", recursive = T)
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.png",
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_jnc_gn_bar.png",
        plot = sel_bar_jnc_gn,
        path = "processed/nygc/",
        width = 12,
@@ -182,7 +223,7 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.png",
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar.png",
        plot = sel_bar_gn,
        path = "processed/nygc/",
        width = 12,
@@ -190,7 +231,7 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
        device = svg,
        plot = sel_bar_jnc_gn,
        path = "processed/nygc/",
@@ -199,7 +240,7 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar.svg",
        plot = sel_bar_gn,
        device = svg,
        path = "processed/nygc/",
@@ -209,7 +250,7 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
        dpi = "retina")
 
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar.svg",
        plot = sel_bar_gn,
        device = svg,
        path = "processed/nygc/",
@@ -218,7 +259,7 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.png",
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar_simple.png",
        plot = sel_bar_gn_simple,
        path = "processed/nygc/",
        width = 7.5,
@@ -227,7 +268,7 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.png",
        dpi = "retina")
 
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.svg",
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar_simple.svg",
        plot = sel_bar_gn_simple,
        device = svg,
        path = "processed/nygc/",
@@ -235,6 +276,35 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.svg",
        height = 15,
        units = "in",
        dpi = "retina")
+
+
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar_simple_legend.svg",
+       plot = sel_bar_gn_simple_leg,
+       device = svg,
+       path = "processed/nygc/",
+       width = 7.5,
+       height = 15,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar_ales_only_legend.svg",
+       plot = sel_bar_gn_simple_leg_ales,
+       device = svg,
+       path = "processed/nygc/",
+       width = 7.5,
+       height = 15,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar_ales_representative_sjs_legend.svg",
+       plot = sel_bar_gn_simple_leg_ales_repsjs,
+       device = svg,
+       path = "processed/nygc/",
+       width = 7.5,
+       height = 15,
+       units = "in",
+       dpi = "retina")
+
 
 #
 path_summ_ale_counts %>%
