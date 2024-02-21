@@ -300,8 +300,8 @@ ggsave(filename = "2024-02-21_nygc_papa_seddighi_selective_gn_bar_ales_represent
        plot = sel_bar_gn_simple_leg_ales_repsjs,
        device = svg,
        path = "processed/nygc/",
-       width = 7.5,
-       height = 15,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
