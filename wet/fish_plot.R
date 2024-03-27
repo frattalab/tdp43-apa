@@ -165,10 +165,12 @@ plot_nuclei_sums <- fish_counts %>%
   mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
                              levels = c("Total", "Cryptic"))
          ) %>%
+  # number of nuclei is consistent regardless of probe - keep 1 row per replicate
+  distinct(replicate, condition, .keep_all = T) %>%
   ggplot(aes(x = condition, y = sum_nuclei, shape = as.factor(replicate))) +
-  facet_wrap("~ plot_probe") +
   scale_y_continuous(limits = c(0,1000), breaks = seq(0,1000, 200)) +
-  geom_point(size = 3) +
+  geom_point(size = 3,
+             position = position_dodge(width = 0.3)) +
   theme_bw(base_size = 20) +
   theme(legend.position = "top") +
   labs(x = "",
@@ -182,16 +184,14 @@ plot_foci_sums <- fish_counts %>%
   ggplot(aes(x = condition, y = sum_foci, shape = as.factor(replicate))) +
   facet_wrap("~ plot_probe") +
   scale_y_continuous(limits = c(0,1000), breaks = seq(0,1000, 200)) +
-  geom_point(size = 3) +
+  geom_point(size = 3,
+             position = position_dodge(width = 0.3)) +
   theme_bw(base_size = 20) +
   theme(legend.position = "top") +
   labs(x = "",
        y = "Total foci",
        shape = "Replicate")
   
-plot_nuclei_sums
-plot_foci_sums
-
 
 # Nuclear/extranuclear foci counts
 plot_subcellfoci_sums <- fish_counts %>%
@@ -205,7 +205,7 @@ plot_subcellfoci_sums <- fish_counts %>%
   # scale_y_continuous(limits = c(0,1000), breaks = seq(0,1000, 200)) +
   geom_point(size = 3,
              position = position_dodge(width = 0.5)
-             ) +
+  ) +
   scale_colour_manual(values = c("#b2df8a", "#1f78b4")) +
   theme_bw(base_size = 20) +
   theme(legend.position = "top") +
@@ -213,6 +213,12 @@ plot_subcellfoci_sums <- fish_counts %>%
        y = "Total foci",
        shape = "Replicate",
        colour = "Location")
+
+
+plot_nuclei_sums
+plot_foci_sums
+plot_subcellfoci_sums
+
 
 
 ### Output plots
@@ -274,7 +280,6 @@ ggsave("2024-01-09_fish_probe_count_ratio_all_cell_facet_start1.svg",
        width = 5,
        dpi = "retina")
 
-
 ggsave("2024-01-09_fish_prox_subcell_ratio_start1.png",
        plot = plot_ratio_prox_1,
        path = "processed/",
@@ -286,6 +291,63 @@ ggsave("2024-01-09_fish_prox_subcell_ratio_start1.png",
 
 ggsave("2024-01-09_fish_prox_subcell_ratio_start1.svg",
        plot = plot_ratio_prox_1,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+# Nuclei counts summed
+ggsave("2024-03-27_fish_nuclei_counts.png",
+       plot = plot_nuclei_sums,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-03-27_fish_nuclei_counts.svg",
+       plot = plot_nuclei_sums,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+# Foci counts summed (faceted by probe)
+ggsave("2024-03-27_fish_foci_counts.png",
+       plot = plot_foci_sums,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-03-27_fish_foci_counts.svg",
+       plot = plot_foci_sums,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+# subcellular foci counts (faceted by probe)
+ggsave("2024-03-27_fish_foci_subcellular_counts.png",
+       plot = plot_subcellfoci_sums,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-03-27_fish_foci_subcellular_counts.svg",
+       plot = plot_subcellfoci_sums,
        path = "processed/",
        device = svg,
        units = "in",
