@@ -154,6 +154,70 @@ plot_ratio_prox_1 <- plot_ratio_prox +
 
 plot_ratio_prox_1
 
+
+
+### Supplementaty figure updates
+
+
+# 1. How variable are foci & nuclear counts replicate to replicate?
+
+plot_nuclei_sums <- fish_counts %>%
+  mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic"))
+         ) %>%
+  ggplot(aes(x = condition, y = sum_nuclei, shape = as.factor(replicate))) +
+  facet_wrap("~ plot_probe") +
+  scale_y_continuous(limits = c(0,1000), breaks = seq(0,1000, 200)) +
+  geom_point(size = 3) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Total nuclei",
+       shape = "Replicate")
+
+plot_foci_sums <- fish_counts %>%
+  mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic"))
+  ) %>%
+  ggplot(aes(x = condition, y = sum_foci, shape = as.factor(replicate))) +
+  facet_wrap("~ plot_probe") +
+  scale_y_continuous(limits = c(0,1000), breaks = seq(0,1000, 200)) +
+  geom_point(size = 3) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Total foci",
+       shape = "Replicate")
+  
+plot_nuclei_sums
+plot_foci_sums
+
+
+# Nuclear/extranuclear foci counts
+plot_subcellfoci_sums <- fish_counts %>%
+  mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic"))
+  ) %>%
+  pivot_longer(cols = starts_with("sum_foci_"), names_to = "subcellular_fraction", values_to = "sum_subcell_foci", names_prefix = "sum_foci_") %>%
+  mutate(plot_subcell_fraction = str_to_sentence(subcellular_fraction)) %>%
+  ggplot(aes(x = condition, y = sum_subcell_foci, colour = plot_subcell_fraction, shape = as.factor(replicate))) +
+  facet_wrap("~ plot_probe") +
+  # scale_y_continuous(limits = c(0,1000), breaks = seq(0,1000, 200)) +
+  geom_point(size = 3,
+             position = position_dodge(width = 0.5)
+             ) +
+  scale_colour_manual(values = c("#b2df8a", "#1f78b4")) +
+  theme_bw(base_size = 20) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Total foci",
+       shape = "Replicate",
+       colour = "Location")
+
+
+### Output plots
+
+
 if (!dir.exists("processed/")) {dir.create("processed")}
 
 ggsave("2024-01-09_fish_probe_count_ratio_all_cell_facet.png",
