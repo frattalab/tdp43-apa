@@ -1,0 +1,13 @@
+gene_name,event_type,cryptic_status,bed_name
+ELK1,3'Ext,annotated,ENSG00000126767.18_1|ELK1|proximal|cryptic
+ELK1,3'Ext,cryptic,ENSG00000126767.18_2|ELK1|distal|cryptic
+SIX3,3'Ext,annotated,ENSG00000138083.5_1|SIX3|proximal|cryptic
+SIX3,3'Ext,cryptic,ENSG00000138083.5_2|SIX3|distal|cryptic
+TLX1,3'Ext,annotated,ENST00000370196.11
+TLX1,3'Ext,cryptic,ENSG00000107807.13_2|TLX1|distal|cryptic
+ANKRD27,IPA,annotated,ANKRD27|annotated|ENST00000306065.9
+ANKRD27,IPA,cryptic,ENSG00000105186.16_3|ANKRD27|bleedthrough|cryptic
+SIN3B,IPA,annotated,SIN3B|annotated|ENST00000379803.5
+SIN3B,IPA,cryptic,ENSG00000127511.10_2|SIN3B|bleedthrough|cryptic
+CNPY3,IPA,annotated,CNPY3|annotated|ENST00000372836.5
+CNPY3,IPA,cryptic,ENSG00000137161.18_1|CNPY3|bleedthrough|cryptic
