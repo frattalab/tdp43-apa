@@ -266,3 +266,6 @@ write.table(ppau_tot,
             quote = FALSE,
             col.names = TRUE,
             row.names = FALSE)
+
+
+save(txi.tx, txi.pas, txi.pas.inf, file = file.path(dirname(output_prefix), "tximport_objects.RData"))
