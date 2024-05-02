@@ -72,7 +72,7 @@ normed_counts_npc_long_3exts %>%
   theme_bw(base_size = 14) +
   labs(x = "Fraction",
        y = "Fraction of total expression") +
-  theme(axis.text.x = element_text(angle = 90))
+  theme()
 
 
 # plot relative difference in proportion between the two isoforms in each replicate?
