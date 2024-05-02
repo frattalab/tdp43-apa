@@ -88,3 +88,51 @@ normed_counts_npc_long_3exts %>%
 # BUT, PPAU normalised to total abundance in that fraction. not comparing between the two isoforms?
 
 
+# TPMs & PPAUs
+
+ppau <- read_tsv("processed/fracseq/2024-04-30_summarised_pas.ppau.tsv")
+# add gene_name
+ppau <- left_join(ppau, le2name, by = "le_id") %>%
+  relocate(gene_name, .after = gene_id)
+
+ppau_long <- pivot_longer(ppau,
+             cols = -all_of(c("le_id", "gene_id", "gene_name")),
+             names_to = "sample_name",
+             values_to = "ppau")
+
+ppau_3exts <- filter(ppau_long, gene_name %in% c("ELK1", "SIX3", "TLX1"))
+
+# extract fraction, replicate number and cell type from sample_names
+ppau_3exts <- ppau_3exts %>%
+  mutate(sample_name_clean = str_remove_all(sample_name, "^SRR[0-9]*_"),
+         replicate = str_extract_all(sample_name_clean, "rep[0-9]$", simplify = T),
+         cell_type = str_split_i(sample_name_clean, "_", 1),
+         group = case_when(str_detect(sample_name_clean, "cytosol") ~ "cytosol",
+                           str_detect(sample_name_clean, "monosome") ~ "monosome",
+                           str_detect(sample_name_clean, "2-4_ribosomes") ~ "2-4_ribosomes",
+                           str_detect(sample_name_clean, "5_ribosomes") ~ "5_ribosomes"
+                           ),
+         group = factor(group, levels = c("cytosol",
+                                          "monosome",
+                                          "2-4_ribosomes",
+                                          "5_ribosomes")
+                        )
+         ) %>%
+  relocate(ppau, .after = everything())
+
+ppau_3exts %>%
+  filter(gene_name == "ELK1",
+         str_ends(le_id, "_2")) %>%
+  mutate(ppau = ppau * 100) %>%
+  ggplot(aes(x = group, y = ppau, group = replicate, shape = replicate)) +
+  facet_wrap("~ cell_type") +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(limits = c(0, 20),
+                     breaks = seq(0,20, 2)
+                     ) +
+  labs(x = "Fraction",
+       y = "Cryptic PAS usage (%)",
+       shape = "Replicate") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom")
