@@ -136,3 +136,63 @@ ppau_3exts %>%
        shape = "Replicate") +
   theme_bw(base_size = 14) +
   theme(legend.position = "bottom")
+
+# Normalise to cytosol usage
+ppau_3exts_npc_cyto_normed <- ppau_3exts %>%
+  filter(cell_type == "NPC") %>%
+  pivot_wider(values_from = ppau, names_from = group, names_prefix = "ppau_") %>%
+  filter(gene_name == "ELK1",
+         str_ends(le_id, "_2")) %>%
+  group_by(replicate) %>%
+  # for each replicate, add default column containing cytosol usage
+  mutate(all_ppau_cytosol = sort(unique(ppau_cytosol), na.last = NA)) %>%
+  ungroup() %>%
+  # each column, divide against cytosol usage
+  mutate(across(starts_with("ppau_"), ~ .x / all_ppau_cytosol)) %>%
+  arrange(replicate, sample_name_clean) %>% 
+  select(-all_ppau_cytosol) %>%
+  pivot_longer(cols = starts_with("ppau_"), names_prefix = "ppau_", names_to = "group", values_to = "cytosol_normed_ppau") %>%
+  # introduces NAs for fraction + other fraction combos
+  drop_na(cytosol_normed_ppau)
+
+ppau_3exts_npc_cyto_normed %>%
+  mutate(cytosol_normed_ppau = cytosol_normed_ppau * 100) %>%
+  mutate(group = case_when(str_detect(sample_name_clean, "cytosol") ~ "cytosol",
+                    str_detect(sample_name_clean, "monosome") ~ "monosome",
+                    str_detect(sample_name_clean, "2-4_ribosomes") ~ "2-4_ribosomes",
+                    str_detect(sample_name_clean, "5_ribosomes") ~ "5_ribosomes"),
+         group = factor(group, levels = c("cytosol",
+                                          "monosome",
+                                          "2-4_ribosomes",
+                                          "5_ribosomes")
+                        )
+         ) %>%
+  ggplot(aes(x = group,
+             y = cytosol_normed_ppau,
+             group = replicate,
+             shape = replicate)) +
+  facet_wrap("~ cell_type") +
+  geom_line() +
+  geom_point() +
+  labs(x = "Fraction",
+       y = "Cytosol normalised PAS usage (%)",
+       shape = "Replicate") +
+  theme_bw(base_size = 14) +
+  theme(legend.position = "bottom")
+
+
+  # filter(gene_name == "ELK1",
+  #        str_ends(le_id, "_2")) %>%
+  # mutate(ppau = ppau * 100) %>%
+  # ggplot(aes(x = group, y = ppau, group = replicate, shape = replicate)) +
+  # facet_wrap("~ cell_type") +
+  # geom_line() +
+  # geom_point() +
+  # scale_y_continuous(limits = c(0, 20),
+  #                    breaks = seq(0,20, 2)
+  # ) +
+  # labs(x = "Fraction",
+  #      y = "Cryptic PAS usage (%)",
+  #      shape = "Replicate") +
+  # theme_bw(base_size = 14) +
+  # theme(legend.position = "bottom")
