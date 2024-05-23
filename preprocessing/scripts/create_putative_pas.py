@@ -159,7 +159,7 @@ def main(gtf_path: str,
     # print(gtf_nupd)
 
     gtf_orig = gtf.drop_duplicate_positions()
-    gtf_orig = gtf_orig.assign("NameDummy", lambda df: pd.Series(["not_updated"]*len(df), index=df.index))
+    gtf_orig = gtf_orig.assign("NameDummy", lambda df: pd.Series(["original"]*len(df), index=df.index))
     gtf_orig = gtf_orig.assign("NameUpdated", lambda df: df["le_id"].str.cat(df[["ref_gene_name", "NameDummy"]], sep="|"))
     gtf_orig.Score = 0
     gtf_orig = gtf_orig.apply(lambda df: df.rename(columns={"NameUpdated": "Name"}))[["Name", "Score"]]
