@@ -86,10 +86,12 @@ def _df_update_3p(df: pd.DataFrame, replace_suffix: str = "_b"):
 
 
 minimal_gtf_cols = ["le_id", "ref_gene_name"]
+bed_col_order = "Chromosome Start End Name Score Strand".split()
 
 def main(gtf_path: str,
          pas_bed_path: str,
          max_distance: int = 5000,
+         use_bed_name: bool = False,
          output_prefix: str = "last_exons.updated_pas"):
     '''_summary_
 
@@ -111,7 +113,17 @@ def main(gtf_path: str,
 
     # read in PAS BED
     print("Reading in PAS BED...")
-    pas_bed = pr.read_bed(pas_bed_path)
+    if use_bed_name:
+        # Extract non-coordinate info from BED
+        bed_meta = pr.read_bed(pas_bed_path, as_df=True)[["Name", "Score"]]
+        
+        # Split out Name field into coord fields + convert to PyRanges
+        bed_meta[["Chromosome", "Strand", "Start", "End"]] = bed_meta["Name"].str.split(":", expand=True)
+        bed_meta = bed_meta.astype({"Start": np.int64, "End": np.int64})
+        pas_bed = pr.PyRanges(bed_meta[bed_col_order])
+
+    else:
+        pas_bed = pr.read_bed(pas_bed_path)
 
     # Join last exons with all PAS, dropping those that have no matches/cannot be updated
     print(f"Joining last exons to all PAS within specified window (either side) - {max_distance}")
@@ -176,6 +188,7 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--gtf_path', type=str, required=True, help="Path to the PAPA novel GTF file")
     parser.add_argument('-b', '--pas_bed_path', type=str, required=True, help="Path to the PAS BED file")
     parser.add_argument('--max_distance', type=int, default=5000, help="Maximum distance between novel PAS and BED PAS to retain as an updated end (default: 5000)")
+    parser.add_argument('--use-bed-name', action="store_true", help="Whether to use the representative coordinate of the BED file to update the PAS. Assumes Name field in format <chrom>:<strand>:<start>:<end> & interval is BED-style convention")
     parser.add_argument('-o', '--output_prefix', type=str, default="last_exons.updated_pas", help="Output prefix (default: last_exons.updated_pas)")
 
     if len(sys.argv) == 1:
@@ -184,4 +197,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.gtf_path, args.pas_bed_path, args.max_distance, args.output_prefix)
+    main(args.gtf_path, args.pas_bed_path, args.max_distance, args.use_bed_name, args.output_prefix)
