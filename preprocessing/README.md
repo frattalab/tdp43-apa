@@ -29,3 +29,11 @@ Cryptic critera are hardcoded:
 ## manual_validation_summary.R
 
 Filters out IPA/bleedthrough events that fail manual validation (i.e. intron retention artefacts) and outputs filtered cryptic summary table. Works with output of `get_cryptics.R` along with mv files provided under `data`
+
+# Miscellaneous commands
+
+## Putative updated 3'ends using polyA junction reads as input
+
+```bash
+python scripts/create_putative_pas.py -g data/novel_ref_combined.last_exons.gtf -b data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed --max_distance 10000 --use-bed-name -o processed/curation/2024-05-23_last_exons.max_distance_10000.rep
+```
