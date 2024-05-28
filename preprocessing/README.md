@@ -37,3 +37,9 @@ Filters out IPA/bleedthrough events that fail manual validation (i.e. intron ret
 ```bash
 python scripts/create_putative_pas.py -g data/novel_ref_combined.last_exons.gtf -b data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed --max_distance 10000 --use-bed-name -o processed/curation/2024-05-23_last_exons.max_distance_10000.rep
 ```
+
+## Get BED file of cryptic PAS from Zeng et al Supplementary Table 5
+
+```bash
+mkdir -p processed/zeng_2024/ && python scripts/zeng_cryptics_to_bed.py data/zeng_2024/supplementary_table_s5.csv processed/zeng_2024/supplementary_s5.cryptic_pas.bed
+```
