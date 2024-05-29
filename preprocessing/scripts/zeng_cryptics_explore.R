@@ -1,7 +1,7 @@
 library(tidyverse)
 set.seed(123)
 
-cryptics_bed <- read_tsv("processed/zeng_2024/supplementary_s5.cryptic_pas.bed", col_names = c("chr", "start", "end", "name", "score", "strand"))
+cryptics_bed <- read_tsv("processed/zeng_2024/supplementary_s5.cryptic_pas.all.bed", col_names = c("chr", "start", "end", "name", "score", "strand"))
 cryptics_bed
 
 cryptics_bed <- cryptics_bed %>%
@@ -32,8 +32,8 @@ cryptics_bed_sampled_na <- cryptics_bed %>%
 
 
 # write sampled dfs to tsv 
-write_tsv(cryptics_bed_sampled, file.path("processed", "zeng_2024", "sampled_region_usage.all.cryptic_pas.tsv"))
-write_tsv(cryptics_bed_sampled_na, file.path("processed", "zeng_2024", "sampled_region_usage.rm_na_genename.cryptic_pas.tsv"))
+write_tsv(cryptics_bed_sampled, file.path("processed", "zeng_2024", "sampled_events_region_usage.all.cryptic_pas.tsv"))
+write_tsv(cryptics_bed_sampled_na, file.path("processed", "zeng_2024", "sampled_events_region_usage.rm_na_genename.cryptic_pas.tsv"))
 
 # Summarise global condition-wise usages and deltas
 cryptics_exprn_summary <- cryptics_bed %>%
@@ -49,6 +49,6 @@ cryptics_region_counts <- cryptics_bed %>%
 
 
 write_tsv(cryptics_exprn_summary, file.path("processed", "zeng_2024", "expression_summary.all.cryptic_pas.tsv"))
-write_tsv(cryptics_region_counts, file.path("processed", "zeng_2024", "event_counts.region.crytic_pas.tsv"))
+write_tsv(cryptics_region_counts, file.path("processed", "zeng_2024", "event_counts.region.cryptic_pas.tsv"))
 
 

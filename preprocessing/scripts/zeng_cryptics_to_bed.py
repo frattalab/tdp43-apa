@@ -9,7 +9,7 @@ import argparse
 
 default_bed_cols = ["Chromosome", "Start", "End", "Name", "Score", "Strand"]
 
-def main(cryptics_csv: str, output_file: str):
+def main(cryptics_csv: str, output_prefix: str):
 
     df = pd.read_csv(cryptics_csv)
 
@@ -32,17 +32,26 @@ def main(cryptics_csv: str, output_file: str):
     pas.loc[:, "Score"] = "."
     
     # convert to pyranges and output to BED
+    features = pas["Feature"].drop_duplicates().tolist()
     pas = pas[default_bed_cols]
     bed = pr.PyRanges(pas)
     # print(bed)
 
-    bed.to_bed(output_file)
+    # create BED files of each region type (including all events)
+    # outputting to file so need to sanitise some fields
+    feature_beds = {feature.replace("'", "").replace(" ", "_"): bed.subset(lambda df: df["Name"].str.contains(feature, regex=False)) for feature in features}
+    feature_beds["all"] = bed
 
+    for key, bedf in feature_beds.items():
+        if len(bedf) == 0:
+            print(f"No entries found for (cleaned) region - {key}")
+            continue
+        bedf.to_bed(".".join([output_prefix, key, "bed"]))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert cryptic PAS table (Zeng et al. 2024 preprint, Supplementary Table 5, doi: 10.1101/2024.01.22.575730) to BED file.")
     parser.add_argument("cryptics_csv", help="Path to supplementary table containing cryptic PAS from Zeng et al. 2024 preprint (Supplementary Table 5)")
-    parser.add_argument("output_file", help="Name of output BED file")
+    parser.add_argument("output_prefix", help="prefix for output BED files (.all.bed for all events, .<Feature>.bed for all input values in 'Feature' column)")
     
     if len(sys.argv) == 1:
         parser.print_help()
@@ -50,4 +59,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    main(args.cryptics_csv, args.output_file)
+    main(args.cryptics_csv, args.output_prefix)
