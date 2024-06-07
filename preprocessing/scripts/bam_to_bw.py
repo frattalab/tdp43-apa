@@ -111,6 +111,48 @@ def check_aln_strand(read: pysam.AlignedSegment,
             return 1 if read.is_reverse else -1
 
 
+def update_aligned_region(fragments: Dict[str, list], alignment: pysam.AlignedSegment, strand: Literal["+", "-"]) -> None:
+    '''Update dictionary with minimal region information for a read alignment
+
+    Parameters
+    ----------
+    fragments : Dict[str, list]
+        _description_
+    alignment : pysam.AlignedSegment
+        _description_
+    strand : Literal[
+        _description_
+
+    Raises
+    ------
+    ValueError
+        _description_
+    '''
+    
+    if strand not in ['+', '-']:
+        raise ValueError("strand must be either '+' or '-'")
+
+    read_posns = alignment.get_blocks()
+
+    num_blocks = len(read_posns)
+
+    # define read_name_num - additional id of <read_name>_<r1/r2> (to allow read-specific processing)
+    aln_name_suff = "_r1" if alignment.is_read1 else "_r2"
+    aln_rname_num = alignment.query_name + aln_name_suff
+
+    # Store start and end coords of aligned segments
+    fragments["Start"].extend(tup[0] for tup in read_posns)
+    fragments["End"].extend(tup[1] for tup in read_posns)
+
+    # add rname_num for alignment positions
+    fragments["read_name_num"].extend([aln_rname_num] * len(read_posns))
+
+    # extend Chromosome and Strand lists
+    fragments["Chromosome"].extend([alignment.reference_name] * num_blocks)
+    fragments["Strand"].extend([strand] * num_blocks)
+    fragments["read_name"].extend([alignment.query_name] * num_blocks)
+
+
 def bam_to_strand_alignments(bam_path: str,
                              region: Region,
                              strandedness: str,
@@ -305,8 +347,46 @@ def bam_to_strand_alignments(bam_path: str,
         out_dict["fragments_minus"] = fragments_minus
 
     if return_orphans:
-        out_dict["orphans_plus"] = read_cache_plus
-        out_dict["orphans_minus"] = read_cache_minus
+        if as_pyranges:
+            # plus strand first
+            if len(read_cache_plus) == 0:
+                out_dict["orphans_plus"] = pr.PyRanges()
+
+            else:
+                orphans_plus = {"Chromosome": [],
+                      "Start": [],
+                      "End": [],
+                      "Strand": [],
+                      "read_name": [],
+                      "read_name_num": []} 
+                
+                # parse out aligned regions for each orphan
+                for alignment in read_cache_plus.values():
+                    update_aligned_region(orphans_plus, alignment, "+")
+
+                out_dict["orphans_plus"] = pr.from_dict(orphans_plus, int64=True)
+
+            # repeat for minus strand
+            if len(read_cache_minus) == 0:
+                out_dict["orphans_minus"] = pr.PyRanges()
+            
+            else:
+                orphans_minus = {"Chromosome": [],
+                      "Start": [],
+                      "End": [],
+                      "Strand": [],
+                      "read_name": [],
+                      "read_name_num": []} 
+                
+                # parse out aligned regions for each orphan
+                for alignment in read_cache_minus.values():
+                    update_aligned_region(orphans_minus, alignment, "-")
+                
+                out_dict["orphans_minus"] = pr.from_dict(orphans_minus, int64=True)
+
+        else:
+            out_dict["orphans_plus"] = read_cache_plus
+            out_dict["orphans_minus"] = read_cache_minus
 
     if return_refskips:
         out_dict["refskip_idxs"] = refskips
@@ -382,7 +462,8 @@ def main(bam_path: str,
          bed_path: str,
          chromsizes_path: str,
          strandedness: str,
-         output_prefix: str):
+         output_prefix: str,
+         keep_orphans: bool = True):
 
 
     # read in chromsizes to dict of {chrom: length}
@@ -422,7 +503,7 @@ def main(bam_path: str,
         if (i + 1) % 100 == 0:
             print(f"Region number - {i + 1} / {num_regions}")
 
-        alns_list.append(bam_to_strand_alignments(bam_path, region, "--" + strandedness, return_refskips=False))
+        alns_list.append(bam_to_strand_alignments(bam_path, region, "--" + strandedness, return_refskips=False, return_orphans=keep_orphans))
 
     # for idx, aln in enumerate(alns_list):
     #     print(f"Number of aligned segments for {regions[idx]}: {len(aln.gr)}")
@@ -433,6 +514,10 @@ def main(bam_path: str,
     # TODO: option to rescue coverage from orphan reads if necessary
     print("Calculating region-wide per base coverage...")
     alns = pr.concat([aln.gr for aln in alns_list])
+
+    if keep_orphans:
+        orphans = pr.concat([aln.orphans_plus for aln in alns_list] + [aln.orphans_minus for aln in alns_list])
+        alns = pr.concat([alns, orphans])
 
     print(f"Number of aligned segments for all reads - {len(alns)}")
 
@@ -462,6 +547,7 @@ if __name__ == "__main__":
         required=True,
         help="Orientation of library in 'StringTie' convention. rf or fr"
     )
+    parser.add_argument("--keep-orphans", action="store_true", help="Whether to keep reads where mate does not align within specified region (recommended for short intervals)")
 
 
     if len(sys.argv) == 1:
@@ -470,11 +556,13 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-
+    print("Input parameters:")
     print("BAM file:", args.bam_path)
     print("Regions BED file:", args.regions_bed)
     print("Chromosome sizes file:", args.chromsizes_path)
     print("Output prefix:", args.output_prefix)
     print("Strandedness:", args.strandedness)
+    print("Keep orphans (i.e. properly paired, but only 1 aligning to region):", args.keep_orphans)
+    print("Running analysis...")
 
-    main(args.bam_path,  args.regions_bed,  args.chromsizes_path, args.output_prefix)
+    main(args.bam_path,  args.regions_bed,  args.chromsizes_path, args.strandedness, args.output_prefix, args.keep_orphans)
