@@ -109,11 +109,9 @@ rule bam_to_stranded_bigwig:
         stdout=os.path.join(output_dir, "logs", "bam_to_stranded_bigwig.{sample}.stdout.txt"),
         stderr=os.path.join(output_dir, "logs", "bam_to_stranded_bigwig.{sample}.stderr.txt")
 
-    # container:
-    #     "docker://quay.io/biocontainers/pyranges:0.0.120--pyh7cba7a3_0"
-    conda:
-        "pybioinfo"
-    
+    container:
+        "docker://docker.io/sambrycesmith/py_ranges_sam_bigwig:0.0.120_0.22.1_0.3.22"
+
     shell:
         """
         python {params.script} \
