@@ -3,7 +3,7 @@ input_dir: tests/coverage_smk/input/bams
 # suffix to strip from file names to identify samples to run and infer sample names
 bam_suffix: ".rep_cryptic_les.bam"
 # path to base output directory
-output_dir: tests/coverage/smk/output/
+output_dir: tests/coverage_smk/output/
 
 # Input BED file of PAS of interest
 pas_bed: tests/coverage_smk/input/eg_cryptic_pas.bed
