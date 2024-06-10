@@ -474,12 +474,13 @@ def main(bam_path: str,
     bed = pr.read_bed(bed_path)
 
     # merge regions by strand to prevent same reads being read in twice
-    bed = bed.merge(strand=True)
+    # merge unstranded, because bam_to_strand_alignments does not consider the strand of the input region when finding overlapping reads (thought it probably should...)
+    bed = bed.merge(strand=False)
 
     # Extract aligned segments for properly mapped read pairs
     # First generate 'Region' objects for each interval in bed file
     regions_dict = bed.apply(lambda df: df.apply(lambda row: Region(contig=row["Chromosome"],
-                                                     start=row["Start"], stop=row["End"], strand=row["Strand"]),
+                                                     start=row["Start"], stop=row["End"]),
                                                      axis=1
                                                      ).tolist(),
                                                     as_pyranges=False)
