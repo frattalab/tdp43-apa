@@ -97,11 +97,11 @@ rule bam_to_stranded_bigwig:
         chromsizes=rules.idxstats_to_chromsizes.output
     
     output:
-        expand(os.path.join(output_dir, "coverage", "{{sample}}.regions.{strand}.bw"), strand=strand_keys.keys()) #double brace to mask + retain sample wildcard
+        expand(os.path.join(output_dir, "bigwigs", "{{sample}}.regions.{strand}.bw"), strand=strand_keys.keys()) #double brace to mask + retain sample wildcard
 
     params:
         script="scripts/bam_to_bw.py",
-        output_prefix=os.path.join(output_dir, "coverage", "{sample}.regions"),
+        output_prefix=os.path.join(output_dir, "bigwigs", "{sample}.regions"),
         strandedness=config["strandedness"],
         keep_orphans="--keep-orphans" if True else "" # placeholder - hardcoding for this analysis
 
@@ -150,7 +150,7 @@ rule megadepth:
     '''
     '''
     input:
-        bw=os.path.join(output_dir, "coverage", "{sample}.regions.{strand}.bw"),
+        bw=os.path.join(output_dir, "bigwigs", "{sample}.regions.{strand}.bw"),
         regions=rules.split_regions_by_strand.output
 
     output:
