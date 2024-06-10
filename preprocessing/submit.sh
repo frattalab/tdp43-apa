@@ -52,6 +52,7 @@ cp $1 ${FOLDER}/${RUN_NAME}/
 
 snakemake \
 -p \
+-s coverage.smk \
 --configfile=$CONFIG_PATH \
 --use-singularity \
 --singularity-args="--bind $IN_BIND_PATH" \
