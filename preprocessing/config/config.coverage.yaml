@@ -1,7 +1,7 @@
 ## path to directory containing input BAM files
 input_dir: tests/coverage_smk/input/bams
 # suffix to strip from file names to identify samples to run and infer sample names
-bam_suffix: ".rep_cryptic_les.bam"
+bam_suffix: ".STMN2_ELK1.bam"
 # path to base output directory
 output_dir: tests/coverage_smk/output/
 
