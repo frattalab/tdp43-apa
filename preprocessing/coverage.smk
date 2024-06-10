@@ -37,12 +37,11 @@ rule bam_to_chromsizes:
         """ 
 
 
-checkpoint create_pas_windows:
+rule create_pas_windows:
     input: 
         config["pas_bed"]
     output:
         window_bed = expand(os.path.join(output_dir, "regions", "pas_windows.{window}.bed"), window=window_keys),
-        # downstream_bed = os.path.join(output_dir, "regions", "pas_windows.downstream.bed"),
         merged_bed = os.path.join(output_dir, "regions", "pas_windows.merged.bed")
 
     params:
@@ -69,14 +68,14 @@ checkpoint create_pas_windows:
 
 
 # Make stranded bw files of per-base coverage over intervals that respects RNA-seq strandedness
-checkpoint bam_to_stranded_bigwig: 
+rule bam_to_stranded_bigwig: 
     input:
         bam=os.path.join(in_bam_dir, "{sample}" + config["bam_suffix"]),
         bed=rules.create_pas_windows.output.merged_bed,
         chromsizes=rules.bam_to_chromsizes.output
     
     output:
-        expand(os.path.join(output_dir, "coverage", "{{sample}}.regions.{strand}.bw"), strand=strand_keys.keys())
+        expand(os.path.join(output_dir, "coverage", "{{sample}}.regions.{strand}.bw"), strand=strand_keys.keys()) #double brace to mask + retain sample wildcard
 
     params:
         script="script/bam_to_bw.py",
@@ -85,8 +84,8 @@ checkpoint bam_to_stranded_bigwig:
         keep_orphans="--keep-orphans" if True else "" # placeholder - hardcoding for this analysis
 
     log:
-        stdout = os.path.join(output_dir, "logs", "bam_to_stranded_bigwig.{sample}.stdout.txt"),
-        stderr = os.path.join(output_dir, "logs", "bam_to_stranded_bigwig.{sample}.stderr.txt")
+        stdout=os.path.join(output_dir, "logs", "bam_to_stranded_bigwig.{sample}.stdout.txt"),
+        stderr=os.path.join(output_dir, "logs", "bam_to_stranded_bigwig.{sample}.stderr.txt")
     
     shell:
         """
@@ -102,13 +101,12 @@ checkpoint bam_to_stranded_bigwig:
         """
 
 
-checkpoint split_regions_by_strand:
+rule split_regions_by_strand:
     '''
     Split BED file by strand for generating coverage with external tools
     '''
     input:
-        window_bed=rules.create_pas_windows.output.window_bed,
-        # bw=rules.bam_to_stranded_bigwig.output #- inserting as placeholder - may need the strand wildcard in the input
+        window_bed=os.path.join(output_dir, "regions", "pas_windows.{window}.bed")
     output:
         os.path.join(output_dir, "regions", "pas_windows.{window}.{strand}.bed")
 
