@@ -1,0 +1,9 @@
+input_dir: tests/coverage_smk/input/bams
+bam_suffix: ".rep_cryptic_les.bam"
+output_dir: tests/coverage/smk/output/
+
+pas_bed: tests/coverage_smk/input/eg_cryptic_pas.bed
+window_size: 200
+exclude_pas: False
+strandedness: "rf"
+megadepth_operation: "mean"
