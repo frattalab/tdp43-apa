@@ -24,16 +24,35 @@ rule all:
          expand(os.path.join(output_dir, "coverage", "{sample}.pas_windows.{window}.summarised_coverage.bed"), sample=sample_names,window=window_keys)
 
 
-rule bam_to_chromsizes:
+rule bam_to_idxstats:
     input:
         bam=os.path.join(in_bam_dir, "{sample}" + bam_suffix)
     output:
-        os.path.join(output_dir, "chromsizes", "{sample}.chromsizes.txt")
+        temp(os.path.join(output_dir, "chromsizes", "{sample}.idxstats.txt"))
     log:
-        stderr=os.path.join(output_dir, "logs", "bam_to_chromsizes.{sample}.stderr.txt")
+        stderr=os.path.join(output_dir, "logs", "bam_to_idxstats.{sample}.stderr.txt")
+
+    container:
+        "docker://quay.io/biocontainers/samtools:1.20--h50ea8bc_0"
+
     shell:
         """
-        samtools idxstats {input.bam} | awk -F"\\t" {{print $1,$2}} > {output} 2> {log.stderr}
+        samtools idxstats {input.bam} 1> {output} 2> {log.stderr}
+        """
+
+rule idxstats_to_chromsizes:
+    input:
+        rules.bam_to_idxstats.output
+    
+    output:
+        os.path.join(output_dir, "chromsizes", "{sample}.chromsizes.txt")
+    
+    log:
+        stderr=os.path.join(output_dir, "logs", "idxstats_to_chromsizes.{sample}.stderr.txt")
+
+    shell:
+        """
+        awk -F"\t" -v OFS="\t" '{{print $1,$2}}' {input} 1> {output} 2> {log.stderr}
         """ 
 
 
@@ -55,6 +74,9 @@ rule create_pas_windows:
         stdout = os.path.join(output_dir, "logs", "create_pas_windows.stdout.txt"),
         stderr = os.path.join(output_dir, "logs", "create_pas_windows.stderr.txt")
     
+    container:
+        "docker://quay.io/biocontainers/pyranges:0.0.120--pyh7cba7a3_0"
+    
     shell:
         """
         python {params.script} \
@@ -72,13 +94,13 @@ rule bam_to_stranded_bigwig:
     input:
         bam=os.path.join(in_bam_dir, "{sample}" + config["bam_suffix"]),
         bed=rules.create_pas_windows.output.merged_bed,
-        chromsizes=rules.bam_to_chromsizes.output
+        chromsizes=rules.idxstats_to_chromsizes.output
     
     output:
         expand(os.path.join(output_dir, "coverage", "{{sample}}.regions.{strand}.bw"), strand=strand_keys.keys()) #double brace to mask + retain sample wildcard
 
     params:
-        script="script/bam_to_bw.py",
+        script="scripts/bam_to_bw.py",
         output_prefix=os.path.join(output_dir, "coverage", "{sample}.regions"),
         strandedness=config["strandedness"],
         keep_orphans="--keep-orphans" if True else "" # placeholder - hardcoding for this analysis
@@ -86,6 +108,11 @@ rule bam_to_stranded_bigwig:
     log:
         stdout=os.path.join(output_dir, "logs", "bam_to_stranded_bigwig.{sample}.stdout.txt"),
         stderr=os.path.join(output_dir, "logs", "bam_to_stranded_bigwig.{sample}.stderr.txt")
+
+    # container:
+    #     "docker://quay.io/biocontainers/pyranges:0.0.120--pyh7cba7a3_0"
+    conda:
+        "pybioinfo"
     
     shell:
         """
@@ -118,14 +145,14 @@ rule split_regions_by_strand:
 
     shell:
         """
-        awk -F"\\t" '{{if ($6 == {params.strand_key}) {{print $0}} }}' {input.window_bed} > {output} 2> {log.stderr}
+        awk -F"\\t" '{{if ($6=="{params.strand_key}") {{print $0}} }}' {input.window_bed} > {output} 2> {log.stderr}
         """
 
 rule megadepth:
     '''
     '''
     input:
-        bw=rules.bam_to_stranded_bigwig.output,
+        bw=os.path.join(output_dir, "coverage", "{sample}.regions.{strand}.bw"),
         regions=rules.split_regions_by_strand.output
 
     output:
@@ -136,22 +163,25 @@ rule megadepth:
         operation=config["megadepth_operation"]
 
     log:
+        stderr=os.path.join(output_dir, "logs", "megadepth.{sample}.{window}.{strand}.stderr.txt")
 
+    container:
+        "docker://quay.io/biocontainers/megadepth:1.2.0--h43eeafb_6"
 
     shell:
         """
         megadepth {input.bw} \
-        --annotation eg_cryptics.bed \
+        --annotation {input.regions} \
         --op {params.operation} \
         --prefix {params.output_prefix} \
-        --no-annotation-stdout
+        --no-annotation-stdout \
+        2> {log.stderr}
         """
 
 
 def aggregate_strands_coverage(wildcards):
     '''
-    Return list of files produced by megadepth for each strand per sample 
-    For each sample, combine the outputs of the plus/minus strand interval coverages into a single file per sample (+ region)
+    Return list of files produced by megadepth for each strand for given sample 
     '''
 
     # this get us the wo
@@ -163,13 +193,14 @@ def aggregate_strands_coverage(wildcards):
     strand=strand_keys.keys()
     )
 
+
 rule add_coverage_to_bed:
     '''
     for each sample 
     '''
     input:
         cov=aggregate_strands_coverage,
-        window_bed=rules.create_pas_windows.output.window_bed
+        window_bed=os.path.join(output_dir, "regions", "pas_windows.{window}.bed")
 
     output:
         os.path.join(output_dir, "coverage", "{sample}.pas_windows.{window}.summarised_coverage.bed")
@@ -180,6 +211,9 @@ rule add_coverage_to_bed:
     log:
         stdout = os.path.join(output_dir, "logs", "add_coverage_to_bed.{sample}.{window}.stdout.txt"),
         stderr = os.path.join(output_dir, "logs", "add_coverage_to_bed.{sample}.{window}.tderr.txt")
+    
+    container:
+        "docker://quay.io/biocontainers/pyranges:0.0.120--pyh7cba7a3_0"
 
     shell:
         """
