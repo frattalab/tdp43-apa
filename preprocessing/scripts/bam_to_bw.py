@@ -387,12 +387,12 @@ def main(bam_path: str,
     
     print("Obtaining per-base coverage across all provided regions from overlapping pairs...")
     # combine individual pyrle objects for each region into a single PyRle object
-    fragments_all = reduce(add, (aln.fragments for aln in alns_list))
+    fragments_all = reduce(add, (aln.fragments for aln in alns_list if len(aln.fragments) != 0))
     
     if keep_orphans:
         # repeat for orphans
         print("Adding per-base coverage of regions from orphan paired-end reads...")
-        orphans_all = reduce(add, (aln.orphans for aln in alns_list))
+        orphans_all = reduce(add, (aln.orphans for aln in alns_list if len(aln.orphans) != 0))
         
         # Combine coverage
         fragments_all = fragments_all + orphans_all
