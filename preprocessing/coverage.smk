@@ -112,6 +112,9 @@ rule bam_to_stranded_bigwig:
     container:
         "docker://docker.io/sambrycesmith/py_ranges_sam_bigwig:0.0.120_0.22.1_0.3.22"
 
+    benchmark:
+        os.path.join(output_dir, "benchmarks", "bam_to_stranded_bigwig.{sample}.benchmark.txt")
+
     shell:
         """
         python {params.script} \
