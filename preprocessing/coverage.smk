@@ -75,7 +75,7 @@ rule create_pas_windows:
         stderr = os.path.join(output_dir, "logs", "create_pas_windows.stderr.txt")
     
     container:
-        "docker://quay.io/biocontainers/pyranges:0.0.120--pyh7cba7a3_0"
+        "docker://docker.io/sambrycesmith/py_ranges_sam_bigwig:0.0.120_0.22.1_0.3.22"
     
     shell:
         """
@@ -211,7 +211,7 @@ rule add_coverage_to_bed:
         stderr = os.path.join(output_dir, "logs", "add_coverage_to_bed.{sample}.{window}.tderr.txt")
     
     container:
-        "docker://quay.io/biocontainers/pyranges:0.0.120--pyh7cba7a3_0"
+        "docker://docker.io/sambrycesmith/py_ranges_sam_bigwig:0.0.120_0.22.1_0.3.22"
 
     shell:
         """
