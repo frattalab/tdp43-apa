@@ -215,7 +215,10 @@ def bam_to_strand_alignments(bam_path: str,
 
     # convert to pyranges object
     fragments = pr.from_dict(fragments, int64=True)
-    num_frags = fragments.read_name.nunique()
+    if len(fragments) == 0:
+        num_frags = 0
+    else:
+        num_frags = fragments.read_name.nunique()
 
     if not as_pyranges:
         # convert to PyRle object
@@ -285,6 +288,9 @@ def gr_to_rle(gr: pr.PyRanges, merge: bool = True, merge_by: str = "read_name", 
     pyrle.RleDict
         _description_
     '''
+
+    if gr.empty:
+        return pyrle.RleDict()
 
     if merge:
         assert merge_by in gr.columns
