@@ -211,7 +211,7 @@ rule add_coverage_to_bed:
 
     log:
         stdout = os.path.join(output_dir, "logs", "add_coverage_to_bed.{sample}.{window}.stdout.txt"),
-        stderr = os.path.join(output_dir, "logs", "add_coverage_to_bed.{sample}.{window}.tderr.txt")
+        stderr = os.path.join(output_dir, "logs", "add_coverage_to_bed.{sample}.{window}.stderr.txt")
     
     container:
         "docker://docker.io/sambrycesmith/py_ranges_sam_bigwig:0.0.120_0.22.1_0.3.22"
