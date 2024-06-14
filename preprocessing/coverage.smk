@@ -21,7 +21,8 @@ wildcard_constraints:
 
 rule all:
     input:
-         expand(os.path.join(output_dir, "coverage", "{sample}.pas_windows.{window}.summarised_coverage.bed"), sample=sample_names,window=window_keys)
+         expand(os.path.join(output_dir, "coverage", "{sample}.pas_windows.{window}.summarised_coverage.bed"), sample=sample_names,window=window_keys),
+         expand(os.path.join(output_dir, "coverage", "{sample}.pas_windows.summarised_coverage.ratio.bed"), sample=sample_names)
 
 
 rule bam_to_idxstats:
@@ -157,10 +158,10 @@ rule megadepth:
         regions=rules.split_regions_by_strand.output
 
     output:
-        os.path.join(output_dir, "coverage", "{sample}.megadepth.{window}.{strand}.annotation.tsv")
+        os.path.join(output_dir, "coverage", "megadepth", "{sample}.megadepth.{window}.{strand}.annotation.tsv")
     
     params:
-        output_prefix=os.path.join(output_dir, "coverage", "{sample}.megadepth.{window}.{strand}"),
+        output_prefix=os.path.join(output_dir, "coverage", "megadepth", "{sample}.megadepth.{window}.{strand}"),
         operation=config["megadepth_operation"]
 
     log:
@@ -188,7 +189,7 @@ def aggregate_strands_coverage(wildcards):
     # this get us the wo
     # checkpoint_output = checkpoints.split_regions_by_strand.get(strand=wildcards.strand).output[0]#
 
-    return expand(os.path.join(output_dir, "coverage", "{sample}.megadepth.{window}.{strand}.annotation.tsv"),
+    return expand(os.path.join(output_dir, "coverage", "megadepth", "{sample}.megadepth.{window}.{strand}.annotation.tsv"),
     sample=wildcards.sample,
     window=wildcards.window,
     strand=strand_keys.keys()
@@ -227,5 +228,34 @@ rule add_coverage_to_bed:
         """
         
 
+rule get_coverage_ratio_bed:
+    input:
+        window_cov_beds=expand(os.path.join(output_dir, "coverage", "{{sample}}.pas_windows.{window}.summarised_coverage.bed"), window=window_keys),
+        pas_bed=config["pas_bed"]
 
+    output:
+        os.path.join(output_dir, "coverage", "{sample}.pas_windows.summarised_coverage.ratio.bed")
+    
+    params:
+        script="scripts/get_coverage_ratio_bed.py",
+        upstream_bed=os.path.join(output_dir, "coverage", "{sample}.pas_windows." + f"{window_keys[0]}.summarised_coverage.bed"),
+        downstream_bed=os.path.join(output_dir, "coverage", "{sample}.pas_windows." + f"{window_keys[1]}.summarised_coverage.bed"),
+
+    log:
+        stdout = os.path.join(output_dir, "logs", "get_coverage_ratio_bed.{sample}.stdout.txt"),
+        stderr = os.path.join(output_dir, "logs", "get_coverage_ratio_bed.{sample}.stderr.txt")
+    
+    container:
+        "docker://docker.io/sambrycesmith/py_ranges_sam_bigwig:0.0.120_0.22.1_0.3.22"
+
+    shell:
+        """
+        python {params.script} \
+        -p {input.pas_bed} \
+        -u {params.upstream_bed} \
+        -d {params.downstream_bed} \
+        -o {output} \
+        1> {log.stdout} \
+        2> {log.stderr}
+        """
 
