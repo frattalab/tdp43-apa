@@ -11,7 +11,18 @@ def main(pas_bed: str,
          upstream_bed: str,
          downstream_bed: str,
          output_bed: str) -> None:
-    '''
+    '''_summary_
+
+    Parameters
+    ----------
+    pas_bed : str
+        BED file of PAS (all PAS that were extended up/downstream)
+    upstream_bed : str
+        BED file of PAS-upstream extended regions with mean coverage added to Score field ( produced by add_coverage_to_bed.py)
+    downstream_bed : str
+        BED file of PAS-downstream extended regions with mean coverage added to Score field ( produced by add_coverage_to_bed.py)
+    output_bed : str
+        Name of output BED-like containing regions from pas_bed with upstream, downstream and upstream:downstream coverage appended as 7th, 8th and 9th fields 
     '''
 
     # read in BED files
@@ -45,4 +56,18 @@ def main(pas_bed: str,
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+
+    parser = argparse.ArgumentParser(description="Calculate upstream vs downstream coverage ratio from BED files.")
+    
+    parser.add_argument("-p", "--pas_bed", required=True, help="BED file of original PAS (all PAS that were extended up/downstream)")
+    parser.add_argument("-u", "--upstream_bed", required=True, help="BED file of PAS-upstream extended regions with mean coverage added to 'Score' field (produced by add_coverage_to_bed.py)")
+    parser.add_argument("-d", "--downstream_bed", required=True, help="BED file of PAS-downstream extended regions with mean coverage added to 'Score' field (produced by add_coverage_to_bed.py)")
+    parser.add_argument("-o", "--output_bed", required=True, help="Name of output BED-like containing regions from pas_bed with upstream, downstream and upstream:downstream coverage appended as 7th, 8th and 9th fields")
+    
+    if len(sys.argv) == 1:
+        parser.print_help()
+        parser.exit()
+
+    args = parser.parse_args()
+    
+    main(args.pas_bed, args.upstream_bed, args.downstream_bed, args.output_bed)
