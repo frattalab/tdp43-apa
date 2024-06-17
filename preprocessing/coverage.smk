@@ -240,6 +240,8 @@ rule get_coverage_ratio_bed:
         script="scripts/get_coverage_ratio_bed.py",
         upstream_bed=os.path.join(output_dir, "coverage", "{sample}.pas_windows." + f"{window_keys[0]}.summarised_coverage.bed"),
         downstream_bed=os.path.join(output_dir, "coverage", "{sample}.pas_windows." + f"{window_keys[1]}.summarised_coverage.bed"),
+        window_size = config["window_size"],
+        exclude_pas = "--exclude_pas" if config["exclude_pas"] else ""
 
     log:
         stdout = os.path.join(output_dir, "logs", "get_coverage_ratio_bed.{sample}.stdout.txt"),
@@ -255,6 +257,8 @@ rule get_coverage_ratio_bed:
         -u {params.upstream_bed} \
         -d {params.downstream_bed} \
         -o {output} \
+        --window_size {params.window_size} \
+        {params.exclude_pas} \
         1> {log.stdout} \
         2> {log.stderr}
         """
