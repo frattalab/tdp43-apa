@@ -76,12 +76,34 @@ cov_cryptics_i3_summ <- cov_cryptics_i3 %>%
             ) %>%
   ungroup() 
 
-cov_cryptics_i3_summ
+
+# Label an event as originating from PAPA / putatively updated
+# 3rd field in name = original then PAPA, otherwise PATRs
+cov_cryptics_i3_summ <- cov_cryptics_i3_summ %>%
+  mutate(end_origin = if_else(str_ends(name, "original$"), "PAPA", "PATR"))
+
+# for each event, rank possible ends in descending order of summarised up vs down ratio (more extreme = more likely to be genuine end) 
+cov_cryptics_i3_summ %>%
+  group_by(le_id) %>%
+  mutate(across(all_of(c("mean__up_down_ratio", "median__up_down_ratio")), ~ min_rank(desc(.x)), .names = "rank__{.col}")) %>%
+  select(all_of(id_cols), end_origin, median__up_cov, median__down_cov, median__up_down_ratio, starts_with("rank__")) %>%
+  ungroup() %>%
+  arrange(le_id, rank__median__up_down_ratio, .by_group = T) %>%
+  View()
+  
+# Concerns:
+# Need to be cautious of infinite values with ranking
+# Need to double check used the right input regions - does TLX1 really have no junction reads?
+# Does my input include annotated events?
+# Is 10k distance enough? Pick a few examples from my manual curation/validation
+
 
 # pivot to long format per statistic + coverage metric
 cov_cryptics_i3_summ_long <- cov_cryptics_i3_summ %>%
-  pivot_longer(cols = -all_of(id_cols),
+  pivot_longer(cols = -all_of(c(id_cols, "end_origin")),
                names_to = c("statistic", "metric"),
                names_sep = "__")
 
 cov_cryptics_i3_summ_long
+
+
