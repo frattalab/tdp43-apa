@@ -339,7 +339,8 @@ def main(bam_path: str,
          chromsizes_path: str,
          strandedness: str,
          output_prefix: str,
-         keep_orphans: bool = True):
+         keep_orphans: bool = True,
+         regions_merge: int = 500):
 
 
     # read in chromsizes to dict of {chrom: length}
@@ -350,7 +351,9 @@ def main(bam_path: str,
     bed = pr.read_bed(bed_path)
 
     # merge regions by strand to prevent same reads being read in twice
-    bed = bed.merge(strand=True)
+    # Include slack so reads overlapping closely spaced intervals are not double-counted (read overlaps both)
+    # Only downside is coverage from slightly more than requested regions
+    bed = bed.merge(strand=True, slack=regions_merge)
 
     # Extract aligned segments for properly mapped read pairs
     # First generate 'Region' objects for each interval in bed file
@@ -417,6 +420,7 @@ if __name__ == "__main__":
         help="Orientation of library in 'StringTie' convention. rf or fr"
     )
     parser.add_argument("--keep-orphans", action="store_true", help="Whether to keep reads where mate does not align within specified region (recommended for short intervals)")
+    parser.add_argument("--regions-merge", dest="regions_merge", default=500, type=int, help="Extend around intervals in region BED before merging for extracting from BAM file. Can prevent double counting of reads for closely spaced intervals (i.e. read overlaps both intervals). At least window size + max read length recommended (default = 500)")
 
 
     if len(sys.argv) == 1:
@@ -434,4 +438,4 @@ if __name__ == "__main__":
     print("Keep orphans (i.e. properly paired, but only 1 aligning to region):", args.keep_orphans)
     print("Running analysis...")
 
-    main(args.bam_path, args.regions_bed, args.chromsizes_path, args.strandedness, args.output_prefix, args.keep_orphans)
+    main(args.bam_path, args.regions_bed, args.chromsizes_path, args.strandedness, args.output_prefix, args.keep_orphans, args.regions_merge)
