@@ -35,11 +35,31 @@ Filters out IPA/bleedthrough events that fail manual validation (i.e. intron ret
 ## Putative updated 3'ends using polyA junction reads as input
 
 ```bash
-python scripts/create_putative_pas.py -g data/novel_ref_combined.last_exons.gtf -b data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed --max_distance 10000 --use-bed-name -o processed/curation/2024-05-23_last_exons.max_distance_10000.rep
+python scripts/create_putative_pas.py -g data/novel_ref_combined.last_exons.gtf -b data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed --max_distance 10000 --use-bed-name -o processed/curation/2024-06-20_last_exons.max_distance_10000.rep
 ```
 
 ## Get BED file of cryptic PAS from Zeng et al Supplementary Table 5
 
 ```bash
 mkdir -p processed/zeng_2024/ && python scripts/zeng_cryptics_to_bed.py data/zeng_2024/supplementary_table_s5.csv processed/zeng_2024/supplementary_s5.cryptic_pas.bed
+```
+
+## Combined BED file of original + updated putative 3'ends
+
+Used as input to coverage.smk
+
+```bash
+$ basename $PWD
+curation
+```
+
+```python
+import pyranges as pr
+>>> orig = pr.read_bed("2024-06-20_last_exons.max_distance_10000.rep.original.bed")
+>>> upd = pr.read_bed("2024-06-20_last_exons.max_distance_10000.rep.updated.bed")
+>>> comb = pr.concat([orig, upd])
+>>> comb_3p = comb.three_end()
+# Doing this just in case, drops ~ 25k rows
+>>> comb_3p = comb_3p.apply(lambda df: df.drop_duplicates())
+>>> comb_3p.sort().to_bed("2024-06-20_pas.max_distance_10000.original_updated_combined.bed")
 ```
