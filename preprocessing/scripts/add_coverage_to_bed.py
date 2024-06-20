@@ -39,12 +39,16 @@ def main(coverage_tsvs: list,
     # combine to single df of all regions
     cov = pd.concat(cov_tsvs, ignore_index=True)
 
+    # dups can occur if same PAS for different regions/identifiers
+    cov.drop_duplicates(inplace=True)
+
     # read in combined regions file used as input
     regions = pr.read_bed(region_bed, as_df=True)
     regions.drop(columns="Score", inplace=True)
 
     # Add coverage column as score for each interval
-    regions = regions.merge(cov, on=["Chromosome", "Start", "End", "Strand"], how="left", validate="one_to_one")
+    # Note: multiple matches for same PAS coordinate are permitted (e.g. if different Name identifiers)
+    regions = regions.merge(cov, on=["Chromosome", "Start", "End", "Strand"], how="left")
     
     # convert to BED format and output to file
     regions = pr.PyRanges(regions, int64=True).sort()
