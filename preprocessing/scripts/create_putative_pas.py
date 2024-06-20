@@ -137,9 +137,8 @@ def main(gtf_path: str,
     # print(gtf_upd)
     # print(gtf_upd.columns)
 
-    # Remove duplicates
-    gtf_upd = gtf_upd.drop_duplicate_positions(strand=True)
-
+    # Remove duplicates (for same identifier)
+    gtf_upd = gtf_upd.apply(lambda df: df.drop_duplicates(subset=["Start", "End", "Strand", "le_id"]))
     # print(gtf_upd)
 
     # construct 'updated' identifier, consisting of isoform_id (le_id), pas_id (Name field) and gene_name (why not)
