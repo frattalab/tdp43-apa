@@ -191,7 +191,40 @@ def _df_update_3p(df: pd.DataFrame, replace_suffix: str = "_b"):
         out = _df_swap_coord(df, "Start", out_col)
     
     out_msk = out["End"] - out["Start"] <= 0
-    print(f"Number of negative or zero-length updated intervals to be dropped - {len(out_msk)}")
+    print(f"Number of negative or zero-length updated intervals to be dropped - {sum(out_msk)}")
+    out = out[~out_msk]
+
+    return out
+
+
+def _df_update_5p(df: pd.DataFrame, replace_suffix: str = "_b"):
+    '''Update the 5' (strand-aware) coordinate of a joined internal PyRanges dataframe
+
+    e.g. gr.apply(lambda df: _df_update_5p(df))
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        _description_
+    '''
+
+    assert "Strand" in df.columns
+    assert (df["Strand"] == "+").all() or (df["Strand"] == "-").all()
+
+    if (df["Strand"] == "+").all():
+        # Update Start col to update 5'end of interval
+        out_col = "Start" + replace_suffix
+        assert out_col in df.columns
+        out = _df_swap_coord(df, "Start", out_col)
+        
+    else:
+        # Update End col to update 5'end of interval
+        out_col = "End" + replace_suffix
+        assert out_col in df.columns
+        out = _df_swap_coord(df, "End", out_col)
+    
+    out_msk = (out["End"] - out["Start"]) <= 0
+    print(f"Number of negative or zero-length updated intervals to be dropped - {sum(out_msk)}")
     out = out[~out_msk]
 
     return out
