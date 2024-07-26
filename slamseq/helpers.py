@@ -228,3 +228,115 @@ def _df_update_5p(df: pd.DataFrame, replace_suffix: str = "_b"):
     out = out[~out_msk]
 
     return out
+
+
+def _df_add_region_number(df: pd.DataFrame,
+                         id_col: str,
+                         sort_col: Literal["Start", "End"] = "Start",
+                         number_type: Literal["stranded", "unstranded"] = "stranded",
+                         zero_based: bool = False,
+                         method: Literal["min", "first"] = "min") -> pd.Series:
+    '''Return positional ranks of intervals belonging to a group 
+    
+    Numbering can be strand-aware (so most 5' is assigned smallest rank) or unstranded (so leftmost interval assigned smallest rank)
+    By default the ranking is returned 1..n, but can also be returned with 0-based ranks/indexes (0..n-1)
+    Function assumes dataframe conforms to pr.PyRanges internal dataframe structure (so should be used internally in a pr.assign (mainly by add_region_number))
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        _description_
+    id_col : str
+        _description_
+    sort_col : str, optional
+        interval column by which to rank. If stranded, then opposite to provided is used to get correct end for minus strand intervals, by default "Start"
+    number_type : Literal[&quot;stranded&quot;, &quot;unstranded&quot;], optional
+        _description_, by default "stranded"
+    zero_based : bool, optional
+        _description_, by default False
+    method : Literal[&quot;min&quot;, &quot;first&quot;], optional
+        method to resolve ties (see pd.rank), by default "min"
+
+    Returns
+    -------
+    pd.Series
+        _description_
+    '''
+
+    assert id_col in df.columns.tolist(), f"id_col - {id_col} - is not present in df for chr/strand pair {','.join([df.Chromosome.iloc[0], df.Strand.iloc[0]])}"
+
+    if df.empty:
+        return pd.Series()
+    
+    # 
+    if number_type == "unstranded":
+        # Start position smallest to largest = 5'-3' (i.e. use left-right order as provided by pr.sort())
+        ranks = df.groupby(id_col)[sort_col].rank(method=method, ascending=True)
+
+    # now strand-aware 5'-3' sort
+    elif (df.Strand == "+").all():
+        # since pr.sort() will put intervals in left-right order, can just use input column as is
+        ranks = df.groupby(id_col)[sort_col].rank(method=method, ascending=True)
+
+    else:
+        # need to select opposite column to get strand-aware correct end
+        # also need to flip the ranking order (i.e. positions in descending order = 5'-3')
+        if sort_col == "Start":
+            ranks = df.groupby(id_col)["End"].rank(method=method, ascending=False)
+
+        else:
+            # 3'end = leftmost i.e. start
+            ranks = df.groupby(id_col)["Start"].rank(method=method, ascending=False)
+
+    if zero_based:
+        return ranks.subtract(1)
+    
+    else:
+        return ranks
+
+
+def add_region_number(gr: pr.PyRanges,
+                      id_col: str = "transcript_id",
+                      feature_key: str = "intron",
+                      out_col: str = "intron_number",
+                      feature_col: str = "Feature",
+                      number_type: Literal["stranded", "unstranded"] = "stranded",
+                      sort_col: Literal["Start", "End"] = "Start",
+                      method: Literal["min", "first"] = "min",
+                      nb_cpu: int = 1) -> pr.PyRanges:
+    '''Add column to gr containing a 0-based region number column ordered left-most to right-most 0..n-1 by a group of features (e.g. transcript)
+
+
+    Parameters
+    ----------
+    gr : pr.PyRanges
+        _description_
+    id_col : str, optional
+        _description_, by default "transcript_id"
+    feature_key : str, optional
+        _description_, by default "intron"
+    out_col : str, optional
+        _description_, by default "intron_number"
+    feature_col : str, optional
+        _description_, by default "Feature"
+    number_type : Literal[&quot;stranded&quot;, &quot;unstranded&quot;], optional
+        _description_, by default "stranded"
+    nb_cpu : int, optional
+        _description_, by default 1
+
+    Returns
+    -------
+    pr.PyRanges
+        _description_
+    '''
+
+    # Make sure only 'feature_key' rows are in the gr
+    assert gr.as_df()[feature_col].drop_duplicates().tolist() == [feature_key], f"only {feature_key} entries should be present in gr"
+
+    # Make sure sorted by position first.
+    gr = gr.sort()
+
+    # Add in region number column left-most to right-most 1..n order for each group of intervals
+    gr = gr.assign(out_col, lambda df: _df_add_region_number(df, id_col, sort_col=sort_col, number_type=number_type, method=method), nb_cpu=nb_cpu)
+
+    return gr
