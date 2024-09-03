@@ -63,3 +63,13 @@ import pyranges as pr
 >>> comb_3p = comb_3p.apply(lambda df: df.drop_duplicates())
 >>> comb_3p.sort().to_bed("2024-06-20_pas.max_distance_10000.original_updated_combined.bed")
 ```
+
+## Count number of unique 3'end coordinates for each last exon ID (le_id)
+
+Currently, script applies only to any le_id evaluated for differential usage across experiments. Outputs number of unique 3'end coordinates per le_id with and without a overlap slack of 12nt.
+
+Output file: `processed/curation/cryptic_annot_comparison/2024-09-03_le_id_pas_counts.tsv`
+
+```bash
+python scripts/get_num_pas.py
+```
