@@ -41,7 +41,7 @@ le_pas_counts_clpsd
 
 # %%
 # combine PAS count dfs
-le_pas_counts = le_pas_counts.merge(le_pas_counts_clpsd, on="le_id", suffixes=[None, "_clpsd"])
+le_pas_counts = le_pas_counts.merge(le_pas_counts_clpsd, on="le_id", suffixes=[None, "_clpsd12"])
 le_pas_counts
 # %%
 # add annotation information to df (first collapsing duplicated/distinct annots to a single string)
