@@ -1,5 +1,6 @@
 library(tidyverse)
 library(nullranges)
+library(cobalt)
 requireNamespace("ks")
 set.seed(123)
 
@@ -65,7 +66,6 @@ evaluate_uniqueness_pairwise <- function(matchRanges_output) {
   return(results_tbl)
 }
 
-
 # Function to evaluate uniqueness using Szymkiewicz–Simpson coefficient against union of other iterations
 evaluate_uniqueness_union <- function(matchRanges_output) {
   n_iterations <- length(matchRanges_output)
@@ -108,6 +108,66 @@ summarise_pairwise_uniqueness <- function(uniqueness_results) {
       q3_Coefficient = quantile(coefficient, 0.75)
     )
 }
+
+# evaluate balancing from matchRanges object using cobalt
+evaluate_balancing_cobalt <- function(mgr) {
+  bal.tab(
+    f.build("set", covariates(mgr)),
+    data = matchedData(mgr),
+    distance = "ps",       # name of column containing propensity score
+    focal = "focal",       # name of focal group in set column
+    which.treat = "focal", # compare everything to focal
+    s.d.denom = "all"      # how to adjust standard deviation
+  )
+}
+
+# Function to process the input list of bal.tab objects (generated from matchRanges objects) and create a dataframe
+process_balance_data <- function(bal) {
+  # Outer map loop over elements in bal
+  iteration_data <- imap(bal, function(bal_element, iteration) {
+    comparison_names <- names(bal_element$Pair.Balance) %>% set_names()
+    
+    # Inner map loop to extract std mean diffs for each 'comparison'
+    comparison_data <- map(comparison_names, ~ bal_element$Pair.Balance[[.x]]$Balance %>%
+                             as_tibble(rownames = "variable") %>%
+                             mutate(comparison = .x)
+    )
+    
+    # Combine comparison data for this iteration into single df
+    bind_rows(comparison_data, .id = "comparison")
+  })
+  
+  # Combine all iterations into single df
+  bind_rows(iteration_data, .id = "iteration")
+}
+
+# generate boxplot version of 'Love plot' from a list of bal.tab objects
+create_enhanced_love_plot <- function(bal, variable_df, variable_col = "variable_clean",
+                                      comparison_vals = c("matched vs. focal", "pool vs. focal")) {
+  # Process the data
+  plot_data <- process_balance_data(bal)
+  # return(plot_data)
+  
+  # subset to set comparisons wish to visualise
+  plot_data <- filter(plot_data, comparison %in% comparison_vals)
+  
+  #
+  plot_data <- inner_join(variable_df, plot_data, by = "variable")
+  
+  # Create the plot
+  ggplot(plot_data, aes(x = Diff.Un, y = !!sym(variable_col))) +
+    geom_vline(xintercept = 0, color = "black", linetype = "dashed") +
+    geom_boxplot(aes(color = comparison), alpha = 0.7) +
+    # facet_wrap(~ Comparison, scales = "free_x", ncol = 1) +
+    # scale_color_manual(values = c("Unadjusted" = "red", "Adjusted" = "blue"),
+    #                    name = "Sample") +
+    labs(title = "Covariate Balance",
+         x = "Standardized Mean Differences",
+         y = "") +
+    theme_bw(base_size = 12) +
+    theme(legend.position = "bottom")
+}
+
 
 outdir <- "processed/curation/cryptic_annot_comparison/"
 mean_tpm_combined <- read_tsv(file.path(outdir, "2024-09-04_le_id.mean_tpm.kd_samples.tsv"))
@@ -187,14 +247,22 @@ uniq_un_median_strat
 summ_uniq_pw_median_strat <- summarise_pairwise_uniqueness(uniq_pw_median_strat)
 summ_uniq_pw_median_strat
 
+# evaluate balancing of covariates from each iteration of matchRanges (standardised mean differences)
+bal_median_strat <- map(median_tpm_annot_matched_strat, evaluate_balancing_cobalt)
+bal_median_strat[[1]]
 
+# example love.plot using only a single iteration
+love.plot(bal_median_strat[[1]], drop.distance = T)
 
-# overview(median_tpm_annot_matched_strat)
-# plotPropensity(median_tpm_annot_matched_strat)
-# plotCovariate(median_tpm_annot_matched_strat)
-# 
-# covariates(median_tpm_annot_matched_strat) %>%
-#   set_names() %>%
-#   map(~ plotCovariate(median_tpm_annot_matched_strat, covar = .x) +
-#         labs(title = paste("Covariate =", .x, sep = " "))
-#       )
+# Generate a love.plot using values from all iterations (visualising distribution as a box plot)
+# Exploring efficacy of matching and whether consistently an improvement on the initial pool of events
+
+# process_balance_data(head(bal_median_strat)) %>% View()
+
+# add cleaned covariate column names for plotting
+covariate_cols_clean <- c("Number of PAS", "Brown i3 Cortical", "Brown SH-SY5Y", "Brown SKNDZ", "Humphrey i3 Cortical", "Seddighi i3 Cortical", "Zanovello i3 Cortical", "Zanovello SH-SY-5Y (CHX)", "Zanovello SH-SY5Y (Curve)", "Zanovello SK-N-BE(2)")
+covar_name_df <- tibble(variable = covariate_cols, variable_clean = covariate_cols_clean)
+covar_name_df
+
+# boxplot of standardised mean differences for all iterations (matched subset & all annotated)
+create_enhanced_love_plot(bal_median_strat, covar_name_df)
