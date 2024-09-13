@@ -73,3 +73,13 @@ Output file: `processed/curation/cryptic_annot_comparison/2024-09-03_le_id_pas_c
 ```bash
 python scripts/get_num_pas.py
 ```
+
+## Get PATR PAS overlap with cryptic and (covariate-matched) annotated le_ids across range of distance thresholds
+
+Feeds on output of `scripts/get_num_pas.py` and `get_matched_annot_pas.R`. Takes directory of different samples of covariate-balanced annotated le_ids (each stored in a separate text file), and one-by-one performs an overlap with PAS defined by polyA-tail reads at a series of overlap thresholds.
+
+Warning - not particularly well optimised. Takes approx 10 mins to run for 1k annotated ID samples and 7 distance thresholds
+
+```bash
+python scripts/get_patr_matches.py --papa-gtf data/novel_ref_combined.last_exons.gtf --patr-bed data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed --outdir processed/curation/cryptic_annot_comparison/ --pas-counts processed/curation/cryptic_annot_comparison/2024-09-03_le_id_pas_counts.tsv --annot-ids-dir processed/curation/cryptic_annot_comparison/ids/ --distance-thresholds 0,10,25,50,100,200,500 --nproc 8
+```
