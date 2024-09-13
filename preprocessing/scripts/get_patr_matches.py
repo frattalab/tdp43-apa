@@ -1,4 +1,3 @@
-# %%
 #!/usr/bin/env python3
 
 import pyranges as pr
@@ -10,6 +9,9 @@ from datetime import datetime
 import os
 import math
 import multiprocessing
+import sys
+import argparse
+
 
 def nearest_threshold_wrapper(gr: pr.PyRanges,
                               gr2: pr.PyRanges,
@@ -174,7 +176,6 @@ def annot_ids_path_nearest_threshold_wrapper(file_names: list, annot_ids_dir: st
                                              distance_thresholds: Union[int, List[int]],
                                              progress_counter):
     
-    
     results = {}
     
     for i, txt_file in enumerate(file_names, 1):
@@ -216,21 +217,13 @@ def annot_ids_path_nearest_threshold_wrapper(file_names: list, annot_ids_dir: st
     return results
 
 
-# Combine results from all processes into a single dictionary
-def combine_results(all_results):
-    combined = {}
-    for result in all_results:
-        combined.update(result)
-    return combined
-
-
 # Main function to execute parallel processing
 def parallel_annot_ids_nearest_threshold_wrapper(file_list: List[str],
                                                  annot_ids_dir: str,
                                                  gr: pr.PyRanges,
                                                  gr2: pr.PyRanges,
                                                  distance_thresholds: Union[int, List[int]],
-                                                 num_processes: int = 1):
+                                                 num_processes: int):
     
     # Split the file list into batches
     file_batches = split_file_list(file_list, num_processes)
@@ -259,109 +252,109 @@ def parallel_annot_ids_nearest_threshold_wrapper(file_list: List[str],
         
         return combined_results
     
-    # # Create a pool of processes
-    # with multiprocessing.Pool(processes=num_processes) as pool:
-    #     # Process each batch in parallel and gather results
-    #     all_results = pool.starmap(annot_ids_path_nearest_threshold_wrapper,
-    #                                [(batch, annot_ids_dir, gr, gr2, distance_thresholds) 
-    #                                 for batch in file_batches]
-    #                                 )
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Identify cryptic and annotated le_ids supported by polyA-tail containing reads at a series of distance thresholds")
+
+    parser.add_argument('--papa-gtf', type=str, required=True, help='Path to the PAPA GTF file of last exons.')
+    parser.add_argument('--patr-bed', type=str, required=True, help='Path to the BED file containing PAS defined by polyA-tail containing reads.')
+    parser.add_argument('--outdir', type=str, required=True, help='Output directory prefix.')
+    parser.add_argument('--pas-counts', type=str, required=True, help='TSV file containing number of unique PAS and cryptic status.')
+    parser.add_argument('--annot-ids-dir', type=str, required=True, help='Directory containing text files of annotated le_ids to evaluate.')
+    parser.add_argument('--distance-thresholds', type=str, required=True, help='Comma-separated list of distance thresholds.')
+    parser.add_argument('--nproc', type=int, required=True, help='Number of processes for parallel processing.')
     
-    # # Combine the results from all processes into a single dictionary
-    # final_results = combine_results(all_results)
-    # return final_results
+    if len(sys.argv) == 1:
+        parser.print_help()
+        parser.exit()
 
-# %%
-# last exon annotations (to extract pas)
-papa_pas = pr.read_gtf("../data/novel_ref_combined.last_exons.gtf")[["le_id", "ref_gene_name", "ref_gene_id"]].three_end()
-papa_pas = papa_pas.drop_duplicate_positions(strand=True)
-outdir = "../processed/curation/cryptic_annot_comparison"
-pas_counts = pd.read_csv(os.path.join(outdir, "2024-09-03_le_id_pas_counts.tsv"), sep="\t")
-annot_ids_dir = "../processed/curation/cryptic_annot_comparison/ids/"
-distance_thresholds = [0,10,25,50,100,200,500]
-# number of processes for parallel processing of annotated events
-nproc = 8
-papa_pas
+    args = parser.parse_args()
 
-# %%
-# PATRs - pooling across all KD samples from all experiments
-patr_pas_all = pr.read_bed("../data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed")
-patr_pas_all
-
-# %%
-# extract cryptic PAS
-cryp_le_ids = set(pas_counts.loc[pas_counts.cryptic_status.eq(1), "le_id"])
-papa_pas_cryp = papa_pas.subset(lambda df: df.le_id.isin(cryp_le_ids))
-papa_pas_cryp
-
-# %%
-# identify PAS support for cryptics at range of distance thresholds
-# # get ids & grs where cryptics have pas junction support from any dataset across range of thresholds
-cryp_patr_all_nr_ids, cryp_patr_all_nr_grs = nearest_threshold_wrapper(papa_pas_cryp, patr_pas_all, distance_thresholds, nearest_only=False, return_grs=True)
-cryp_patr_all_nr_df = create_threshold_binary_dataframe(cryp_le_ids, cryp_patr_all_nr_ids)
-cryp_patr_all_nr_df
-
-# %%
-# calculate sum / num cryptic ids supported at each threshold (column)
-cryp_patr_all_nr_df.drop(columns="le_id").sum(axis=0)
-
-
-# %%
-
+    # output directory
+    outdir = args.outdir
     
-# List all .txt files in the directory
-txt_files = [f for f in os.listdir(annot_ids_dir) if f.endswith('.txt')]
-total_files = len(txt_files)
+    # Directory containing text files of annotated le_ids to evaluate
+    annot_ids_dir = args.annot_ids_dir
 
-# first, collect all annotated IDs plan to extract, then subset the papa PAS GTF
-# (saves lugging around a huge pyranges object, possibly speeds up the subsetting)
-all_annot_le_ids = set()
-for file in txt_files:
-    with open(os.path.join(annot_ids_dir, file), 'r') as f:
-        for line in f:
-            all_annot_le_ids.add(line.rstrip())
+    # Series of tolerance thresholds
+    distance_thresholds = list(map(int, args.distance_thresholds.split(',')))
 
-print(f"Total unique annotated le_ids to analyse - {len(all_annot_le_ids)}")
-print(f"Number of intervals in PAPA PAS GTF - {len(papa_pas)}")
-papa_pas_annot = papa_pas.subset(lambda df: df.le_id.isin(all_annot_le_ids))
+    # Number of processes for parallel processing
+    nproc = args.nproc
 
-# %%
-# Calculate for all iterations of sampled, covariate-matched (expression, num PAS) annotated events
-results = parallel_annot_ids_nearest_threshold_wrapper(txt_files, annot_ids_dir, papa_pas_annot, patr_pas_all, distance_thresholds, num_processes=nproc)
+    # Print or use the variables as needed
+    print(f"PAPA GTF: {args.papa_gtf}")
+    print(f"Output Directory: {outdir}")
+    print(f"PAS Counts TSV: {args.pas_counts}")
+    print(f"Annotation IDs Directory: {annot_ids_dir}")
+    print(f"Distance Thresholds: {distance_thresholds}")
+    print(f"Number of Processes: {nproc}")
 
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Reading in input files")
+    papa_pas = pr.read_gtf(args.papa_gtf)[["le_id", "ref_gene_name", "ref_gene_id"]].three_end()
+    patr_pas_all = pr.read_bed(args.patr_bed)
+    
+    # Read the TSV containing number of unique pas & cryptic status
+    pas_counts = pd.read_csv(args.pas_counts, sep="\t")
 
-# %%
-# output binary dataframes at each threshold for cryptics and combined annotated iterations
+    # extract cryptic PAS
+    cryp_le_ids = set(pas_counts.loc[pas_counts.cryptic_status.eq(1), "le_id"])
+    papa_pas_cryp = papa_pas.subset(lambda df: df.le_id.isin(cryp_le_ids))
+    papa_pas_cryp
 
-# combine annotated dataframes across iterations
-comb_annot_all_nr_df = pd.concat({k: v for k,v in results.items()}, names=['iteration']).reset_index(level='iteration')
-comb_annot_all_nr_df
+    # identify PAS support for cryptics at range of distance thresholds
+    # # get ids & grs where cryptics have pas junction support from any dataset across range of thresholds
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Calculating cryptic PAS PATR support across provided thresholds")
+    cryp_patr_all_nr_ids, cryp_patr_all_nr_grs = nearest_threshold_wrapper(papa_pas_cryp, patr_pas_all, distance_thresholds, nearest_only=False, return_grs=True)
+    cryp_patr_all_nr_df = create_threshold_binary_dataframe(cryp_le_ids, cryp_patr_all_nr_ids)
+    
+    # List all .txt files in the directory
+    txt_files = [f for f in os.listdir(annot_ids_dir) if f.endswith('.txt')]
+    total_files = len(txt_files)
 
-# %%
-# 227 * 1000 is going to create a 227k row CSV/TSV (quite big)
-# Main interest is in number of events supported at a given threshold
-# Precaluclate counts of supported events at each threshold for each iteration
-distancethresh_cols = [col for col in comb_annot_all_nr_df.columns if col.startswith('distancethresh')]
-comb_annot_all_nr_df_counts = comb_annot_all_nr_df.groupby('iteration')[distancethresh_cols].sum().reset_index()
-comb_annot_all_nr_df_counts
+    # first, collect all annotated IDs plan to extract, then subset the papa PAS GTF
+    # (saves lugging around a huge pyranges object, possibly speeds up the subsetting)
+    all_annot_le_ids = set()
+    for file in txt_files:
+        with open(os.path.join(annot_ids_dir, file), 'r') as f:
+            for line in f:
+                all_annot_le_ids.add(line.rstrip())
 
-# %%
-# repeat for cryptic events
-cryp_patr_all_nr_df_counts = cryp_patr_all_nr_df.drop(columns="le_id").sum(axis=0)
-cryp_patr_all_nr_df_counts
-# %%
-# output counts to plain TSV
-comb_annot_all_nr_df_counts.to_csv(os.path.join(outdir, "2024-09-13_annotated_iterations.patr_all.nearest_threshold.counts.tsv"), sep="\t", header=True, index=False)
-(cryp_patr_all_nr_df_counts
- # convert to df
- .reset_index(name="n").rename(columns={"index": "distancethresh"})
- .to_csv(os.path.join(outdir, "2024-09-13_cryptics.patr_all.nearest_threshold.counts.tsv"), sep="\t", header=True, index=False)
- )
+    print(f"Total unique annotated le_ids to analyse - {len(all_annot_le_ids)}")
+    print(f"Number of intervals in PAPA PAS GTF - {len(papa_pas)}")
+    papa_pas_annot = papa_pas.subset(lambda df: df.le_id.isin(all_annot_le_ids))
 
-# output binary matrices of diff IDs to TSV (and GZIPPED TSV for annotated)
-comb_annot_all_nr_df.to_csv(os.path.join(outdir,
-                                         "2024-09-13_annotated_iterations.patr_all.nearest_threshold.matrix.tsv.gz"), sep="\t", header=True, index=False)
-cryp_patr_all_nr_df.to_csv(os.path.join(outdir,
-                                         "2024-09-13_cryptics.patr_all.nearest_threshold.matrix.tsv"), sep="\t", header=True, index=False)
+    # Calculate for all iterations of sampled, covariate-matched (expression, num PAS) annotated events
+    results = parallel_annot_ids_nearest_threshold_wrapper(txt_files, annot_ids_dir, papa_pas_annot, patr_pas_all, distance_thresholds, num_processes=nproc)
+
+    # output binary dataframes at each threshold for cryptics and combined annotated iterations
+    # combine annotated dataframes across iterations
+    comb_annot_all_nr_df = pd.concat({k: v for k,v in results.items()}, names=['iteration']).reset_index(level='iteration')
+    print(comb_annot_all_nr_df)
+
+    # 227 * 1000 is going to create a 227k row CSV/TSV (quite big)
+    # Main interest is in number of events supported at a given threshold
+    # Precaluclate counts of supported events at each threshold for each iteration
+    distancethresh_cols = [col for col in comb_annot_all_nr_df.columns if col.startswith('distancethresh')]
+    comb_annot_all_nr_df_counts = comb_annot_all_nr_df.groupby('iteration')[distancethresh_cols].sum().reset_index()
+    print(comb_annot_all_nr_df_counts)
+
+    # repeat for cryptic events
+    cryp_patr_all_nr_df_counts = cryp_patr_all_nr_df.drop(columns="le_id").sum(axis=0)
+    cryp_patr_all_nr_df_counts
+
+    # output counts to plain TSV
+    comb_annot_all_nr_df_counts.to_csv(os.path.join(outdir, "annotated_iterations.patr_all.nearest_threshold.counts.tsv"), sep="\t", header=True, index=False)
+    (cryp_patr_all_nr_df_counts
+    # convert to df
+    .reset_index(name="n").rename(columns={"index": "distancethresh"})
+    .to_csv(os.path.join(outdir, "cryptics.patr_all.nearest_threshold.counts.tsv"), sep="\t", header=True, index=False)
+    )
+
+    # output binary matrices of diff IDs to TSV (and GZIPPED TSV for annotated)
+    comb_annot_all_nr_df.to_csv(os.path.join(outdir,
+                                            "annotated_iterations.patr_all.nearest_threshold.matrix.tsv.gz"), sep="\t", header=True, index=False)
+    cryp_patr_all_nr_df.to_csv(os.path.join(outdir,
+                                            "cryptics.patr_all.nearest_threshold.matrix.tsv"), sep="\t", header=True, index=False)
 
 
