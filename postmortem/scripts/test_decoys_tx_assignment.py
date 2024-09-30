@@ -10,7 +10,7 @@ Script raises an exception if any failure encountered (completely missing le_ids
 Script can be tested using output of test_data_decoys_tx_assignment.py (LE5 dropped, LE2,4,6 have no matching transcript_ids)
 '''
 
-def compare_tsv_files(orig_file: str, new_file: str):
+def compare_tsv_files(orig_file: str, new_file: str, output_prefix: str, metadata_file: str = None):
     # Read the TSV files
     tx2le_orig = pd.read_csv(orig_file, sep='\t')
     tx2le_new = pd.read_csv(new_file, sep='\t')
@@ -19,7 +19,7 @@ def compare_tsv_files(orig_file: str, new_file: str):
     merged = pd.merge(tx2le_orig, tx2le_new, on='le_id', how='left', suffixes=('_orig', '_new'))
 
     # Check for dropped le_ids (will have NaN in transcript_id_new)
-    dropped_le_ids = merged[merged['transcript_id_new'].isna()]['le_id']
+    dropped_le_ids = set(merged[merged['transcript_id_new'].isna()]['le_id'])
 
     # For non-dropped le_ids, check if there's at least one matching transcript_id
     def check_transcript_match(group):
@@ -41,14 +41,47 @@ def compare_tsv_files(orig_file: str, new_file: str):
     if len(dropped_le_ids) > 0:
         dropped_ids = True
         print("Dropped le_ids:")
-        print(dropped_le_ids.tolist())
+        print(dropped_le_ids)
 
     unmatched_tx = False
     print(f"3. Number of le_ids with no matching transcript_ids: {len(unmatched_transcripts)}")
     if len(unmatched_transcripts) > 0:
         unmatched_tx = True
         print("le_ids with no matching transcript_ids:")
-        print(unmatched_transcripts.tolist())
+        print(set(unmatched_transcripts))
+
+    # Write the dropped_le_ids to a text file
+    with open(f"{output_prefix}.dropped_le_ids.txt", 'w') as file:
+        for le_id in dropped_le_ids:
+            file.write(f"{le_id}\n")
+
+    # Write the le_ids with unmatched_transcripts to a text file
+    with open(f"{output_prefix}.unmatched_transcripts_le_ids.txt", 'w') as file:
+        for le_id in unmatched_transcripts:
+            file.write(f"{le_id}\n")
+
+    print(f"Results saved to {output_prefix}.dropped_le_ids.txt and {output_prefix}.unmatched_tx_le_ids.txt")
+
+    # If metadata file is provided, process count
+    if metadata_file:
+        # Read the metadata file
+        metadata = pd.read_csv(metadata_file, sep='\t')
+
+        # Process dropped_le_ids
+        dropped_le_metadata = metadata[metadata['le_id'].isin(dropped_le_ids)]
+        if not dropped_le_metadata.empty:
+            dropped_counts = dropped_le_metadata[['simple_event_type', 'annot_status']].value_counts().reset_index(name='count')
+            dropped_counts.to_csv(f"{output_prefix}.dropped_le_ids.metadata_counts.tsv", sep='\t', index=False)
+            dropped_le_metadata.to_csv(f"{output_prefix}.dropped_le_ids.metadata_df.tsv", sep='\t', index=False)
+
+        # Process le_ids with unmatched_transcripts
+        unmatched_metadata = metadata[metadata['le_id'].isin(unmatched_transcripts)]
+        if not unmatched_metadata.empty:
+            unmatched_counts = unmatched_metadata[['simple_event_type', 'annot_status']].value_counts().reset_index(name='count')
+            unmatched_counts.to_csv(f"{output_prefix}.unmatched_tx_le_ids.metadata_counts.tsv", sep='\t', index=False)
+            unmatched_metadata.to_csv(f"{output_prefix}.unmatched_tx_le_ids.metadata_df.tsv", sep='\t', index=False)
+
+        print(f"Metadata summaries saved to {output_prefix}_dropped_le_ids_metadata_counts.tsv and {output_prefix}_unmatched_transcripts_metadata_counts.tsv")
 
     print("\nSummary:")
     if len(dropped_le_ids) == 0 and len(unmatched_transcripts) == 0:
@@ -58,22 +91,22 @@ def compare_tsv_files(orig_file: str, new_file: str):
         raise Exception(f"Following errors were encountered (True/False): dropped le_ids = {dropped_ids} , no matching transcript_ids for same le_id = {unmatched_tx}")
 
 
-def main(args):
-
-    compare_tsv_files(args.orig_tx2le, args.new_tx2le)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Check for consistent assignment of transcript_ids to le_ids between two tx2le tables.")
     parser.add_argument("orig_tx2le", help="Path to the original 'tx2le' TSV file")
     parser.add_argument("new_tx2le", help="Path to the new 'tx2le' TSV file")
+    parser.add_argument('--output_prefix', type=str, required=True, help='Prefix for the output file names.')
+    parser.add_argument('--metadata_file', type=str, help='Optional metadata summary (TSV) for cryptic le_ids (used to annotate missing events with event type and annotation status).')
 
     if len(sys.argv) == 1:
         parser.print_help()
         parser.exit()
 
     args = parser.parse_args()
-    main(args)
 
+    # Call the function with the provided arguments
+    compare_tsv_files(args.orig_tx2le, args.new_tx2le, args.output_prefix, args.metadata_file)
 
 
 # # Read the TSV files
