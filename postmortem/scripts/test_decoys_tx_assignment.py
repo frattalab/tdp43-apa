@@ -40,15 +40,15 @@ def compare_tsv_files(orig_file: str, new_file: str, output_prefix: str, metadat
     print(f"2. Number of dropped le_ids: {len(dropped_le_ids)}")
     if len(dropped_le_ids) > 0:
         dropped_ids = True
-        print("Dropped le_ids:")
-        print(dropped_le_ids)
+        # print("Dropped le_ids:")
+        # print(dropped_le_ids)
 
     unmatched_tx = False
     print(f"3. Number of le_ids with no matching transcript_ids: {len(unmatched_transcripts)}")
     if len(unmatched_transcripts) > 0:
         unmatched_tx = True
-        print("le_ids with no matching transcript_ids:")
-        print(set(unmatched_transcripts))
+        # print("le_ids with no matching transcript_ids:")
+        # print(set(unmatched_transcripts))
 
     # Write the dropped_le_ids to a text file
     with open(f"{output_prefix}.dropped_le_ids.txt", 'w') as file:
@@ -71,6 +71,8 @@ def compare_tsv_files(orig_file: str, new_file: str, output_prefix: str, metadat
         dropped_le_metadata = metadata[metadata['le_id'].isin(dropped_le_ids)]
         if not dropped_le_metadata.empty:
             dropped_counts = dropped_le_metadata[['simple_event_type', 'annot_status']].value_counts().reset_index(name='count')
+            print("Metadata summary counts for completely missing le_ids")
+            print(dropped_counts)
             dropped_counts.to_csv(f"{output_prefix}.dropped_le_ids.metadata_counts.tsv", sep='\t', index=False)
             dropped_le_metadata.to_csv(f"{output_prefix}.dropped_le_ids.metadata_df.tsv", sep='\t', index=False)
 
@@ -78,6 +80,8 @@ def compare_tsv_files(orig_file: str, new_file: str, output_prefix: str, metadat
         unmatched_metadata = metadata[metadata['le_id'].isin(unmatched_transcripts)]
         if not unmatched_metadata.empty:
             unmatched_counts = unmatched_metadata[['simple_event_type', 'annot_status']].value_counts().reset_index(name='count')
+            print("Metadata summary counts for le_ids with incorrect transcript assignment")
+            print(dropped_counts)
             unmatched_counts.to_csv(f"{output_prefix}.unmatched_tx_le_ids.metadata_counts.tsv", sep='\t', index=False)
             unmatched_metadata.to_csv(f"{output_prefix}.unmatched_tx_le_ids.metadata_df.tsv", sep='\t', index=False)
 
