@@ -69,6 +69,8 @@ bash scripts/decoys_wrapper.sh processed/decoys/2024-10-02_cryptics_plus_decoys.
 
 ### Construct decoys for IPA and ALE events
 
+Replacing 2024-11-06 with whatever is today's date (TODO: update when have finalised offering)
+
 ```bash
 mkdir -p processed/decoys/playground/
 python scripts/get_decoy_tx.py -r data/reference_filtered.gtf -i processed/decoys/novel_ref_combined.quant.cryptics.ipa.ids.gtf -a processed/decoys/novel_ref_combined.quant.cryptics.ale.ids.gtf -o processed/decoys/playground/2024-11-06_decoys
