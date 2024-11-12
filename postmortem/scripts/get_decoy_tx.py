@@ -7,6 +7,7 @@ import numpy as np
 from helpers import add_region_number, get_internal_regions, get_terminal_regions, add_region_rank
 import sys
 import argparse
+from typing import Iterable, Set
 
 
 '''
@@ -255,6 +256,31 @@ def get_retention_event(introns, exons, id_col="transcript_id", suffix="_b"):
     return introns_ext.drop(added_cols)
 
 
+def expand_ids(ids: Iterable[str], delimiter: str = ',') -> Set[str]:
+    '''Expands an iterable of (potentially) delimited strings into a set of individual strings.
+
+    Parameters
+    ----------
+    ids : Iterable[str]
+        An iterable of strings, where each string may contain 
+                             multiple items separated by the specified delimiter.
+    delimiter : str, optional
+        delimiter (str, optional): The delimiter used to split the strings, by default ','
+
+    Returns
+    -------
+    Set[str]
+        _description_
+    '''
+    expanded_ids = set()
+    for id in ids:
+        if delimiter in id:
+            expanded_ids.update(id.split(delimiter))
+        else:
+            expanded_ids.add(id)
+    return expanded_ids
+
+
 def main(ref_gtf: str,
          ipa_gtf: str,
          ale_gtf: str,
@@ -287,10 +313,10 @@ def main(ref_gtf: str,
     ale = pr.read_gtf(ale_gtf)
 
     # Extract gene IDs from input target events (only process GTF for these genes)
-    ipa_gene_ids = set(ipa.as_df()[gene_id_col])
-    ale_gene_ids = set(ale.as_df()[gene_id_col])
+    ipa_gene_ids = expand_ids(ipa.as_df()[gene_id_col])
+    ale_gene_ids = expand_ids(ale.as_df()[gene_id_col])
     comb_gene_ids = ipa_gene_ids.union(ale_gene_ids)
-
+ 
     # track event IDs for downstream checks
     ipa_ids = set(ipa.as_df()[event_id_col])
     ale_ids = set(ale.as_df()[event_id_col])
@@ -351,6 +377,11 @@ def main(ref_gtf: str,
     
     print("Identify introns containing ALE events (ALE intron retention decoy)")
     introns_ale = introns.overlap(ale, strandedness="same")
+    
+    # get ALEs not overlapping annotated introns
+    ale_nintrons = ale.overlap(introns, strandedness="same", invert=True)
+    nintrons_ale_ids = set(ale_nintrons.as_df()[event_id_col])
+    print(f"Number of ALEs not overlapping annotated introns - {len(nintrons_ale_ids)}")
 
     # assign decoy tx id for introns overlapping non-bleedthroughs
     introns_ale = (introns_ale.assign("transcript_id",
@@ -378,13 +409,23 @@ def main(ref_gtf: str,
 
     print("Spliced/ALE events")
     # All ALEs should also have an overlapping intron
-    ale_in_ids = set(ale.overlap(introns_ale, strandedness="same").le_id)
+    ale_in_ids = set(ale.overlap(introns_ale, strandedness="same").as_df()[event_id_col])
     missing_ale_in_ids = ale_ids.difference(ale_in_ids)
+    
+    # sanity check - ALEs not overlapping introns should be excluded from this analysis
+    ale_in_nintron_ids = ale_in_ids.intersection(nintrons_ale_ids)
+    missing_ale_in_nintron_ids = missing_ale_in_ids.intersection(nintrons_ale_ids)
     if len(missing_ale_in_ids) > 0:
         print(f"ALE events missing overlapping intron retention decoy event, n = {len(missing_ale_in_ids)}")
         if len(missing_ale_in_ids) <= 25:
             print(missing_ale_in_ids) 
 
+        print(f"Intersection between IDs found in output and those allegedly with intron decoys, n = {len(ale_in_nintron_ids)}")
+        if len(ale_in_nintron_ids) <= 25:
+            print(ale_in_nintron_ids) 
+        print(f"Intersection between IDs dropped and those without an overlapping intron, n = {len(missing_ale_in_nintron_ids)}")
+        if len(missing_ale_in_nintron_ids) <= 25:
+            print(missing_ale_in_nintron_ids) 
     
     print("Generating and outputting combined files...")
     # combine decoy events into a single GTF
