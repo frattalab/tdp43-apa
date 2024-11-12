@@ -63,6 +63,16 @@ Wrapper script to generate decoys then check tx assignment
 bash scripts/decoys_wrapper.sh processed/decoys/2024-10-02_cryptics_plus_decoys.full
 ```
 
+## Decoys take 2
+
+### Split GTF by cryptic status and event type
+
+### Construct decoys for IPA and ALE events
+
+```bash
+mkdir -p processed/decoys/playground/
+python scripts/get_decoy_tx.py -r data/reference_filtered.gtf -i processed/decoys/novel_ref_combined.quant.cryptics.ipa.ids.gtf -a processed/decoys/novel_ref_combined.quant.cryptics.ale.ids.gtf -o processed/decoys/playground/2024-11-06_decoys
+```
 
 ### PAPA to splice junctions
 
