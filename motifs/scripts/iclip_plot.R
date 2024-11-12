@@ -1,10 +1,12 @@
 library(tidyverse)
 source("scripts/fncs_plot_iclip.R")
 
-parse_coverage <- function(file, flank_interval) {
-  f <- read_tsv(file, col_names = c("chr", "start", "end", "ID", ".", "strand", "position", "coverage"))
+parse_coverage <- function(file, flank_interval, average = TRUE) {
+  f <- read_tsv(file, col_names = c("chr", "start", "end", "name", ".", "strand", "position", "coverage"))
   # make sure positions are strand-aware
   f$position[f$strand == "-"] <- (2 + flank_interval*2) - f$position[f$strand == "-"]
+  
+  if (average) {
   
   average_coverage <- f %>%
     group_by(position) %>%
@@ -17,8 +19,13 @@ parse_coverage <- function(file, flank_interval) {
               n_events = n(),
               frac_overlaps = sum(coverage) / n()
     )
-  average_coverage
+  return(average_coverage)
+  }
   
+  else {
+    return(f)
+  }
+
 }
 
 #' read in coverages files - assumes a named vector
