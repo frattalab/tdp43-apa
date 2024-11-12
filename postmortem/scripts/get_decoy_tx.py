@@ -7,7 +7,7 @@ import numpy as np
 from helpers import add_region_number, get_internal_regions, get_terminal_regions, add_region_rank
 import sys
 import argparse
-from typing import Iterable, Set
+from typing import Iterable, Set, List
 
 
 '''
@@ -281,12 +281,51 @@ def expand_ids(ids: Iterable[str], delimiter: str = ',') -> Set[str]:
     return expanded_ids
 
 
+def decoy_assignment_category(df: pd.DataFrame, id_col: str = "le_id", indicator_col: str = "le_id_in", out_col: str = "decoy_assignment", out_keys: List[str] = ["all", "some", "none"]) -> pd.DataFrame:
+    '''_summary_
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        _description_
+    id_col : str, optional
+        _description_, by default "le_id"
+    indicator_col : str, optional
+        _description_, by default "le_id_in"
+    out_col : str, optional
+        _description_, by default "decoy_assignment"
+    out_keys : List[str], optional
+        _description_, by default ["all", "some", "none"]
+
+    Returns
+    -------
+    pd.DataFrame
+        _description_
+    '''
+    
+    assert len(out_keys) == 3, f"out_keys must contain 3 values, n = {len(out_keys)}"
+    
+    # Group by group_id and calculate the mean of le_id_in
+    summ = df.groupby(id_col)[indicator_col].mean().reset_index()
+    
+    # Determine the decoy_assignment (category) based on the mean
+    summ[out_col] = np.select(
+        [summ[indicator_col] == 1, summ[indicator_col] == 0],
+        [out_keys[0], out_keys[2]],
+        default=out_keys[1]
+    )
+    
+    # Return the group_id and decoy_assignment columns
+    return summ[[id_col, out_col]]
+
+
 def main(ref_gtf: str,
          ipa_gtf: str,
          ale_gtf: str,
          output_prefix: str,
          gene_id_col: str = "ref_gene_id",
          event_id_col: str = "le_id",
+         event_tx_col: str = "transcript_id",
          ref_gene_id_col: str = "gene_id"
          ):
     '''Generate decoy transcript models representing alternative processing decisions for ALE and IPA events
@@ -303,12 +342,14 @@ def main(ref_gtf: str,
         Prefix for output GTFs, suffixed with ".decoys.gtf" (decoys only) or ".combined.gtf" (decoys + IPA + ALE)
     gene_id_col : str
         name of column containing gene ID in ipa_gtf/ale_gtf, by default "ref_gene_id"
-    event_id_col : str
-        name of column containing event identifier (i.e. le_id), by default "le_id"
+    event_id_col : str, optional
+        _name of column containing event identifier (i.e. le_id), by default "le_id"
+    event_tx_col : str, optional
+        Name of column containing identifier one below --event_id_col (i.e. id column for overlapping intervals that are grouped into a single event), by default "transcript_id"
     ref_gene_id_col : str
         name of column containing gene ID in ref_gtf, by default "gene_id"
-    '''
-
+        '''
+    
     ipa = pr.read_gtf(ipa_gtf)
     ale = pr.read_gtf(ale_gtf)
 
@@ -321,6 +362,10 @@ def main(ref_gtf: str,
     ipa_ids = set(ipa.as_df()[event_id_col])
     ale_ids = set(ale.as_df()[event_id_col])
     
+    # track 'sub' event IDs mapped to each event (used to track/report decoy assignment status)
+    ipa_ids2tx = ipa.as_df()[[event_id_col, event_tx_col]].drop_duplicates()
+    ale_ids2tx = ale.as_df()[[event_id_col, event_tx_col]].drop_duplicates()
+   
     print("Reading in reference GTF & filtering for input genes...")
     gtf = pr.read_gtf(ref_gtf).subset(lambda df: df[ref_gene_id_col].isin(comb_gene_ids))
 
@@ -380,8 +425,12 @@ def main(ref_gtf: str,
     
     # get ALEs not overlapping annotated introns
     ale_nintrons = ale.overlap(introns, strandedness="same", invert=True)
+    
+    
     nintrons_ale_ids = set(ale_nintrons.as_df()[event_id_col])
     print(f"Number of ALEs not overlapping annotated introns - {len(nintrons_ale_ids)}")
+    
+    
 
     # assign decoy tx id for introns overlapping non-bleedthroughs
     introns_ale = (introns_ale.assign("transcript_id",
@@ -392,7 +441,7 @@ def main(ref_gtf: str,
     print("Sanity checking for complete assignment of decoy events...")
     print("Bleedthrough/IPA events")
     # exons_IPA - every IPA event should have an overlapping (or bookended) exon
-    ipa_ex_ids = set(ipa.join(exons_ipa, strandedness="same", how=None, slack=1).le_id)
+    ipa_ex_ids = set(ipa.join(exons_ipa, strandedness="same", how=None, slack=1).as_df()[event_id_col])
     missing_ipa_ex_ids = ipa_ids.difference(ipa_ex_ids)
     if len(missing_ipa_ex_ids) > 0:
         print(f"IPA events missing flanking exon splicing decoy event, n = {len(missing_ipa_ex_ids)}")
@@ -400,7 +449,7 @@ def main(ref_gtf: str,
             print(sorted(list(missing_ipa_ex_ids)))
     
     # Every IPA event should also have an overlapping intron
-    ipa_in_ids = set(ipa.overlap(introns_ipa_ext, strandedness="same").le_id)
+    ipa_in_ids = set(ipa.overlap(introns_ipa_ext, strandedness="same").as_df()[event_id_col])
     missing_ipa_in_ids = ipa_ids.difference(ipa_in_ids)
     if len(missing_ipa_in_ids) > 0:
         print(f"IPA events missing overlapping intron retention decoy event, n = {len(missing_ipa_in_ids)}")
@@ -409,8 +458,21 @@ def main(ref_gtf: str,
 
     print("Spliced/ALE events")
     # All ALEs should also have an overlapping intron
-    ale_in_ids = set(ale.overlap(introns_ale, strandedness="same").as_df()[event_id_col])
+    ale_in_ids2tx = ale.overlap(introns_ale, strandedness="same").as_df()[[event_id_col, event_tx_col]].drop_duplicates()
+    ale_in_ids = set(ale_in_ids2tx[event_id_col])
     missing_ale_in_ids = ale_ids.difference(ale_in_ids)
+    
+    # decoy assignment category - check whether all txs of a le_id are overlapping intron
+    ale_in_ids2tx = ale_ids2tx.merge(ale_in_ids2tx, how="left", on=event_tx_col, suffixes=[None, "_in"])
+    
+    # Make join column an indicator columm (1 if decoy assigned, 0 if not)
+    joined_col = event_id_col + "_in"
+    ale_in_ids2tx[joined_col] = np.where(ale_in_ids2tx[joined_col].isna(), 0, 1)
+    # Categorise le_ids according to whether all/some/none of its transcripts/sub-ids are assigned a decoy transcript
+    ale_decoys_summ = decoy_assignment_category(ale_in_ids2tx, id_col=event_id_col, indicator_col=joined_col)
+    
+    print("Summary counts for ALEs and assignment of decoy transcripts")
+    print(ale_decoys_summ["decoy_assignment"].value_counts())
     
     # sanity check - ALEs not overlapping introns should be excluded from this analysis
     ale_in_nintron_ids = ale_in_ids.intersection(nintrons_ale_ids)
@@ -437,7 +499,8 @@ def main(ref_gtf: str,
     # Output to file
     decoys_comb.to_gtf(output_prefix + ".decoys.gtf")
     all_comb.to_gtf(output_prefix + ".combined.gtf")
-
+    ale_decoys_summ.sort_values(by="decoy_assignment").to_csv(output_prefix + ".decoy_assignment.summary.ale.tsv", sep="\t", index=False, header=True)
+    ale_in_ids2tx.rename(columns={"le_id_in": "decoy"}).to_csv(output_prefix + ".decoy_assignment.all.ale.tsv", sep="\t", index=False, header=True)
 
 if __name__ == "__main__":
 
@@ -474,6 +537,11 @@ if __name__ == "__main__":
         "--event_id_col", type=str, default="le_id",
         help='Name of column containing event identifier (i.e. le_id), by default "le_id"'
     )
+    
+    parser.add_argument(
+        "--event_tx_col", type=str, default="transcript_id",
+        help='Name of column containing identifier one below --event_id_col (i.e. id column for overlapping intervals that are grouped into a single event), by default "transcript_id"'
+    )
 
     parser.add_argument(
         "--ref_gene_id_col", type=str, default="gene_id",
@@ -493,5 +561,6 @@ if __name__ == "__main__":
         output_prefix=args.output_prefix,
         gene_id_col=args.gene_id_col,
         event_id_col=args.event_id_col,
+        event_tx_col=args.event_tx_col,
         ref_gene_id_col=args.ref_gene_id_col
     )
