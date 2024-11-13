@@ -1,7 +1,7 @@
 library(tidyverse)
 
 parse_coverage <- function(file, flank_interval, average = TRUE) {
-  f <- read_tsv(file, col_names = c("chr", "start", "end", "name", ".", "strand", "position", "coverage"))
+  f <- read_tsv(file, col_names = c("chr", "start", "end", "name", ".", "strand", "position", "coverage"), show_col_types = F)
   # make sure positions are strand-aware
   f$position[f$strand == "-"] <- (2 + flank_interval*2) - f$position[f$strand == "-"]
   
