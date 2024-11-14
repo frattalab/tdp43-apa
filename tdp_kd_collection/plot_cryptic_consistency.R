@@ -153,8 +153,9 @@ barplot_cryptic_counts <- dataset_cryptic_counts %>%
              y = plot_experiment_name)) +
   geom_col() +
   scale_y_discrete(limits = rev) +
-  geom_text(aes(y = plot_experiment_name, label = n),nudge_x = 5) +
-  theme_bw(base_size = 14) +
+  scale_x_continuous(limits = c(0,125)) +
+  geom_text(aes(y = plot_experiment_name, label = n), hjust = -0.25, size = 3) +
+  theme_bw(base_size = 12) +
   labs(x = "Number of Cryptics",
        y = "Dataset")
 
@@ -170,11 +171,12 @@ upsetplot_cryptic_counts <- df %>%
   summarise(datasets = list(plot_experiment_name)) %>%
   ggplot(aes(x = datasets)) +
   geom_bar() +
-  scale_x_upset(order_by = "freq") +
-  geom_text(stat='count', aes(label=after_stat(count)), vjust=-0.5) +
+  scale_x_upset() +
+  scale_y_continuous(limits = c(0,65)) +
+  geom_text(stat='count', aes(label=after_stat(count)), vjust=-0.25, size = 2) +
   labs(x = "Dataset",
        y = "Count") +
-  theme_bw(base_size = 12)
+  theme_bw()
 
 upsetplot_cryptic_counts
 
@@ -423,6 +425,50 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
        units = "in",
        dpi = "retina")
 
+
+# cryptic counts and overlap plots
+
+ggsave(filename = "2024-11-14_cryptics_count_barplot.png",
+       plot = barplot_cryptic_counts,
+       path = "processed",
+       width = 100,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-14_cryptics_count_barplot.pdf",
+       plot = barplot_cryptic_counts,
+       path = "processed",
+       width = 100,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
+
+
+ggsave(filename = "2024-11-14_cryptics_upsetplot.png",
+       plot = upsetplot_cryptic_counts,
+       path = "processed",
+       width = 200,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-14_cryptics_upsetplot.pdf",
+       plot = upsetplot_cryptic_counts,
+       path = "processed",
+       width = 200,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-14_cryptics_upsetplot.svg",
+       plot = upsetplot_cryptic_counts,
+       path = "processed",
+       device = svg,
+       width = 200,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
 
 
 # write enrichment scores to tsv (summarised)
