@@ -209,7 +209,7 @@ covar_name_df
 
 # boxplot of standardised mean differences for all iterations (matched subset & all annotated)
 compar_name_df <- tibble(comparison = c("matched vs. focal", "pool vs. focal"),
-                         comparison_clean = c("Matched vs Cryptic", "Annotated vs Cryptic"))
+                         comparison_clean = c("Matched Annotated\nvs Cryptic", "All Annotated\nvs Cryptic"))
 
 
 annot_cryptic_love_boxplot <- create_enhanced_love_plot(bal_median_strat, covar_name_df, compar_name_df, comparison_vals = compar_name_df$comparison)
@@ -218,7 +218,7 @@ annot_cryptic_love_boxplot <- create_enhanced_love_plot(bal_median_strat, covar_
 annot_cryptic_love_boxplot <- annot_cryptic_love_boxplot +
   labs(colour = "Comparison",
        title = NULL) +
-  scale_colour_manual(values = c("#7570b3", "#1b9e77")) +
+  scale_colour_manual(values = c( "#7570b3", "#1b9e77")) +
   scale_x_continuous(limits = c(-1.2,1.2), breaks = seq(-1,1,0.5)) +
   annotate(geom = "text", x = -1, y = "TPM Zanovello SK-N-BE(2)", label = "Higher in\nCryptic set", size = 3) +
   
@@ -229,12 +229,12 @@ annot_cryptic_love_boxplot
 
 if (!dir.exists(outdir)) {dir.create(outdir, recursive = T)}
 
-ggsave(filename = file.path(outdir, "2024-11-04_covariate_balance.love_plot.boxplot.png"),
+ggsave(filename = file.path(outdir, "2024-11-14_covariate_balance.love_plot.boxplot.png"),
        plot = annot_cryptic_love_boxplot,
        dpi = "retina",
        units = "mm", width = 150, height = 100)
 
-ggsave(filename = file.path(outdir, "2024-11-04_covariate_balance.love_plot.boxplot.pdf"),
+ggsave(filename = file.path(outdir, "2024-11-14_covariate_balance.love_plot.boxplot.pdf"),
        plot = annot_cryptic_love_boxplot,
        dpi = "retina",
        units = "mm", width = 150, height = 100)
