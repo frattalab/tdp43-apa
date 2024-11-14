@@ -302,7 +302,7 @@ med_scatter_lab_1dataset
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2024-11-11_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.png",
+ggsave(filename = "2024-11-14_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.png",
        plot = med_scatter_all_gn,
        path = "processed",
        width = 12,
@@ -310,9 +310,10 @@ ggsave(filename = "2024-11-11_tdp_kd_collection_cryptics_scatter_colour_medians_
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-11-11_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.svg",
+ggsave(filename = "2024-11-14_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.svg",
        plot = med_scatter_all_gn,
        path = "processed",
+       device = svg,
        width = 12,
        height = 12,
        units = "in",
@@ -368,7 +369,7 @@ cryp_type_med_df_counts %>%
   write_tsv("processed/2023-10-12_cryptic_median_exprn_category_counts.tsv", col_names = T)
 
 # save to Rdata
-save(med_scatter_lab_1dataset, med_scatter, plot_med_df, cryp_any_not_med_df, sig_med_df, cryp_type_med_df_counts, cryp_type_med_df, file = "processed/fig1_cryptics_scatter.Rdata")
+save(med_scatter_lab_1dataset, med_scatter, plot_med_df, cryp_any_not_med_df, sig_med_df, cryp_type_med_df_counts, cryp_type_med_df, file = "processed/2024-11-14_fig1_cryptics_scatter.Rdata")
 
 
 
