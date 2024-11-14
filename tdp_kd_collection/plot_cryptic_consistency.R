@@ -58,6 +58,43 @@ df <- filter(df, !le_id %in% mv_fail_ids)
 # annotate cryptic events (any dataset)
 df <- mutate(df, cryptic_any = padj < 0.05 & mean_PPAU_base < 0.1 & delta_PPAU_treatment_control > 0.1)
 
+# Define a cleaned df mapping experiment names to plot names
+experiment_names <- tibble(experiment_name = c("humphrey_i3_cortical",
+                                          "brown_i3_cortical",
+                                          "seddighi_i3_cortical",
+                                          "zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl",
+                                          "klim_i3_motor",
+                                          "zanovello_shsy5y_curve_0075",
+                                          "zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl",
+                                          "brown_shsy5y",
+                                          "zanovello_skndz_curve_1",
+                                          "brown_skndz"),
+                      plot_experiment_name = c("Humphrey i3 cortical",
+                                               "Brown i3 cortical",
+                                               "Seddighi i3 cortical",
+                                               "Zanovello i3 cortical",
+                                               "Klim i3 motor",
+                                               "Zanovello SH-SY-5Y curve",
+                                               "Zanovello SH-SY-5Y CHX",
+                                               "Brown SH-SY-5Y",
+                                               "Zanovello SK-N-BE(2) curve",
+                                               "Brown SK-N-BE(2)")
+                      ) %>%
+  mutate(plot_experiment_name = factor(plot_experiment_name, levels = c("Humphrey i3 cortical",
+                                                                        "Brown i3 cortical",
+                                                                        "Seddighi i3 cortical",
+                                                                        "Zanovello i3 cortical",
+                                                                        "Klim i3 motor",
+                                                                        "Zanovello SH-SY-5Y curve",
+                                                                        "Zanovello SH-SY-5Y CHX",
+                                                                        "Brown SH-SY-5Y",
+                                                                        "Zanovello SK-N-BE(2) curve",
+                                                                        "Brown SK-N-BE(2)"))
+         )
+
+
+
+
 #1. number of datasets cryptic, regulated, expressed/evaluated (and fractions)
 
 # annotate regulated, cryptic & expressed for each event
@@ -99,6 +136,28 @@ plot_cryptic_vs_expressed_counts
 
 plot_cryptic_vs_expressed_counts_notitle <- plot_cryptic_vs_expressed_counts + 
   labs(title = "")
+
+#. Plot number of cryptic events per dataset
+
+# get df of cryptic counts per dataset
+dataset_cryptic_counts <-  df %>%
+  filter(cryptic) %>%
+  distinct(experiment_name, le_id) %>%
+  count(experiment_name) %>%
+  # add in tidy dataset name for plotting
+  left_join(experiment_names, by = "experiment_name")
+
+barplot_cryptic_counts <- dataset_cryptic_counts %>%
+  ggplot(aes(x = n,
+             y = plot_experiment_name)) +
+  geom_col() +
+  scale_y_discrete(limits = rev) +
+  geom_text(aes(y = plot_experiment_name, label = n),nudge_x = 5) +
+  theme_bw(base_size = 14) +
+  labs(x = "Number of Cryptics",
+       y = "Dataset")
+
+barplot_cryptic_counts
 
 
 #2. Calculate regulation consistency score (basically sum of absolute/ signed-ranks of -log10 pvalues
