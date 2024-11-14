@@ -1,4 +1,5 @@
 library(tidyverse)
+library(ggupset)
 
 facet_heatmap <- function(df,
                           plot_title = "Cryptic event deltas across datasets",
@@ -137,7 +138,7 @@ plot_cryptic_vs_expressed_counts
 plot_cryptic_vs_expressed_counts_notitle <- plot_cryptic_vs_expressed_counts + 
   labs(title = "")
 
-#. Plot number of cryptic events per dataset
+# Plot number of cryptic events per dataset
 
 # get df of cryptic counts per dataset
 dataset_cryptic_counts <-  df %>%
@@ -158,6 +159,24 @@ barplot_cryptic_counts <- dataset_cryptic_counts %>%
        y = "Dataset")
 
 barplot_cryptic_counts
+
+
+# Upset plot of overlap of cryptic events between datasets
+upsetplot_cryptic_counts <- df %>%
+  filter(cryptic) %>%
+  distinct(experiment_name, le_id) %>%
+  left_join(experiment_names, by = "experiment_name") %>%
+  group_by(le_id) %>%
+  summarise(datasets = list(plot_experiment_name)) %>%
+  ggplot(aes(x = datasets)) +
+  geom_bar() +
+  scale_x_upset(order_by = "freq") +
+  geom_text(stat='count', aes(label=after_stat(count)), vjust=-0.5) +
+  labs(x = "Dataset",
+       y = "Count") +
+  theme_bw(base_size = 12)
+
+upsetplot_cryptic_counts
 
 
 #2. Calculate regulation consistency score (basically sum of absolute/ signed-ranks of -log10 pvalues
@@ -351,9 +370,6 @@ ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.svg
        height = 12,
        units = "in",
        dpi = "retina")
-
-
-
 
 ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.png",
        plot = cryptics_norm_score_sort_heatmap,
