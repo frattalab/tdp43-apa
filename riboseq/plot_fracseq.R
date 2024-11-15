@@ -367,6 +367,9 @@ npc_cyto_normed_elk1_pooledall_line <- ggplot(ppau_npc_elk1_some_cyto_cyto_norme
 
 npc_cyto_normed_elk1_pooledall_line
 
+# extract the computed mean value from the plot
+npc_cyto_normed_elk1_pooledall_mean <- ggplot_build(npc_cyto_normed_elk1_pooledall_line)$data[[2]]
+
 # Repeat but for cytosol, monosome + 2-4/5+ polysomes
 sum_tpm_polysome_cyto_3exts <- tpm_long_3exts %>%
   mutate(group = if_else(fraction %in% c("2-4_ribosomes", "5_ribosomes"),
