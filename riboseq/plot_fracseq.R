@@ -356,7 +356,7 @@ npc_cyto_normed_elk1_pooledall_line <- ggplot(ppau_npc_elk1_some_cyto_cyto_norme
              size = 3,) +
   stat_summary(
     fun = mean, geom = "point", 
-    shape = 95, size = 25, colour = "#1f78b4"
+    shape = 95, size = 15, colour = "#1f78b4", alpha = 0.75
   ) +
   scale_y_continuous(breaks = seq(1, 1.5, 0.1)) +
   theme_bw(base_size = 14) +
@@ -475,6 +475,12 @@ ggsave(file.path(outdir,
 
 ggsave(file.path(outdir,
                  "2024-11-15_fracseq.npc.elk1.cytosol_normed.mean_line.ribosome_pooled.png"),
+       plot = npc_cyto_normed_elk1_pooledall_line,
+       width = 150, height = 150,
+       units = "mm", dpi = "retina")
+
+ggsave(file.path(outdir,
+                 "2024-11-15_fracseq.npc.elk1.cytosol_normed.mean_line.ribosome_pooled.pdf"),
        plot = npc_cyto_normed_elk1_pooledall_line,
        width = 150, height = 150,
        units = "mm", dpi = "retina")
