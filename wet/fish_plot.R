@@ -31,7 +31,11 @@ norm_control_by_batch <- function(df, value_col, conds = c("CTRL", "TDP43KD")) {
 }
 
 
+fish_counts_raw <- read_tsv("processed/2023-10-13_fish_counts_cleaned_longer.tsv")
 fish_counts <- read_tsv("processed/2023-10-13_fish_counts_processed.tsv")
+# number of images per replicate and sample
+n_images <- 10
+
 # update condition labels
 fish_counts <- mutate(fish_counts,
                       condition = if_else(condition == "TDP", "TDP43KD", condition))
@@ -163,7 +167,8 @@ plot_ratio_prox_1
 
 plot_nuclei_sums <- fish_counts %>%
   mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
-                             levels = c("Total", "Cryptic"))
+                             levels = c("Total", "Cryptic")),
+         mean_nuclei = sum_nuclei
          ) %>%
   # number of nuclei is consistent regardless of probe - keep 1 row per replicate
   distinct(replicate, condition, .keep_all = T) %>%
@@ -176,6 +181,30 @@ plot_nuclei_sums <- fish_counts %>%
   labs(x = "",
        y = "Total nuclei",
        shape = "Replicate")
+
+# plot mean nuclei counts 
+# First, check that mean reflects cntre of distribution of image nuclei counts well across replicates
+plot_nuclei_means <- fish_counts_raw %>%
+  distinct(replicate, condition, image, n_nuclei) %>%
+  mutate(condition = if_else(condition == "TDP", "TDP43KD", condition)) %>%
+  ggplot(aes(x = condition, y = n_nuclei, shape = as.factor(replicate), group = as.factor(replicate))) +
+  geom_point(size = 2, position = position_jitterdodge(seed = 12)) +
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 95,
+               size = 15,
+               colour = "#1f78b4",
+               alpha = 0.75,
+               position = position_dodge(width = 0.75)) +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Nuclei per image",
+       shape = "Replicate")
+
+plot_nuclei_means
+
+# foci counts 
 
 plot_foci_sums <- fish_counts %>%
   mutate(plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
@@ -191,7 +220,76 @@ plot_foci_sums <- fish_counts %>%
   labs(x = "",
        y = "Total foci",
        shape = "Replicate")
-  
+
+plot_foci_sums
+
+
+# repeat with counts for all images
+plot_foci_all_means <- fish_counts_raw  %>%
+  group_by(replicate, condition, image, probe) %>%
+  # sum across regions for each probe
+  summarise(n_foci = sum(n_foci)) %>%
+  ungroup() %>%
+  mutate(condition = if_else(condition == "TDP", "TDP43KD", condition),
+         plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic")),
+         replicate = as.factor(replicate)
+         ) %>%
+  ggplot(aes(x = condition, y = n_foci, shape = replicate, group = replicate))+
+  facet_wrap("~ plot_probe") +
+  geom_point(size = 2,
+             position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.75, seed = 123)
+  ) +
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 95,
+               size = 15,
+               colour = "#1f78b4",
+               alpha = 0.75,
+               position = position_dodge(width = 0.75)) +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Foci per image",
+       shape = "Replicate",
+       colour = "Location")
+
+plot_foci_all_means
+
+# repeat with distribution of foci counts per cell  
+plot_foci_cell_means <- fish_counts_raw  %>%
+  group_by(replicate, condition, image, probe) %>%
+  # sum across regions for each probe
+  summarise(n_foci = sum(n_foci),
+            n_nuclei = unique(n_nuclei)) %>%
+  ungroup() %>%
+  mutate(foci_per_cell = n_foci / n_nuclei, 
+         condition = if_else(condition == "TDP", "TDP43KD", condition),
+         plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic")),
+         replicate = as.factor(replicate)
+  ) %>%
+  ggplot(aes(x = condition, y = foci_per_cell, shape = replicate, group = replicate))+
+  facet_wrap("~ plot_probe") +
+  geom_point(size = 2,
+             position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.75, seed = 123)
+  ) +
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 95,
+               size = 15,
+               colour = "#1f78b4",
+               alpha = 0.75,
+               position = position_dodge(width = 0.75)) +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Mean foci per cell",
+       shape = "Replicate",
+       colour = "Location")
+
+
+plot_foci_cell_means
 
 # Nuclear/extranuclear foci counts
 plot_subcellfoci_sums <- fish_counts %>%
@@ -214,10 +312,41 @@ plot_subcellfoci_sums <- fish_counts %>%
        shape = "Replicate",
        colour = "Location")
 
+plot_subcellfoci_sums
+
+# attempt plot with all images represented - just for total probe
+plot_subcellfoci_total_means <- fish_counts_raw  %>%
+  mutate(condition = if_else(condition == "TDP", "TDP43KD", condition),
+         plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic")),
+         plot_subcell_fraction = str_to_sentence(region),
+         plot_subcell_fraction = factor(plot_subcell_fraction, levels = c("Nuclear", "Extranuclear"))) %>%
+  filter(plot_probe == "Total") %>%
+  select(replicate, condition, image, plot_probe, plot_subcell_fraction, n_foci) %>%
+  ggplot(aes(x = condition, y = n_foci, shape = as.factor(replicate), group = as.factor(replicate))) +
+  facet_wrap("~ plot_subcell_fraction", scales = "free_y") +
+  geom_point(size = 2,
+             position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.75, seed = 123)
+  ) +
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 95,
+               size = 15,
+               colour = "#1f78b4",
+               alpha = 0.75,
+               position = position_dodge(width = 0.75)) +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Foci per image",
+       shape = "Replicate",
+       colour = "Location")
+ 
+plot_subcellfoci_total_means
 
 plot_nuclei_sums
 plot_foci_sums
-plot_subcellfoci_sums
+
 
 
 
@@ -354,3 +483,87 @@ ggsave("2024-03-27_fish_foci_subcellular_counts.svg",
        height = 5,
        width = 5,
        dpi = "retina")
+
+# updated mean plots
+
+# Number of nuclei (cells) per image of each replicate
+ggsave("2024-11-15_fish_nuclei_counts_all_images.png",
+       plot = plot_nuclei_means,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-11-15_fish_nuclei_counts_all_images.svg",
+       plot = plot_nuclei_means,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+# Number pf foci (total) per image in each replicate
+
+ggsave("2024-11-15_fish_foci_counts_all_images.png",
+       plot = plot_foci_all_means,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-11-15_fish_foci_counts_all_images.svg",
+       plot = plot_foci_all_means,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+
+# Mean foci per cell per image in each replicate
+ggsave("2024-11-15_fish_focipercell_counts_all_images.png",
+       plot = plot_foci_cell_means,
+       path = "processed/",
+       device = "png",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-11-15_fish_focipercell_counts_all_images.svg",
+       plot = plot_foci_cell_means,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+
+# Total probe foci counts in each subcellular compartment per image in each replicate
+ggsave("2024-11-15_fish_subcellfoci_counts_all_images.png",
+       plot = plot_subcellfoci_total_means,
+       path = "processed/",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-11-15_fish_subcellfoci_counts_all_images.svg",
+       plot = plot_subcellfoci_total_means,
+       path = "processed/",
+       device = svg,
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+
+
+
