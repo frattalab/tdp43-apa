@@ -203,7 +203,7 @@ med_scatter_all_gn <- plot_med_df_all_gn %>%
   geom_vline(xintercept = 10, linetype = "dashed") +
   scale_colour_manual(values = c("#000000", "#d95f02")) +
   geom_text_repel(max.overlaps = 1000, 
-                  size = rel(4),
+                  size = rel(6),
                   force = 80,
                   force_pull = 0.5,
                   direction = "both",
@@ -228,53 +228,6 @@ med_scatter_all_gn <- plot_med_df_all_gn %>%
 med_scatter_all_gn
 
 
-# Alternative plot - avoid mirroring by selecting minor isoforms as representative for a gene
-
-# Simple alternative 1. Just plot all minor isoforms (< 50 % usage in controls)
-plot_med_df %>%
-  filter(median_ctl < 0.5) %>%
-  ggplot(aes(x = median_ctl*100,
-             y = median_delta*100, 
-             alpha = plot_alpha,
-             colour = plot_colour, label = plot_name)) + 
-  geom_point() +
-  geom_hline(yintercept = -10, linetype = "dashed") +
-  geom_hline(yintercept = 10, linetype = "dashed") +
-  geom_vline(xintercept = 10, linetype = "dashed") +
-  scale_colour_manual(values = c("#000000", "#d95f02")) +
-  geom_text_repel(max.overlaps = 1000, 
-                  size = rel(4),
-                  force = 80,
-                  force_pull = 0.5,
-                  direction = "both",
-                  min.segment.length = 0,
-                  seed = 123,
-                  xlim = c(0,100)
-  ) +
-  scale_x_continuous(breaks = seq(0,100,10)) + 
-  scale_y_continuous(limits = c(-100,100),
-                     breaks = seq(-100,100,10)) +
-  labs(x = "Median of CTL mean PAS usage %",
-       y = "Median of change in usage (TDP-43 KD - CTL)") +
-  theme_bw(base_size = 16) + 
-  guides(alpha = "none",
-         colour = "none") +
-  theme(axis.title.x = element_text(size = rel(1.75)),
-        axis.title.y = element_text(size = rel(1.75)),
-        axis.text.x = element_text(size = rel(1.5)),
-        axis.text.y = element_text(size = rel(1.5))
-  )
-
-# among events with increased usage upon KD, are they overrep among lower delta usages (i.e. cryptic vs not?)
-plot_med_df %>%
-  filter(median_delta >= 0.1) %>%
-  ggplot(aes(x = median_ctl)) +
-  geom_histogram(binwidth = 0.0075) +
-  geom_vline(xintercept = 0.1, linetype = "dashed")
-
-
-
-
 # first, get counts of unique IDs per gene
 cryp_id_counts <- cryp_any_med_df %>%
   distinct(gene_id, gene_name, le_id) %>%
@@ -286,70 +239,12 @@ plot_cryp_id_counts <- cryp_id_counts %>%
   geom_bar() +
   geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
   scale_x_continuous(breaks = seq(1,10,1)) +
+  scale_y_continuous(limits = c(0,2250)) +
   theme_bw(base_size = 14) +
-  labs(x = "number of unique isoforms")
+  labs(x = "Unique Isoform Count",
+       y = "Gene Count")
 
 plot_cryp_id_counts
-# For most genes, just keeping the reported isoform, or selecting the minor one will solve the mirroring issue
-
-# select minor isoform for genes with n <= 2 genes
-cryp_any_med_min2_df <- cryp_id_counts %>%
-  filter(n == 2) %>%
-  left_join(cryp_any_med_df, by = "gene_name") %>%
-  group_by(gene_name) %>%
-  slice_min(median_ctl, n = 1) %>%
-  ungroup()
-
-# trying to understand - what is the distribution of activated vs repressed sites for minor isoforms?
-cryp_any_med_min2_df %>%
-  select(gene_name, median_delta) %>%
-  mutate(dirn = sign(median_delta)) %>%
-  ggplot(aes(x = dirn)) +
-  geom_bar()
-
-# Plot with respect to change in usage (i..e are )
-cryp_any_med_min2_df %>%
-  select(gene_name, median_delta) %>%
-  mutate(dirn = sign(median_delta)) %>%
-  ggplot(aes(x = abs(median_delta), fill = factor(dirn))) +
-  geom_histogram(binwidth = 0.025)
-
-# 
-cryp_any_med_min2_df %>%
-  get_scatter_df(highlight_genes) %>%
-  ggplot(aes(x = median_ctl*100,
-             y = median_delta*100, 
-             alpha = plot_alpha,
-             colour = plot_colour, label = plot_name)) + 
-  geom_point() +
-  geom_hline(yintercept = -10, linetype = "dashed") +
-  geom_hline(yintercept = 10, linetype = "dashed") +
-  geom_vline(xintercept = 10, linetype = "dashed") +
-  scale_colour_manual(values = c("#000000", "#d95f02")) +
-  geom_text_repel(max.overlaps = 1000, 
-                  size = rel(4),
-                  force = 80,
-                  force_pull = 0.5,
-                  direction = "both",
-                  min.segment.length = 0,
-                  seed = 123,
-                  xlim = c(0,100)
-  ) +
-  scale_x_continuous(breaks = seq(0,100,10)) + 
-  scale_y_continuous(limits = c(-100,100),
-                     breaks = seq(-100,100,10)) +
-  labs(x = "Median of CTL mean PAS usage %",
-       y = "Median of change in usage (TDP-43 KD - CTL)") +
-  theme_bw(base_size = 16) + 
-  guides(alpha = "none",
-         colour = "none") +
-  theme(axis.title.x = element_text(size = rel(1.75)),
-        axis.title.y = element_text(size = rel(1.75)),
-        axis.text.x = element_text(size = rel(1.5)),
-        axis.text.y = element_text(size = rel(1.5))
-  )
-  
-  
 
 
 # Alternative plot - highlight events that are cryptic in at least one dataset (so can still highlight these, useful for later discussion)
@@ -426,7 +321,7 @@ med_scatter_lab_1dataset
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2024-11-14_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.png",
+ggsave(filename = "2024-11-17_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.png",
        plot = med_scatter_all_gn,
        path = "processed",
        width = 12,
@@ -434,7 +329,7 @@ ggsave(filename = "2024-11-14_tdp_kd_collection_cryptics_scatter_colour_medians_
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-11-14_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.svg",
+ggsave(filename = "2024-11-17_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.svg",
        plot = med_scatter_all_gn,
        path = "processed",
        device = svg,
@@ -442,6 +337,24 @@ ggsave(filename = "2024-11-14_tdp_kd_collection_cryptics_scatter_colour_medians_
        height = 12,
        units = "in",
        dpi = "retina")
+
+ggsave(filename = "2024-11-17_tdp_kd_collection_sig_isoform_gene_counts_bar.png",
+       plot = plot_cryp_id_counts,
+       path = "processed",
+       width = 125,
+       height = 75,
+       units = "mm",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-17_tdp_kd_collection_sig_isoform_gene_counts_bar.svg",
+       plot = plot_cryp_id_counts,
+       path = "processed",
+       device = svg,
+       width = 125,
+       height = 75,
+       units = "mm",
+       dpi = "retina")
+
 
 ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
        plot = med_scatter,
