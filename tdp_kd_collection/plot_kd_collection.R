@@ -329,10 +329,9 @@ ggsave(filename = "2024-11-17_tdp_kd_collection_cryptics_scatter_colour_medians_
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-11-17_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.svg",
+ggsave(filename = "2024-11-17_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.pdf",
        plot = med_scatter_all_gn,
        path = "processed",
-       device = svg,
        width = 12,
        height = 12,
        units = "in",
@@ -346,10 +345,9 @@ ggsave(filename = "2024-11-17_tdp_kd_collection_sig_isoform_gene_counts_bar.png"
        units = "mm",
        dpi = "retina")
 
-ggsave(filename = "2024-11-17_tdp_kd_collection_sig_isoform_gene_counts_bar.svg",
+ggsave(filename = "2024-11-17_tdp_kd_collection_sig_isoform_gene_counts_bar.pdf",
        plot = plot_cryp_id_counts,
        path = "processed",
-       device = svg,
        width = 125,
        height = 75,
        units = "mm",
@@ -372,6 +370,16 @@ ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_
        height = 12,
        units = "in",
        dpi = "retina")
+
+ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.pdf",
+       plot = med_scatter,
+       path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+
 
 ggsave(filename = "2023-10-06_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
        plot = med_scatter_lab_1dataset,
