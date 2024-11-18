@@ -75,6 +75,14 @@ def compare_tsv_files(orig_file: str, new_file: str, output_prefix: str, metadat
             print(dropped_counts)
             dropped_counts.to_csv(f"{output_prefix}.dropped_le_ids.metadata_counts.tsv", sep='\t', index=False)
             dropped_le_metadata.to_csv(f"{output_prefix}.dropped_le_ids.metadata_df.tsv", sep='\t', index=False)
+            
+        # Also print gene-level info for dropped le_ids
+        dropped_le_ids_gene = "|".join([id.split("_")[0] for id in dropped_le_ids])
+        dropped_le_metadata_gene = metadata[metadata['le_id'].str.contains(dropped_le_ids_gene, regex=True)]
+        if not dropped_le_metadata_gene.empty:
+            print("Outputting metadata df for cryptic genes with at least 1 dropped isoform")
+            dropped_le_metadata_gene.to_csv(f"{output_prefix}.dropped_le_ids.gene.metadata_df.tsv", sep='\t', index=False)
+            
 
         # Process le_ids with unmatched_transcripts
         unmatched_metadata = metadata[metadata['le_id'].isin(unmatched_transcripts)]
