@@ -505,6 +505,14 @@ ggsave("2024-11-15_fish_nuclei_counts_all_images.svg",
        width = 5,
        dpi = "retina")
 
+ggsave("2024-11-15_fish_nuclei_counts_all_images.pdf",
+       plot = plot_nuclei_means,
+       path = "processed/",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
 # Number pf foci (total) per image in each replicate
 
 ggsave("2024-11-15_fish_foci_counts_all_images.png",
