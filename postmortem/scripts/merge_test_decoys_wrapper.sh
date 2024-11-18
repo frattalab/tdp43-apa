@@ -25,7 +25,7 @@ echo
 echo 'CHECKING TRANSCRIPT TO LE_ID ASSIGNMENT, FOCUSING ON CRYPTIC IDS ONLY'
 echo
 python scripts/test_decoys_tx_assignment.py \
-    --metadata $METADATA_FILE \
+    --metadata_file $METADATA_FILE \
     --output_prefix "${OUTPUT_PREFIX}.tx_assignment.cryptic_ids" \
     "$TX2LE_IDS" \
     "$OUTPUT_TX2LE"
@@ -35,7 +35,7 @@ echo
 echo 'CHECKING TRANSCRIPT TO LE_ID ASSIGNMENT, FOCUSING ON ALL IDS OF CRYPTIC GENES'
 echo
 python scripts/test_decoys_tx_assignment.py \
-    --metadata $METADATA_FILE \
+    --metadata_file $METADATA_FILE \
     --output_prefix "${OUTPUT_PREFIX}.tx_assignment.cryptic_genes" \
     "$TX2LE_GENE" \
     "$OUTPUT_TX2LE"
