@@ -45,7 +45,7 @@ for id_key, le_ids in zip(["ipa", "ale", "ext3", "proxext3", "complex"],
 
 print("Outputting GTF of cryptic-containing genes (with cryptic IDs excluded)")
 #  Output GTF of cryptic genes (with the cryptic IDs excluded)
-gtf_cryptic.subset(lambda df: df.le_id.isin(set(cryptics_df.le_id))).to_gtf(output_prefix + ".cryptics.all.non_cryptic_ids.gtf")
+gtf_cryptic.subset(lambda df: ~df.le_id.isin(set(cryptics_df.le_id))).to_gtf(output_prefix + ".cryptics.all.non_cryptic_ids.gtf")
 
 
 
