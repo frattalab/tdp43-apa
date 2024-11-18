@@ -67,6 +67,10 @@ bash scripts/decoys_wrapper.sh processed/decoys/2024-10-02_cryptics_plus_decoys.
 
 ### Split GTF by cryptic status and event type
 
+```bash
+python scripts/split_gtf_by_cryptic_and_event_status.py data/novel_ref_combined.quant.last_exons.gtf data/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation.tsv processed/decoys/novel_ref_combined.quant
+```
+
 ### Construct decoys for IPA and ALE events
 
 Replacing 2024-11-06 with whatever is today's date (TODO: update when have finalised offering)
@@ -74,6 +78,14 @@ Replacing 2024-11-06 with whatever is today's date (TODO: update when have final
 ```bash
 mkdir -p processed/decoys/playground/
 python scripts/get_decoy_tx.py -r data/reference_filtered.gtf -i processed/decoys/novel_ref_combined.quant.cryptics.ipa.ids.gtf -a processed/decoys/novel_ref_combined.quant.cryptics.ale.ids.gtf -o processed/decoys/playground/2024-11-06_decoys
+```
+
+### Merge decoys with original quant GTF and test ID assignment (for cryptic genes)
+
+Wrapper script - WIP for final commands
+
+```bash
+bash scripts/merge_test_decoys_wrapper.sh tmp_merge_test_decoys
 ```
 
 ### PAPA to splice junctions
