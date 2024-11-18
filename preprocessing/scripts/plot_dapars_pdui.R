@@ -67,3 +67,8 @@ ggsave(filename = file.path(outdir, "2024-11-11_updated.elk1_six3_tlx1.pdui.sedd
        width = 100, height = 100, units = "mm", dpi = "retina"
        )
 
+ggsave(filename = file.path(outdir, "2024-11-11_updated.elk1_six3_tlx1.pdui.seddighi_i3_cortical.pdf"),
+       plot = distal_pdui_plot,
+       width = 100, height = 100, units = "mm", dpi = "retina"
+)
+
