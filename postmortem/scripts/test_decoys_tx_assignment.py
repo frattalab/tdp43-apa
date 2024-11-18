@@ -85,7 +85,7 @@ def compare_tsv_files(orig_file: str, new_file: str, output_prefix: str, metadat
             unmatched_counts.to_csv(f"{output_prefix}.unmatched_tx_le_ids.metadata_counts.tsv", sep='\t', index=False)
             unmatched_metadata.to_csv(f"{output_prefix}.unmatched_tx_le_ids.metadata_df.tsv", sep='\t', index=False)
 
-        print(f"Metadata summaries saved to {output_prefix}_dropped_le_ids_metadata_counts.tsv and {output_prefix}_unmatched_transcripts_metadata_counts.tsv")
+        print(f"Metadata summaries saved to {output_prefix}.dropped_le_ids.metadata_counts.tsv and {output_prefix}.unmatched_tx_le_ids.metadata_counts.tsv")
 
     print("\nSummary:")
     if len(dropped_le_ids) == 0 and len(unmatched_transcripts) == 0:
