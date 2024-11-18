@@ -2,15 +2,18 @@ import argparse
 import pyranges as pr
 import sys
 
-def main(non_cryptics_path: str, decoys_path: str, cryptic_others_path: str, output_prefix: str,
+def main(non_cryptics_path: str, decoys_path: str, cryptic_others_path: str, cryptic_3exts_path: str, cryptic_prox3exts_path: str, cryptic_complex_path: str, output_prefix: str,
          event_tx_col: str = 'transcript_id', event_id_col: str = 'le_id', gene_id_col: str = 'gene_id', gene_name_col: str = 'gene_name') -> None:
     # Read the GTF files
     non_cryptics = pr.read_gtf(non_cryptics_path)
     decoys = pr.read_gtf(decoys_path)
     cryptic_others = pr.read_gtf(cryptic_others_path)
+    cryptic_3exts = pr.read_gtf(cryptic_3exts_path)
+    cryptic_prox3exts = pr.read_gtf(cryptic_prox3exts_path)
+    cryptic_complex = pr.read_gtf(cryptic_complex_path)
 
     # Combine the GTF files into a single object
-    combined = pr.concat([non_cryptics, decoys, cryptic_others])
+    combined = pr.concat([non_cryptics, decoys, cryptic_others, cryptic_3exts, cryptic_prox3exts, cryptic_complex])
 
     # Remove duplicate entries
     combined = combined.drop_duplicate_positions(strand=True)
@@ -90,5 +93,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    main(args.non_cryptics, args.decoys, args.cryptic_others, args.output_prefix,
-         args.event_tx_col, args.event_id_col, args.gene_id_col, args.gene_name_col)
+main(
+        args.non_cryptics,
+        args.decoys,
+        args.cryptic_others,
+        args.cryptic_3exts,
+        args.cryptic_prox3exts,
+        args.cryptic_complex,
+        args.output_prefix,
+        args.event_tx_col,
+        args.event_id_col,
+        args.gene_id_col,
+        args.gene_name_col
+)
