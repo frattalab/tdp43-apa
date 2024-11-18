@@ -526,6 +526,14 @@ ggsave("2024-11-15_fish_foci_counts_all_images.svg",
        dpi = "retina")
 
 
+ggsave("2024-11-15_fish_foci_counts_all_images.pdf",
+       plot = plot_foci_all_means,
+       path = "processed/",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
 # Mean foci per cell per image in each replicate
 ggsave("2024-11-15_fish_focipercell_counts_all_images.png",
        plot = plot_foci_cell_means,
@@ -545,6 +553,14 @@ ggsave("2024-11-15_fish_focipercell_counts_all_images.svg",
        width = 5,
        dpi = "retina")
 
+ggsave("2024-11-15_fish_focipercell_counts_all_images.pdf",
+       plot = plot_foci_cell_means,
+       path = "processed/",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
 
 # Total probe foci counts in each subcellular compartment per image in each replicate
 ggsave("2024-11-15_fish_subcellfoci_counts_all_images.png",
@@ -559,6 +575,15 @@ ggsave("2024-11-15_fish_subcellfoci_counts_all_images.svg",
        plot = plot_subcellfoci_total_means,
        path = "processed/",
        device = svg,
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+
+ggsave("2024-11-15_fish_subcellfoci_counts_all_images.pdf",
+       plot = plot_subcellfoci_total_means,
+       path = "processed/",
        units = "in",
        height = 5,
        width = 5,
