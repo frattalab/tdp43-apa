@@ -15,8 +15,8 @@ def main(non_cryptics_path: str, decoys_path: str, cryptic_others_path: str, cry
     # Combine the GTF files into a single object
     combined = pr.concat([non_cryptics, decoys, cryptic_others, cryptic_3exts, cryptic_prox3exts, cryptic_complex])
 
-    # Remove duplicate entries
-    combined = combined.drop_duplicate_positions(strand=True)
+    # Remove duplicate entries (by event_id_col/le_id)
+    combined = combined.apply(lambda df: df.drop_duplicates(subset=["Chromosome", "Start", "End", "Strand", event_id_col]))
 
     # Output the merged GTF to a file
     print(f"Writing combined GTF to file - {output_prefix + '.merged.gtf'}")
