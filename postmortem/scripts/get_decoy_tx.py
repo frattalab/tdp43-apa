@@ -7,7 +7,7 @@ import numpy as np
 from helpers import add_region_number, get_internal_regions, get_terminal_regions, add_region_rank
 import sys
 import argparse
-from typing import Iterable, Set, List
+from typing import Iterable, Set, List, Literal
 
 
 '''
@@ -26,6 +26,88 @@ Output:
 - GTF combining decoy models with last exons of interest
 (optionally extending bleedthrough models to boundary of upstream exon, if provided PAPA quant GTF)
 '''
+
+
+def _df_swap_coord(df: pd.DataFrame,
+                   change: Literal['Start', 'End'],
+                   replace_col: str
+                   ):
+    '''Swap one end of a coordinate range (i.e. either start or end) with a joined value
+
+    Note: intended to be applied to internal df of pyranges 0.x/1.x dataframe i.e. all strand values are the same
+
+    Adapted from pr.methods.new_position._new_position (to only swap a single coordinate)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        _description_
+    change : Literal[&#39;Start&#39;, &#39;End&#39;]
+        _description_
+    replace_col : str
+        _description_
+    old_out_suffix : str
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    '''    ''''''
+    
+    # '''
+    # Swap values in Start/End coordinates with a provided column
+    # Adapted from pr.methods.new_position._new_position (to only swap a single coordinate)
+    # '''
+    assert isinstance(df, pd.DataFrame)
+    assert change in ["Start", "End"]
+    assert replace_col in df.columns
+
+    # copy of original    
+    to_change = df[change].copy()
+    
+    df.loc[:, change] = df[replace_col]
+    df.loc[:, replace_col] = to_change
+
+    return df
+
+
+def _df_update_5p(df: pd.DataFrame, suffix: str = "_b"):
+    '''Swap the 5'end coordinate (strand-aware) of an interval with the value from another column (e.g. join result)
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        _description_
+
+    suffix : str
+        _description_
+    '''
+
+    assert "Strand" in df.columns
+    assert (df["Strand"] == "+").all() or (df["Strand"] == "-").all()
+
+    if (df["Strand"] == "+").all():
+        # Update Start col to update 5'end of interval
+        out_col = "Start" + suffix
+        assert out_col in df.columns
+        out = _df_swap_coord(df, "Start", out_col)
+        
+
+    else:
+        # Update End col to update 5'end of interval
+        out_col = "End" + suffix
+        assert out_col in df.columns
+        out = _df_swap_coord(df, "End", out_col)
+    
+    # Check if have created negative intervals
+    out_msk = out["End"] - out["Start"] >= 0
+    n_neg = len(out[~out_msk])
+    if n_neg > 0:
+        print(f"Number of negative putative intervals (to be dropped) - {n_neg}")
+    out = out[out_msk]
+
+    return out
 
 
 def _n_ids(gr, id_col, is_df=False):
@@ -161,6 +243,58 @@ def get_straddled_exons(exons, introns, id_col="transcript_id", suffix="_b"):
 
     return exons_olap.drop(added_cols)
 
+
+def extend_ipa_5p(gr: pr.PyRanges, gr2: pr.PyRanges, id_col: str, suffix: str = "_decoy") -> pr.PyRanges:
+    '''Update IPA 5'ends to the 5'end boundary of the joined/directly adjacent exon
+    
+    1. Join gr and gr2, allowing bookended intervals to overlap
+    2. Filter for directly adjacent intervals at the 5'end
+    3. Swap the 5'end coordinates
+
+    Parameters
+    ----------
+    gr : pr.PyRanges
+        _description_
+    gr2 : pr.PyRanges
+        _description_
+    id_col : str
+        _description_
+    suffix : str, optional
+        _description_, by default "_decoy"
+
+    Returns
+    -------
+    pr.PyRanges
+        _description_
+    '''
+    gr_ids = set(gr.as_df()[id_col])
+    
+    # find cols unique to gr2 (won't have suffix added)
+    gr2_uniq_cols = set(gr2.columns).difference(set(gr.columns))
+
+    gr_joined = gr.join(gr2,
+                        how=None,  # Only keep introns with overlap
+                        strandedness="same",
+                        slack=1,  # bookended/directly adjacent intervals can overlap (this picks up )
+                        suffix=suffix
+                            )
+    
+    # track dropped ids/with no overlap - these will not be modified
+    dropped_ids = gr_ids.difference(set(gr_joined.as_df()[id_col]))
+    if len(dropped_ids) > 0:
+        print(f"extend_ipa_5p - some IDs do not have overlapping/bookended interval from gr2, will be unmodified - n = {len(dropped_ids)}")
+
+    gr_dropped = gr.subset(lambda df: df[id_col].isin(dropped_ids))
+    
+    # subset overlapping intervals for exact 5'matches
+    gr_joined = gr_joined.subset(lambda df: _df_match_5p_adj(df, suffix))
+    # swap 5'end coordinate of gr intervals to the joined 5'end
+    gr_joined = gr_joined.apply(lambda df: _df_update_5p(df, suffix))
+    # drop any joined cols
+    gr_joined = gr_joined.drop(like=suffix+"$").drop(gr2_uniq_cols)
+    
+    return pr.concat([gr_dropped,gr_joined]).sort()
+    
 
 def _df_extend_intron(df, id_col, suffix):
     '''
@@ -420,6 +554,11 @@ def main(ref_gtf: str,
                 .assign("gene_id",
                         lambda df: df["gene_id"] + "_decoy_exon"))
     
+    # Extend IPA 5'ends to the bookended exon 5'end (to align with spliced/intron-retention decoys)
+    # IDs with no spliced decoy assigned will be unmodified
+    print("Updating 5'coordinates of IPAs to adjacent internal exon...")
+    ipa = extend_ipa_5p(ipa, exons_ipa, event_id_col)
+
     print("Identify introns containing ALE events (ALE intron retention decoy)")
     introns_ale = introns.overlap(ale, strandedness="same")
     
