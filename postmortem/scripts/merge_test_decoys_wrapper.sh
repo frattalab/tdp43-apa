@@ -18,7 +18,7 @@ CRYPTIC_PROX3EXT_GTF="${SPLIT_GTF_PREFIX}.cryptics.proxext3.ids.gtf"
 CRYPTIC_COMPLEX_GTF="${SPLIT_GTF_PREFIX}.cryptics.complex.ids.gtf"
 
 # output of scripts/get_decoy_tx.py - contains IPA, ALEs & their decoy transcripts
-DECOYS_GTF="processed/decoys/playground/2024-11-12_decoys.combined.gtf"
+DECOYS_GTF="processed/decoys/2024-11-20_cryptics_plus_decoys.combined.gtf"
 
 # Paths to the metadata and output files
 METADATA_FILE="data/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation.tsv"
