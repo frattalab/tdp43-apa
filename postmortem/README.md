@@ -77,7 +77,8 @@ Replacing 2024-11-06 with whatever is today's date (TODO: update when have final
 
 ```bash
 mkdir -p processed/decoys/playground/
-python scripts/get_decoy_tx.py -r data/reference_filtered.gtf -i processed/decoys/novel_ref_combined.quant.cryptics.ipa.ids.gtf -a processed/decoys/novel_ref_combined.quant.cryptics.ale.ids.gtf -o processed/decoys/playground/2024-11-06_decoys
+#python scripts/get_decoy_tx.py -r data/reference_filtered.gtf -i processed/decoys/novel_ref_combined.quant.cryptics.ipa.ids.gtf -a processed/decoys/novel_ref_combined.quant.cryptics.ale.ids.gtf -o processed/decoys/playground/2024-11-06_decoys
+python scripts/get_decoy_tx.py -r data/reference_filtered.gtf -i processed/decoys/novel_ref_combined.quant.cryptics.ipa.ids.gtf -a processed/decoys/novel_ref_combined.quant.cryptics.ale.ids.gtf -o processed/decoys/2024-11-20_cryptics_plus_decoys &> processed/decoys/2024-10-20_get_decoy_tx.log.stderr.txt
 ```
 
 ### Merge decoys with original quant GTF and test ID assignment (for cryptic genes)
@@ -85,7 +86,8 @@ python scripts/get_decoy_tx.py -r data/reference_filtered.gtf -i processed/decoy
 Wrapper script - WIP for final commands
 
 ```bash
-bash scripts/merge_test_decoys_wrapper.sh tmp_merge_test_decoys
+# bash scripts/merge_test_decoys_wrapper.sh tmp_merge_test_decoys
+bash scripts/merge_test_decoys_wrapper.sh processed/decoys/2024-11-20_decoys_novel_ref_combined.quant &> processed/decoys/2024-11-20_merge_test_decoys_wrapper.log.txt
 ```
 
 ### PAPA to splice junctions
@@ -101,6 +103,32 @@ Commands used:
 - No annotated intron/SJ that contains this exon
 - Probably initially classified as spliced because of novel exon 5'end (+ 3'end being contained within intron), but 5'end of last intron matches a known intron
 
+### PAS quantication
+
+- Single steps 'salmon' pipeline used to quantify decoy-augmented transcriptome. Output at `<main_output_dir>/salmon_quant` is used here
+
+- transcript-level TPMs summarised to the isoform/le_id level & PPAUs are using the `scripts/summarise_quant.sh` script, which is just a wrapper around `scripts/tx_to_polya_quant.R`, a copy of the PAPA script to merge Salmon results using tximport
+
+```bash
+Rscript --vanilla scripts/tx_to_polya_quant.R \
+-s $sample_tbl \
+-d $salmon_dir \
+-t $tx2le \
+-g $le2gene \
+-o $out_prefix &> ${out_prefix}.tx_to_polya_quant.log
+```
+
+where:
+
+- `sample_tbl` - 'dummy' PAPA compatible sample table containing sample names and their sorted population (TDP-positive or negative) and additional metadata
+- `salmon_dir` - directory to storing quantification results from Salmon single steps Snakemake pipeline
+- `tx2le` - TSV mapping transcript ids to last exon ids, produced by `scripts/merge_test_decoys_wrapper.sh`
+- `le2gene` - TSV mapping **transcript ids** to **gene ids**, produced by `scripts/merge_test_decoys_wrapper.sh`
+
+### Sample-wise delta PPAU calculation
+
+- PAPA's summary script can only handle two conditions, so only calculates means and deltas considering all negative vs all positive. 
+- use `scripts/ppau_liu_facs.R` to get sample level differences
 
 ### BED file of SJs from Seddighi counts table
 
