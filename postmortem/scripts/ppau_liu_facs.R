@@ -49,16 +49,22 @@ cryptics_summary_simple <- cryptics_summary %>%
    select(-gene_ncryp, -le_number, -gene_id)
 
 # pull out event ID annotations for all events
+# Where events are cryptic, rely on the summary table (which has cleaned up/merged event types where mutliple)
 le2event <- dexseq %>%
-  distinct(le_id, gene_name, simple_event_type)
+  distinct(le_id, gene_name, simple_event_type) %>%
+  left_join(select(cryptics_summary_simple, le_id, plot_le_id, simple_event_type), by = "le_id", suffix = c("", "_cryp")) %>%
+  mutate(simple_event_type_upd = if_else(is.na(simple_event_type_cryp), simple_event_type, simple_event_type_cryp)) %>%
+  distinct(le_id, plot_le_id, gene_name, simple_event_type = simple_event_type_upd)
+
 
 # add annotations to PPAU matrix - event types with all events, cryptic status (and whether evaluated by DEXSeq)
-ppau_meta <- ppau %>% 
-  left_join(le2event, by = "le_id") %>%
-  left_join(select(cryptics_summary_simple, le_id, plot_le_id), by = "le_id") %>%
-  mutate(evaluated_status = if_else(is.na(gene_name) & is.na(simple_event_type), F, T), # not in DEXSeq table (i.e. never evaluated for diff usage)
-         cryptic_status = if_else(is.na(plot_le_id), F, T) # column joined from cryptic annotation
-         )
+ppau_meta <- ppau %>%
+    left_join(le2event, by = "le_id") %>%
+    mutate(evaluated_status = if_else(is.na(gene_name) & is.na(simple_event_type),
+                                      F,
+                                      T), # not in DEXSeq table (i.e. never evaluated for diff usage)
+           cryptic_status = if_else(is.na(plot_le_id), F, T) # column joined from cryptic annotation
+           ) 
 
 # pull out group-level mean & delta PPAUs for later querying
 ppau_meta_means <- ppau_meta %>%
