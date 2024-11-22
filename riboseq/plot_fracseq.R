@@ -1,4 +1,6 @@
 library(tidyverse)
+library(rstatix)
+library(ggprism)
 
 normed_counts_npc <- read_tsv("processed/fracseq/2024-04-30_summarised_pas.counts.normalised.npc.tsv")
 le2name <- read_tsv("../postmortem/processed/2023-06-22_cryptics_plus_decoys.decoys_full_fix_tx2le.le2name.tsv")
@@ -325,8 +327,15 @@ ppau_npc_elk1_some_cyto_cyto_normed <- ppau_some_cyto_3exts %>%
   mutate(group = str_to_title(group),
          replicate = str_remove_all(replicate, "^rep"))
 
-ppau_npc_elk1_some_cyto_cyto_normed
-
+# Calculate p-value for enrichment ratio
+# 1 sample t.test of log-transformed ratios, assessing null that true difference is 1
+some_cyto_normed_pval <- ppau_npc_elk1_some_cyto_cyto_normed %>%
+  filter(group == "Ribosome") %>%
+  mutate(cytosol_normed_ppau = log(cytosol_normed_ppau)) %>%
+  t_test(cytosol_normed_ppau ~ 0) %>% # log(1) = 0
+  # standardise group labels for plotting
+  mutate(group1 = "Ribosome", group2 = "Cytosol") %>%
+  add_significance(p.col = "p", output.col = "p.signif")
 
 # Frac-seq pooled ribosome-associated vs cytosol bar plot
 npc_cyto_normed_elk1_pooledall_bar <- ggpubr::ggbarplot(ppau_npc_elk1_some_cyto_cyto_normed,
@@ -351,8 +360,14 @@ npc_cyto_normed_elk1_pooledall_bar <- ggpubr::ggbarplot(ppau_npc_elk1_some_cyto_
 npc_cyto_normed_elk1_pooledall_bar
 
 # Frac-seq pooled ribosome-associated vs cytosol - represent median with line instead of bar
-npc_cyto_normed_elk1_pooledall_line <- ggplot(ppau_npc_elk1_some_cyto_cyto_normed, aes(x = group, y = cytosol_normed_ppau, shape = replicate)) +
-  geom_point(position = position_dodge(width = 0.4),
+npc_cyto_normed_elk1_pooledall_line <- ggplot(ppau_npc_elk1_some_cyto_cyto_normed,
+                                              aes(x = group, y = cytosol_normed_ppau)) +
+  ggprism::add_pvalue(some_cyto_normed_pval,
+                      label = "p = {round(p, 3)}",
+                      y.position = 1.525,
+                      tip.length = 0,
+                      label.size = 5) +
+  geom_point(aes(shape = replicate), position = position_dodge(width = 0.4),
              size = 3,) +
   stat_summary(
     fun = mean, geom = "point", 
@@ -367,6 +382,7 @@ npc_cyto_normed_elk1_pooledall_line <- ggplot(ppau_npc_elk1_some_cyto_cyto_norme
 
 npc_cyto_normed_elk1_pooledall_line
 
+ 
 # extract the computed mean value from the plot
 npc_cyto_normed_elk1_pooledall_mean <- ggplot_build(npc_cyto_normed_elk1_pooledall_line)$data[[2]]
 
@@ -471,21 +487,22 @@ ggsave(file.path(outdir,
        plot = npc_cyto_normed_elk1_pooled_bar, width = 150, height = 150, units = "mm", dpi = "retina")
 
 ggsave(file.path(outdir,
-                 "2024-11-15_fracseq.npc.elk1.cytosol_normed.mean_bar.ribosome_pooled.png"),
+                 "2024-11-22_fracseq.npc.elk1.cytosol_normed.mean_bar.ribosome_pooled.png"),
        plot = npc_cyto_normed_elk1_pooledall_bar, 
        width = 150, height = 150,
        units = "mm", dpi = "retina")
 
 ggsave(file.path(outdir,
-                 "2024-11-15_fracseq.npc.elk1.cytosol_normed.mean_line.ribosome_pooled.png"),
+                 "2024-11-22_fracseq.npc.elk1.cytosol_normed.mean_line.ribosome_pooled.png"),
        plot = npc_cyto_normed_elk1_pooledall_line,
        width = 150, height = 150,
        units = "mm", dpi = "retina")
 
 ggsave(file.path(outdir,
-                 "2024-11-15_fracseq.npc.elk1.cytosol_normed.mean_line.ribosome_pooled.pdf"),
+                 "2024-11-22_fracseq.npc.elk1.cytosol_normed.mean_line.ribosome_pooled.pdf"),
        plot = npc_cyto_normed_elk1_pooledall_line,
        width = 150, height = 150,
        units = "mm", dpi = "retina")
 
 
+write_tsv(some_cyto_normed_pval, file.path(outdir, "2024-11-22_fracseq_cytosol_normed.ribosome_pooled.ttest.tsv"))
