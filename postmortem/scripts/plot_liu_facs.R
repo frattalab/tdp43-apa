@@ -107,6 +107,10 @@ ppau_order_cryp_median_gn <- ppau_order_cryp %>%
   arrange(rank_median_up) %>%
   pull(plot_le_id)
 
+# get a df of events passing the median threshold
+ppau_order_cryp_min5 <- ppau_order_cryp %>%
+  filter(median_paired_delta_ppau > 0.05)
+
 # 
 delta_paired_summary <- ppau_delta_paired_median_all %>%
   filter(cryptic_status) %>%
@@ -116,9 +120,6 @@ delta_paired_summary <- ppau_delta_paired_median_all %>%
 ppau_order_cryp_median_gn_5 <- ppau_order_cryp %>%
   filter(median_paired_delta_ppau > 0.05) %>%
   pull(plot_le_id)
-
-cryp_median_min_5_nevent_by_type
-
 
 # Decay of number of enriched events as increase the delta cut-off
 cryp_median_min_delta_n <- seq(0,0.25,0.05) %>%
@@ -258,3 +259,6 @@ ggsave("2024-11-21_liu_facs_nygc_selective_only.ales.pdf",
 # enriched count tables
 write_tsv(cryp_median_min_delta_nevent_by_type, "processed/liu_facs/2024-11-21_liu_facs_min_delta_range_numevents_eventtype.tsv", col_names = T)
 write_tsv(cryp_median_min_delta_n, "processed/liu_facs/2024-11-21_liu_facs_min_delta_cutoffs_numevents_all.tsv", col_names = T)
+# enriched table (with ranks and summarised ppau)
+write_tsv(ppau_order_cryp_min5, "processed/liu_facs/2024-11-22_liu_facs_median_delta_5.delta_ppau.all_samples.cryptics.tsv", col_names = T)
+          
