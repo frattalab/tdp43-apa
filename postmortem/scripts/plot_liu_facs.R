@@ -14,6 +14,12 @@ mutate(rank_mean_up = min_rank(desc(mean_paired_delta_ppau)),
        rank_median_up = min_rank(desc(median_paired_delta_ppau))) %>%
   arrange(rank_median_up, rank_mean_up)
 
+# get a df of events passing the median threshold
+ppau_order_cryp_min5 <- ppau_order_cryp %>%
+  filter(median_paired_delta_ppau > 0.05)
+
+
+
 # ppau_order_cryp_median <- ppau_order_cryp %>%
 #   arrange(rank_median_up) %>%
 #   pull(le_id)
@@ -138,7 +144,7 @@ ggsave("2023-10-18_liu_facs_cryptic_median_delta_05_event_type_facet.svg",
 write_tsv(cryp_median_min_5_nevent_by_type, "processed/liu_facs/2023-10-18_liu_facs_min_delta_5_numevents_eventtype.tsv", col_names = T)
 write_tsv(cryp_median_min_delta_nevent_by_type, "processed/liu_facs/2023-10-18_liu_facs_min_delta_range_numevents_eventtype.tsv", col_names = T)
 write_tsv(cryp_median_min_delta_n, "processed/liu_facs/2023-10-18_liu_facs_min_delta_cutoffs_numevents_all.tsv", col_names = T)
-
+write_tsv(ppau_order_cryp_min5, "processed/liu_facs/2023-10-18_liu_facs_median_delta_5.delta_ppau.all_samples.cryptics.tsv", col_names = T)
 # ppau_delta_paired_cryp %>%
 #   filter(plot_le_id %in% ppau_order_cryp_median_gn_5) %>%
 #   mutate(
