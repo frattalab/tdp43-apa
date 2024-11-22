@@ -363,7 +363,7 @@ npc_cyto_normed_elk1_pooledall_bar
 npc_cyto_normed_elk1_pooledall_line <- ggplot(ppau_npc_elk1_some_cyto_cyto_normed,
                                               aes(x = group, y = cytosol_normed_ppau)) +
   ggprism::add_pvalue(some_cyto_normed_pval,
-                      label = "p = {round(p, 3)}",
+                      label = "p.signif",
                       y.position = 1.525,
                       tip.length = 0,
                       label.size = 5) +
