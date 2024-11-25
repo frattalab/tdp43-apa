@@ -307,34 +307,34 @@ plot_foci_cell_means
 
 
 # attempt plot with all images represented - just for total probe
-plot_subcellfoci_total_means <- fish_counts_raw  %>%
-  mutate(condition = if_else(condition == "TDP", "TDP43KD", condition),
-         plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
-                             levels = c("Total", "Cryptic")),
-         plot_subcell_fraction = str_to_sentence(region),
-         plot_subcell_fraction = factor(plot_subcell_fraction, levels = c("Nuclear", "Extranuclear"))) %>%
-  filter(plot_probe == "Total") %>%
-  select(replicate, condition, image, plot_probe, plot_subcell_fraction, n_foci) %>%
-  ggplot(aes(x = condition, y = n_foci, shape = as.factor(replicate), group = as.factor(replicate))) +
-  facet_wrap("~ plot_subcell_fraction", scales = "free_y") +
-  geom_point(size = 2,
-             position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.75, seed = 123)
-  ) +
-  stat_summary(fun = mean,
-               geom = "point",
-               shape = 95,
-               size = 15,
-               colour = "#1f78b4",
-               alpha = 0.75,
-               position = position_dodge(width = 0.75)) +
-  theme_bw(base_size = 16) +
-  theme(legend.position = "top") +
-  labs(x = "",
-       y = "Foci per image",
-       shape = "Replicate",
-       colour = "Location")
- 
-plot_subcellfoci_total_means
+# plot_subcellfoci_total_means <- fish_counts_raw  %>%
+#   mutate(condition = if_else(condition == "TDP", "TDP43KD", condition),
+#          plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+#                              levels = c("Total", "Cryptic")),
+#          plot_subcell_fraction = str_to_sentence(region),
+#          plot_subcell_fraction = factor(plot_subcell_fraction, levels = c("Nuclear", "Extranuclear"))) %>%
+#   filter(plot_probe == "Total") %>%
+#   select(replicate, condition, image, plot_probe, plot_subcell_fraction, n_foci) %>%
+#   ggplot(aes(x = condition, y = n_foci, shape = as.factor(replicate), group = as.factor(replicate))) +
+#   facet_wrap("~ plot_subcell_fraction", scales = "free_y") +
+#   geom_point(size = 2,
+#              position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.75, seed = 123)
+#   ) +
+#   stat_summary(fun = mean,
+#                geom = "point",
+#                shape = 95,
+#                size = 15,
+#                colour = "#1f78b4",
+#                alpha = 0.75,
+#                position = position_dodge(width = 0.75)) +
+#   theme_bw(base_size = 16) +
+#   theme(legend.position = "top") +
+#   labs(x = "",
+#        y = "Foci per image",
+#        shape = "Replicate",
+#        colour = "Location")
+#  
+# plot_subcellfoci_total_means
 
 
 # Repeat for both probes
@@ -354,13 +354,84 @@ plot_subcell_foci_counts_norm_ttest <- subcell_foci_counts_norm_ttest %>%
 plot_subcell_foci_counts_norm_ttest
 
 # calculate y positions per facet & add to pvalue df
-probe_region_max_ns <- fish_counts_raw %>%
-  group_by(probe, region) %>%
-  summarise(y.position = max(n_foci) - 2.5) %>%
-  ungroup()
+# probe_region_max_ns <- fish_counts_raw %>%
+#   group_by(probe, region) %>%
+#   summarise(y.position = max(n_foci) - 2.5) %>%
+#   ungroup()
+# 
+# plot_subcell_foci_counts_norm_ttest <- plot_subcell_foci_counts_norm_ttest %>%
+#   left_join(probe_region_max_ns, by = c("probe", "region"))
 
 plot_subcell_foci_counts_norm_ttest <- plot_subcell_foci_counts_norm_ttest %>%
-  left_join(probe_region_max_ns, by = c("probe", "region"))
+  mutate(y.position = case_when(probe == "proximal" & region == "nuclear" ~ 110,
+                                       probe == "proximal" & region == "extranuclear" ~ 50,
+                                       probe == "distal" & region == "nuclear" ~ 110,
+                                       probe == "distal" & region == "extranuclear" ~ 75)
+         )
+
+plot_subcellfoci_total_means <- fish_counts_raw  %>%
+  mutate(condition = if_else(condition == "TDP", "TDP43KD", condition),
+         plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic")),
+         plot_subcell_fraction = str_to_sentence(region),
+         plot_subcell_fraction = factor(plot_subcell_fraction, levels = c("Nuclear", "Extranuclear"))) %>%
+  select(replicate, condition, image, plot_probe, plot_subcell_fraction, n_foci) %>%
+  filter(plot_probe == "Total") %>%
+  ggplot(aes(x = condition, y = n_foci, group = as.factor(replicate))) + # must add shape inside geom_point for add_pvalue to work
+  facet_wrap("~ plot_subcell_fraction", scales = "free_y",) +
+  ggprism::add_pvalue(data = filter(plot_subcell_foci_counts_norm_ttest, plot_probe == "Total"),
+                      label = "p.adj.signif", tip.length = 0, label.size = 8, bracket.nudge.y = 10) +
+  geom_point(aes(shape = as.factor(replicate)),
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.75, seed = 123)
+  ) +
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 95,
+               size = 15,
+               colour = "#1f78b4",
+               alpha = 0.75,
+               position = position_dodge(width = 0.75)) +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Foci per image",
+       shape = "Replicate",
+       colour = "Location")
+
+plot_subcellfoci_cryptic_means <- fish_counts_raw  %>%
+  mutate(condition = if_else(condition == "TDP", "TDP43KD", condition),
+         plot_probe = factor(if_else(probe == "proximal", "Total", "Cryptic"),
+                             levels = c("Total", "Cryptic")),
+         plot_subcell_fraction = str_to_sentence(region),
+         plot_subcell_fraction = factor(plot_subcell_fraction, levels = c("Nuclear", "Extranuclear"))) %>%
+  select(replicate, condition, image, plot_probe, plot_subcell_fraction, n_foci) %>%
+  filter(plot_probe == "Cryptic") %>%
+  ggplot(aes(x = condition, y = n_foci, group = as.factor(replicate))) + # must add shape inside geom_point for add_pvalue to work
+  facet_wrap("~ plot_subcell_fraction", scales = "free_y",) +
+  ggprism::add_pvalue(data = filter(plot_subcell_foci_counts_norm_ttest, plot_probe == "Cryptic"),
+                      label = "p.adj.signif", tip.length = 0, label.size = 10, bracket.nudge.y = 10) +
+  geom_point(aes(shape = as.factor(replicate)),
+             size = 2,
+             position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.75, seed = 123)
+  ) +
+  stat_summary(fun = mean,
+               geom = "point",
+               shape = 95,
+               size = 15,
+               colour = "#1f78b4",
+               alpha = 0.75,
+               position = position_dodge(width = 0.75)) +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "top") +
+  labs(x = "",
+       y = "Foci per image",
+       shape = "Replicate",
+       colour = "Location")
+
+plot_subcellfoci_total_means
+plot_subcellfoci_cryptic_means
+
 
 # plot counts for both probes with p-value
 plot_subcellfoci_both_means <- fish_counts_raw  %>%
@@ -617,7 +688,7 @@ ggsave("2024-11-15_fish_focipercell_counts_all_images.pdf",
 
 
 # Total probe foci counts in each subcellular compartment per image in each replicate
-ggsave("2024-11-15_fish_subcellfoci_counts_all_images.png",
+ggsave("2024-11-25_fish_subcellfoci_counts_total_probe_all_images_pval.png",
        plot = plot_subcellfoci_total_means,
        path = "processed/",
        units = "in",
@@ -625,8 +696,24 @@ ggsave("2024-11-15_fish_subcellfoci_counts_all_images.png",
        width = 5,
        dpi = "retina")
 
-ggsave("2024-11-15_fish_subcellfoci_counts_all_images.pdf",
+ggsave("2024-11-25_fish_subcellfoci_counts_total_probe_all_images_pval.pdf",
        plot = plot_subcellfoci_total_means,
+       path = "processed/",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-11-25_fish_subcellfoci_counts_cryptic_probe_all_images_pval.png",
+       plot = plot_subcellfoci_cryptic_means,
+       path = "processed/",
+       units = "in",
+       height = 5,
+       width = 5,
+       dpi = "retina")
+
+ggsave("2024-11-25_fish_subcellfoci_counts_cryptic_probe_all_images_pval.pdf",
+       plot = plot_subcellfoci_cryptic_means,
        path = "processed/",
        units = "in",
        height = 5,
@@ -634,7 +721,7 @@ ggsave("2024-11-15_fish_subcellfoci_counts_all_images.pdf",
        dpi = "retina")
 
 #
-ggsave("2024-11-25_fish_subcellfoci_counts_both_probed_all_images_pval.png",
+ggsave("2024-11-25_fish_subcellfoci_counts_both_probes_all_images_pval.png",
        plot = plot_subcellfoci_both_means,
        path = "processed/",
        units = "in",
@@ -642,7 +729,7 @@ ggsave("2024-11-25_fish_subcellfoci_counts_both_probed_all_images_pval.png",
        width = 7.5,
        dpi = "retina")
 
-ggsave("2024-11-25_fish_subcellfoci_counts_both_probed_all_images_pval.pdf",
+ggsave("2024-11-25_fish_subcellfoci_counts_both_probes_all_images_pval.pdf",
        plot = plot_subcellfoci_both_means,
        path = "processed/",
        units = "in",
