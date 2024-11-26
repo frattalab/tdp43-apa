@@ -69,7 +69,7 @@ cryptics_summary_clean <- cryptics_summary %>%
   mutate(event_type = case_when(simple_event_type == "spliced" ~ "ALE",
                    simple_event_type == "bleedthrough" ~ "IPA",
                    simple_event_type == "distal_3utr_extension" ~ "3'Ext",
-                   simple_event_type == "proximal_3utr_extension" ~ "Proximal 3'Ext",
+                   simple_event_type == "proximal_3utr_extension" ~ "3'Shortening",
                    TRUE ~ "Complex")) %>%
   select(-simple_event_type) %>%
   relocate(event_type, .after = gene_name) 
