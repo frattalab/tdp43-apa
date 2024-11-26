@@ -68,8 +68,7 @@ comb_summary <- comb_summary %>%
   relocate(event_type, .after = gene_name) %>%
   arrange(event_type, desc(binding_start), desc(binding_end))
 
-comb_summary %>%
-  a
+comb_summary
 
 if (!dir.exists(outdir)) {dir.create(outdir, recursive = T)}
 
