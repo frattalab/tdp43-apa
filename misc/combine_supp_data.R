@@ -2,6 +2,7 @@ library(tidyverse)
 library(writexl)
 
 datasets <- read_tsv("data/2023-11-22_paper_tdp43_collection_library_statistics.tsv")
+outdir <- "processed"
 
 # replace unpublished with this study
 datasets <- mutate(datasets, paper_doi = if_else(paper_doi == "unpublished",
@@ -110,7 +111,13 @@ complex_coords <- cryptics_summary_clean %>%
 cryptics_summary_clean <- select(cryptics_summary_clean, -all_of(c("chromosome", "start", "end", "strand"))) %>%
   left_join(bind_rows(rep_coords_df, complex_coords), by = "le_id")
 
+# Add in binding information for each event
+iclip_summary <- read_tsv(file.path(outdir, "2024-11-26_cryptic_iclip_summary_cleaned_combined.tsv"))
 
+cryptics_summary_clean <- cryptics_summary_clean %>%
+  left_join(select(iclip_summary, le_id, binding_start, binding_end), by = c("le_id"))
+
+cryptics_summary_clean
 
 # HeLa target genes
 hela_chipseq_targets <- read_tsv("data/2024-01-09_ferguson_hela_chipseq_target_gene_lists.tsv")
@@ -122,15 +129,15 @@ suppl_list <- list("Supplementary_Table_1" = datasets,
                    "Supplementary_Table_4" = riboseq_ale_clean,
                    "Supplementary_Table_5" = hela_chipseq_targets)
 
-if (!dir.exists("processed")) {dir.create("processed")}
+if (!dir.exists(outdir)) {dir.create(outdir)}
 
 write_xlsx(suppl_list,
-           path = "processed/2024-09-01_supplementary_tables.xlsx", col_names = T, format_headers = T)
+           path = file.path(outdir, "2024-11-26_supplementary_tables.xlsx"), col_names = T, format_headers = T)
 
 walk2(.x = suppl_list,
       .y = names(suppl_list),
       ~ write_tsv(.x, 
-                  file = paste("processed/", "2024-09-01_", .y, ".tsv", sep = ""),
+                  file = file.path(outdir, paste("2024-11-26_", .y, ".tsv", sep = "")),
                   col_names = T,
                   na = ""
                   )
