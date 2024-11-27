@@ -121,9 +121,9 @@ disease_metadata_summ_stats <- disease_metadata_summ_stats %>%
 
 disease_metadata_summ_stats <- disease_metadata_summ_stats %>%
   mutate(
-    rin_summary = glue::glue("{median_rin} ({min_rin}, {max_rin}, missing = {missing_rin})"),
-    pmi_summary = glue::glue("{median_pmi} ({min_pmi}, {max_pmi}, missing = {missing_pmi})"),
-    age_summary = glue::glue("{median_age} ({min_age}, {max_age}, missing = {missing_age})"),
+    rin_summary = glue::glue("{median_rin} ({q1_rin}, {q3_rin}, missing = {missing_rin})"),
+    pmi_summary = glue::glue("{median_pmi} ({q1_pmi}, {q3_pmi}, missing = {missing_pmi})"),
+    age_summary = glue::glue("{median_age} ({q1_age}, {q3_age}, missing = {missing_age})"),
     onset_summary = glue::glue("{median_onset} ({q1_onset}, {q3_onset}, missing = {missing_onset})")
   ) %>%
   select(disease.clean,ends_with("_summary")) %>%
@@ -156,10 +156,11 @@ disease_metadata_summ_stats <- disease_summ_counts %>%
   relocate(n_samples, .after = everything()) %>%
   left_join(disease_metadata_summ_stats, by = "disease.clean", relationship = "one-to-one")
 
+# final clean up
 disease_metadata_summ_stats <- disease_metadata_summ_stats %>%
-  rename(subtype = disease.clean)
-
-
+  rename(subtype = disease.clean, age_of_onset = onset) %>%
+  mutate(subtype = factor(subtype, levels = c("Control", "ALS-non-TDP", "ALS-TDP", "FTD-non-TDP", "FTD-TDP"))) %>%
+  arrange(subtype)
 
 
 write_tsv(disease_metadata_summ_stats, "processed/nygc/2024-11-27_nygc_metadata_summary.tdp_subtypes.tsv")
