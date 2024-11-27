@@ -86,7 +86,7 @@ cryptics_summary_clean <- mutate(cryptics_summary_clean, experiment_name = str_r
 rep_coords_paths <- c("ALE" = "data/2023-12-14_papa_cryptic_spliced.background_shsy5y.last_exons.bed",
   "IPA" = "data/2023-12-14_papa_cryptic_bleedthrough_uniq.background_shsy5y.last_exons.bed",
   "3'Ext" = "data/2023-12-15_papa_cryptic_d3utr.background_shsy5y.last_exons.distal.bed",
-  "Proximal 3'Ext" = "data/2023-12-15_papa_cryptic_d3utr_proximal.background_shsy5y.last_exons.proximal.bed")
+  "3'Shortening" = "data/2023-12-15_papa_cryptic_d3utr_proximal.background_shsy5y.last_exons.proximal.bed")
 
 #
 rep_coords_df <-  rep_coords_paths %>%
@@ -119,25 +119,29 @@ cryptics_summary_clean <- cryptics_summary_clean %>%
 
 cryptics_summary_clean
 
+# summmary df containing non-cryptic significant hits from the analysis
+noncryptics_summary_clean <- read_tsv(file.path(outdir, "2023-05-24_i3_cortical_zanovello.all_datasets.non_cryptic_sig_apas.summary.tsv"))
+
 # HeLa target genes
 hela_chipseq_targets <- read_tsv("data/2024-01-09_ferguson_hela_chipseq_target_gene_lists.tsv")
 
 
 suppl_list <- list("Supplementary_Table_1" = datasets,
                    "Supplementary_Table_2" = cryptics_summary_clean,
-                   "Supplementary_Table_3" = nygc_ale_all_cleaned,
-                   "Supplementary_Table_4" = riboseq_ale_clean,
-                   "Supplementary_Table_5" = hela_chipseq_targets)
+                   "Supplementary_Table_3" = noncryptics_summary_clean,
+                   "Supplementary_Table_4" = nygc_ale_all_cleaned,
+                   "Supplementary_Table_5" = riboseq_ale_clean,
+                   "Supplementary_Table_6" = hela_chipseq_targets)
 
 if (!dir.exists(outdir)) {dir.create(outdir)}
 
 write_xlsx(suppl_list,
-           path = file.path(outdir, "2024-11-26_supplementary_tables.xlsx"), col_names = T, format_headers = T)
+           path = file.path(outdir, "2024-11-27_supplementary_tables.xlsx"), col_names = T, format_headers = T)
 
 walk2(.x = suppl_list,
       .y = names(suppl_list),
       ~ write_tsv(.x, 
-                  file = file.path(outdir, paste("2024-11-26_", .y, ".tsv", sep = "")),
+                  file = file.path(outdir, paste("2024-11-27_", .y, ".tsv", sep = "")),
                   col_names = T,
                   na = ""
                   )
