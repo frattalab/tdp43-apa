@@ -51,3 +51,7 @@ rsconnect/
 **/.snakemake/*
 
 **/processed/*
+**/data/*
+motifs/peka_snakemake/output_peka/*
+preprocessing/tests/coverage_smk/output*
+preprocessing/tmp_tests/*
