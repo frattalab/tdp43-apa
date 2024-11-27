@@ -2,6 +2,10 @@ library(tidyverse)
 library(writexl)
 
 datasets <- read_tsv("data/2023-11-22_paper_tdp43_collection_library_statistics.tsv")
+# df containing cleaned cooridnate columns extracted from quant GTF
+le_id_coords <- read_tsv("processed/le_id_collapsed_coords.quant.last_exons.tsv")
+# yes/no binding within plotting windows at representative coordinates/boundaries
+iclip_summary <- read_tsv(file.path(outdir, "2024-11-26_cryptic_iclip_summary_cleaned_combined.tsv"))
 outdir <- "processed"
 
 # replace unpublished with this study
@@ -111,8 +115,16 @@ complex_coords <- cryptics_summary_clean %>%
 cryptics_summary_clean <- select(cryptics_summary_clean, -all_of(c("chromosome", "start", "end", "strand"))) %>%
   left_join(bind_rows(rep_coords_df, complex_coords), by = "le_id")
 
+# Complex coords not used for iCLIP so do not assign start/end coords
+# Add in all coordinates from quant GTF and differentiate coords
+cryptics_summary_clean <- cryptics_summary_clean %>%
+  mutate(start = if_else(event_type == "Complex", NA, start),
+         end = if_else(event_type == "Complex", NA, end)) %>%
+  left_join(select(le_id_coords, le_id, start, end),
+            by = "le_id", suffix = c("_rep", "_all")) %>%
+  relocate(strand, .after = everything())
+  
 # Add in binding information for each event
-iclip_summary <- read_tsv(file.path(outdir, "2024-11-26_cryptic_iclip_summary_cleaned_combined.tsv"))
 
 cryptics_summary_clean <- cryptics_summary_clean %>%
   left_join(select(iclip_summary, le_id, binding_start, binding_end), by = c("le_id"))
