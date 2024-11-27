@@ -122,6 +122,9 @@ cryptics_summary_clean
 # summmary df containing non-cryptic significant hits from the analysis
 noncryptics_summary_clean <- read_tsv(file.path(outdir, "2023-05-24_i3_cortical_zanovello.all_datasets.non_cryptic_sig_apas.summary.tsv"))
 
+# NYGC metadata summary
+nygc_metadata <- read_tsv("../postmortem/processed/nygc/2024-11-27_nygc_metadata_summary.tdp_subtypes.tsv")
+
 # HeLa target genes
 hela_chipseq_targets <- read_tsv("data/2024-01-09_ferguson_hela_chipseq_target_gene_lists.tsv")
 
@@ -129,9 +132,10 @@ hela_chipseq_targets <- read_tsv("data/2024-01-09_ferguson_hela_chipseq_target_g
 suppl_list <- list("Supplementary_Table_1" = datasets,
                    "Supplementary_Table_2" = cryptics_summary_clean,
                    "Supplementary_Table_3" = noncryptics_summary_clean,
-                   "Supplementary_Table_4" = nygc_ale_all_cleaned,
-                   "Supplementary_Table_5" = riboseq_ale_clean,
-                   "Supplementary_Table_6" = hela_chipseq_targets)
+                   "Supplementary_Table_4" = nygc_metadata,
+                   "Supplementary_Table_5" = nygc_ale_all_cleaned,
+                   "Supplementary_Table_6" = riboseq_ale_clean,
+                   "Supplementary_Table_7" = hela_chipseq_targets)
 
 if (!dir.exists(outdir)) {dir.create(outdir)}
 
