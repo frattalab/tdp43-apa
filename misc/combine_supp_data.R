@@ -140,6 +140,12 @@ nygc_metadata <- read_tsv("../postmortem/processed/nygc/2024-11-27_nygc_metadata
 # HeLa target genes
 hela_chipseq_targets <- read_tsv("data/2024-01-09_ferguson_hela_chipseq_target_gene_lists.tsv")
 
+# table of primer sequences
+primers <- read_tsv("data/Oligonucleotides_table_final.tsv")
+
+# table mapping cell type/model to the experiment(s) in which they were used
+cell2exper <- read_csv("data/celltype-to-experiment-mapping.csv")
+cell2exper <- drop_na(cell2exper)
 
 suppl_list <- list("Supplementary_Table_1" = datasets,
                    "Supplementary_Table_2" = cryptics_summary_clean,
@@ -147,17 +153,19 @@ suppl_list <- list("Supplementary_Table_1" = datasets,
                    "Supplementary_Table_4" = nygc_metadata,
                    "Supplementary_Table_5" = nygc_ale_all_cleaned,
                    "Supplementary_Table_6" = riboseq_ale_clean,
-                   "Supplementary_Table_7" = hela_chipseq_targets)
+                   "Supplementary_Table_7" = hela_chipseq_targets,
+                   "Supplementary_Table_8" = primers,
+                   "Supplementary_Table_9" = cell2exper)
 
 if (!dir.exists(outdir)) {dir.create(outdir)}
 
 write_xlsx(suppl_list,
-           path = file.path(outdir, "2024-11-27_supplementary_tables.xlsx"), col_names = T, format_headers = T)
+           path = file.path(outdir, "2024-11-28_supplementary_tables.xlsx"), col_names = T, format_headers = T)
 
 walk2(.x = suppl_list,
       .y = names(suppl_list),
       ~ write_tsv(.x, 
-                  file = file.path(outdir, paste("2024-11-27_", .y, ".tsv", sep = "")),
+                  file = file.path(outdir, paste("2024-11-28_", .y, ".tsv", sep = "")),
                   col_names = T,
                   na = ""
                   )
