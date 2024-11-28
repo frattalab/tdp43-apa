@@ -154,8 +154,8 @@ suppl_list <- list("Supplementary_Table_1" = datasets,
                    "Supplementary_Table_5" = nygc_ale_all_cleaned,
                    "Supplementary_Table_6" = riboseq_ale_clean,
                    "Supplementary_Table_7" = hela_chipseq_targets,
-                   "Supplementary_Table_8" = primers,
-                   "Supplementary_Table_9" = cell2exper)
+                   "Supplementary_Table_8" = cell2exper,
+                   "Supplementary_Table_9" = primers)
 
 if (!dir.exists(outdir)) {dir.create(outdir)}
 
