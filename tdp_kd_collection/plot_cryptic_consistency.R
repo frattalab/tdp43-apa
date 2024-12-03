@@ -1,4 +1,5 @@
 library(tidyverse)
+library(ggupset)
 
 facet_heatmap <- function(df,
                           plot_title = "Cryptic event deltas across datasets",
@@ -58,6 +59,43 @@ df <- filter(df, !le_id %in% mv_fail_ids)
 # annotate cryptic events (any dataset)
 df <- mutate(df, cryptic_any = padj < 0.05 & mean_PPAU_base < 0.1 & delta_PPAU_treatment_control > 0.1)
 
+# Define a cleaned df mapping experiment names to plot names
+experiment_names <- tibble(experiment_name = c("humphrey_i3_cortical",
+                                          "brown_i3_cortical",
+                                          "seddighi_i3_cortical",
+                                          "zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl",
+                                          "klim_i3_motor",
+                                          "zanovello_shsy5y_curve_0075",
+                                          "zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl",
+                                          "brown_shsy5y",
+                                          "zanovello_skndz_curve_1",
+                                          "brown_skndz"),
+                      plot_experiment_name = c("Humphrey i3 cortical",
+                                               "Brown i3 cortical",
+                                               "Seddighi i3 cortical",
+                                               "Zanovello i3 cortical",
+                                               "Klim i3 motor",
+                                               "Zanovello SH-SY-5Y curve",
+                                               "Zanovello SH-SY-5Y CHX",
+                                               "Brown SH-SY-5Y",
+                                               "Zanovello SK-N-BE(2) curve",
+                                               "Brown SK-N-BE(2)")
+                      ) %>%
+  mutate(plot_experiment_name = factor(plot_experiment_name, levels = c("Humphrey i3 cortical",
+                                                                        "Brown i3 cortical",
+                                                                        "Seddighi i3 cortical",
+                                                                        "Zanovello i3 cortical",
+                                                                        "Klim i3 motor",
+                                                                        "Zanovello SH-SY-5Y curve",
+                                                                        "Zanovello SH-SY-5Y CHX",
+                                                                        "Brown SH-SY-5Y",
+                                                                        "Zanovello SK-N-BE(2) curve",
+                                                                        "Brown SK-N-BE(2)"))
+         )
+
+
+
+
 #1. number of datasets cryptic, regulated, expressed/evaluated (and fractions)
 
 # annotate regulated, cryptic & expressed for each event
@@ -99,6 +137,48 @@ plot_cryptic_vs_expressed_counts
 
 plot_cryptic_vs_expressed_counts_notitle <- plot_cryptic_vs_expressed_counts + 
   labs(title = "")
+
+# Plot number of cryptic events per dataset
+
+# get df of cryptic counts per dataset
+dataset_cryptic_counts <-  df %>%
+  filter(cryptic) %>%
+  distinct(experiment_name, le_id) %>%
+  count(experiment_name) %>%
+  # add in tidy dataset name for plotting
+  left_join(experiment_names, by = "experiment_name")
+
+barplot_cryptic_counts <- dataset_cryptic_counts %>%
+  ggplot(aes(x = n,
+             y = plot_experiment_name)) +
+  geom_col() +
+  scale_y_discrete(limits = rev) +
+  scale_x_continuous(limits = c(0,125)) +
+  geom_text(aes(y = plot_experiment_name, label = n), hjust = -0.25, size = 3) +
+  theme_bw(base_size = 12) +
+  labs(x = "Number of Cryptics",
+       y = "Dataset")
+
+barplot_cryptic_counts
+
+
+# Upset plot of overlap of cryptic events between datasets
+upsetplot_cryptic_counts <- df %>%
+  filter(cryptic) %>%
+  distinct(experiment_name, le_id) %>%
+  left_join(experiment_names, by = "experiment_name") %>%
+  group_by(le_id) %>%
+  summarise(datasets = list(plot_experiment_name)) %>%
+  ggplot(aes(x = datasets)) +
+  geom_bar() +
+  scale_x_upset() +
+  scale_y_continuous(limits = c(0,65)) +
+  geom_text(stat='count', aes(label=after_stat(count)), vjust=-0.25, size = 2) +
+  labs(x = "Dataset",
+       y = "Count") +
+  theme_bw()
+
+upsetplot_cryptic_counts
 
 
 #2. Calculate regulation consistency score (basically sum of absolute/ signed-ranks of -log10 pvalues
@@ -206,12 +286,13 @@ plot_df <- df %>%
   mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score_norm),
          experiment_name_simple = plot_exper_name_simple[experiment_name],
          experiment_name_simple = factor(experiment_name_simple, levels = plot_exper_name_simple),
-         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "Bleedthrough-ALE",
-                                     simple_event_type == "distal_3utr_extension" ~ "3'UTR-ALE",
-                                     simple_event_type == "spliced" ~ "AS-ALE",
+         plot_event_type = case_when(simple_event_type == "bleedthrough" ~ "IPA",
+                                     simple_event_type == "distal_3utr_extension" ~ "3'Ext",
+                                     simple_event_type == "spliced" ~ "ALE",
                                      T ~ ""),
-         plot_event_type = factor(plot_event_type, levels = c("AS-ALE", "Bleedthrough-ALE", "3'UTR-ALE"))
+         plot_event_type = factor(plot_event_type, levels = c("ALE", "IPA", "3'Ext"))
          )
+
 
 # normalised score plot df
 cryptic_norm_score_plot_df <- plot_df %>%
@@ -220,17 +301,38 @@ cryptic_norm_score_plot_df <- plot_df %>%
   filter(any(cryptic)) %>%
   ungroup()
 
+
+# Remove redundant/unnecessary suffixes from name labels (i.e. keep only when multiple isoforms for same gene)
+cryptic_norm_score_plot_df <- cryptic_norm_score_plot_df %>%
+  group_by(gene_name) %>%
+  mutate(gene_ncryp = n_distinct(le_id),
+         plot_le_id = if_else(gene_ncryp == 1, gene_name, plot_le_id)) %>%
+  ungroup() %>%
+  select(-gene_ncryp) %>%
+  # Re-arrange le_ids in order descending order of regulation_score
+  mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score_norm))
+
+
 cryptics_norm_score_sort_heatmap <- cryptic_norm_score_plot_df %>%
   facet_heatmap(plot_title = "Cryptic event deltas across datasets - sorted by normalised sum of regulation score")
 
 
 # repeat - this time just using sum of regulation score across datasets
 cryptic_sum_score_plot_df <- plot_df %>%
-  mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score)) %>%
   # first subset for events that are cryptic in at least one dataset
   group_by(le_id) %>%
   filter(any(cryptic)) %>%
   ungroup()
+
+# Remove redundant/unnecessary suffixes from name labels
+cryptic_sum_score_plot_df <- cryptic_sum_score_plot_df %>%
+  group_by(gene_name) %>%
+  mutate(gene_ncryp = n_distinct(le_id),
+         plot_le_id = if_else(gene_ncryp == 1, gene_name, plot_le_id)) %>%
+  ungroup() %>%
+  select(-gene_ncryp) %>%
+  # Re-order using sum of regulation score across datasets
+  mutate(plot_le_id = fct_reorder(plot_le_id, sum_regn_score))
 
 cryptics_sum_score_sort_heatmap <- cryptic_sum_score_plot_df %>%
   facet_heatmap(plot_title = "Cryptic event deltas across datasets - sorted by sum of regulation score")
@@ -258,7 +360,7 @@ cryptics_sum_score_sort_heatmap_nolab
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot.png",
+ggsave(filename = "2024-11-15_ndatasets_cryptic_vs_expressed_binplot.png",
        plot = plot_cryptic_vs_expressed_counts,
               path = "processed",
               width = 12,
@@ -266,7 +368,7 @@ ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot.png",
               units = "in",
               dpi = "retina")
 
-ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot.svg",
+ggsave(filename = "2024-11-15_ndatasets_cryptic_vs_expressed_binplot.svg",
        plot = plot_cryptic_vs_expressed_counts,
        device = svg,
        path = "processed",
@@ -276,7 +378,7 @@ ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot.svg",
        dpi = "retina")
 
 
-ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.png",
+ggsave(filename = "2024-11-15_ndatasets_cryptic_vs_expressed_binplot_notitle.png",
        plot = plot_cryptic_vs_expressed_counts_notitle,
        path = "processed",
        width = 12,
@@ -284,7 +386,7 @@ ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.png
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.svg",
+ggsave(filename = "2024-11-15_ndatasets_cryptic_vs_expressed_binplot_notitle.svg",
        plot = plot_cryptic_vs_expressed_counts_notitle,
        device = svg,
        path = "processed",
@@ -293,10 +395,7 @@ ggsave(filename = "2023-10-06_ndatasets_cryptic_vs_expressed_binplot_notitle.svg
        units = "in",
        dpi = "retina")
 
-
-
-
-ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2024-11-15_cryptics_normed_regn_score_sort_facet_heatmap.png",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -304,7 +403,7 @@ ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.png"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.png",
+ggsave(filename = "2024-11-15_cryptics_sum_regn_score_sort_facet_heatmap.png",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
        width = 12,
@@ -312,7 +411,7 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.svg",
+ggsave(filename = "2024-11-15_cryptics_normed_regn_score_sort_facet_heatmap.svg",
        plot = cryptics_norm_score_sort_heatmap,
        path = "processed",
        device = svg,
@@ -321,7 +420,7 @@ ggsave(filename = "2023-10-20_cryptics_normed_regn_score_sort_facet_heatmap.svg"
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.svg",
+ggsave(filename = "2024-11-15_cryptics_sum_regn_score_sort_facet_heatmap.svg",
        plot = cryptics_sum_score_sort_heatmap,
        path = "processed",
        device = svg,
@@ -330,7 +429,7 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.svg",
+ggsave(filename = "2024-11-15_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.svg",
        plot = cryptics_sum_score_sort_heatmap_nolab,
        path = "processed",
        device = svg,
@@ -339,7 +438,7 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.pdf",
+ggsave(filename = "2024-11-15_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.pdf",
        plot = cryptics_sum_score_sort_heatmap_nolab,
        path = "processed",
        device = "pdf",
@@ -348,6 +447,50 @@ ggsave(filename = "2023-10-20_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
        units = "in",
        dpi = "retina")
 
+
+# cryptic counts and overlap plots
+
+ggsave(filename = "2024-11-14_cryptics_count_barplot.png",
+       plot = barplot_cryptic_counts,
+       path = "processed",
+       width = 100,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-14_cryptics_count_barplot.pdf",
+       plot = barplot_cryptic_counts,
+       path = "processed",
+       width = 100,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
+
+
+ggsave(filename = "2024-11-14_cryptics_upsetplot.png",
+       plot = upsetplot_cryptic_counts,
+       path = "processed",
+       width = 200,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-14_cryptics_upsetplot.pdf",
+       plot = upsetplot_cryptic_counts,
+       path = "processed",
+       width = 200,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-14_cryptics_upsetplot.svg",
+       plot = upsetplot_cryptic_counts,
+       path = "processed",
+       device = svg,
+       width = 200,
+       height = 100,
+       units = "mm",
+       dpi = "retina")
 
 
 # write enrichment scores to tsv (summarised)
