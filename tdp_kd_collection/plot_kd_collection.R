@@ -1,6 +1,7 @@
 library(tidyverse)
 library(ggrepel)
-library(ggupset)
+library(ggrastr)
+# library(ggupset)
 set.seed(123)
 
 #' Convert dataframe of median delta usages for signficiant events into df reading for scatter plot
@@ -41,17 +42,9 @@ get_scatter_df <- function(df, genes_to_label, label_all = F) {
 
 
 
-df <- read_tsv("data/2023-05-24_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
+df <- read_tsv("data/2023-12-10_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
 mv_df <- read_tsv("data/bleedthrough_manual_validation.tsv")
-
-# remove some of the intermediate depletion curve datasets (i.e. keep highest KD only)
-# zanovello_skndz_curve_1
-# zanovello_shsy5y_curve_0075
-
-exp_to_keep <- unique(df$experiment_name)[str_detect(unique(df$experiment_name), "_curve_",negate = T) | 
-                             unique(df$experiment_name) %in% c("zanovello_skndz_curve_1", "zanovello_shsy5y_curve_0075")]
-
-df <- filter(df, experiment_name %in% exp_to_keep)
+cryptics_df <- read_tsv("data/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation_complex.tsv")
 
 # remove manually validated isoforms
 mv_fail_ids <- filter(mv_df, event_manual_validation != "yes") %>% pull(le_id)
@@ -60,9 +53,9 @@ df <- filter(df, !le_id %in% mv_fail_ids)
 sig_df <- filter(df, padj < 0.05)
 
 # annotate cryptic events (any dataset)
-sig_df <- mutate(sig_df, cryptic_any = padj < 0.05 & mean_PPAU_base < 0.1 & delta_PPAU_treatment_control > 0.1)
+sig_df <- mutate(sig_df, cryptic_any = le_id %in% unique(cryptics_df$le_id))
 
-# how many events are cryptic in at least 1 dataset?
+# how many events are cryptic in at least 1 dataset? (double check matches previous Ns of 227)
 cryp_any_df <- sig_df %>%
   arrange(le_id, desc(cryptic_any)) %>%
   # keep first row, favouring if cryptic in at least 1 dataset
@@ -102,19 +95,20 @@ cryp_any_med_df %>%
 
 cryp_any_med_df %>%
   count(simple_event_type, cryptic_any, cryptic_med,)
-# A tibble: 10 × 4
+# A tibble: 11 × 4
 # simple_event_type     cryptic_any cryptic_med     n
 # <chr>                 <lgl>       <lgl>       <int>
-#   1 bleedthrough          FALSE       FALSE        1082
-# 2 bleedthrough          TRUE        FALSE          21
-# 3 bleedthrough          TRUE        TRUE           41
-# 4 distal_3utr_extension FALSE       FALSE        1272
-# 5 distal_3utr_extension FALSE       TRUE            1
-# 6 distal_3utr_extension TRUE        FALSE          44
-# 7 distal_3utr_extension TRUE        TRUE           61
-# 8 spliced               FALSE       FALSE        3337
-# 9 spliced               TRUE        FALSE          48
-# 10 spliced               TRUE        TRUE           78
+#   1 bleedthrough          FALSE       FALSE        1033
+# 2 bleedthrough          FALSE       TRUE            1
+# 3 bleedthrough          TRUE        FALSE          10
+# 4 bleedthrough          TRUE        TRUE           12
+# 5 distal_3utr_extension FALSE       FALSE        1152
+# 6 distal_3utr_extension FALSE       TRUE            1
+# 7 distal_3utr_extension TRUE        FALSE          40
+# 8 distal_3utr_extension TRUE        TRUE           46
+# 9 spliced               FALSE       FALSE        3134
+# 10 spliced               TRUE        FALSE          41
+# 11 spliced               TRUE        TRUE           78
 
 # seems to affect event types quite generally
 
@@ -169,16 +163,16 @@ med_scatter <- plot_med_df %>%
   scale_x_continuous(breaks = seq(0,100,10)) + 
   scale_y_continuous(limits = c(-100,100),
                      breaks = seq(-100,100,10)) +
-  labs(x = "Median of CTL mean PAS usage %",
-       y = "Median of change in usage (TDP-43 KD - CTL)") +
-  theme_bw(base_size = 16) + 
+  labs(x = "Median of CTRL mean PAS usage %",
+       y = "Median of change in usage (TDP43KD - CTRL)") +
+  theme_bw(base_size = 20) + 
   guides(alpha = "none",
-         colour = "none") +
-  theme(axis.title.x = element_text(size = rel(1.75)),
-        axis.title.y = element_text(size = rel(1.75)),
-        axis.text.x = element_text(size = rel(1.5)),
-        axis.text.y = element_text(size = rel(1.5))
-  )
+         colour = "none") #+
+  # theme(axis.title.x = element_text(size = rel(1.75)),
+  #       axis.title.y = element_text(size = rel(1.75)),
+  #       axis.text.x = element_text(size = rel(1.5)),
+  #       axis.text.y = element_text(size = rel(1.5))
+  # )
 
 med_scatter
 
@@ -261,7 +255,7 @@ x <- cryp_any_med_df %>%
                                  )
          )
 
-# 
+
 # x %>%
 #   ggplot(aes(x = median_ctl*100,
 #              y = median_delta*100, 
@@ -302,19 +296,19 @@ med_scatter_lab_1dataset <- ggplot(filter(x, !cryptic_any & !cryptic_med), aes(x
   scale_x_continuous(breaks = seq(0,100,10)) + 
   scale_y_continuous(limits = c(-100,100),
                      breaks = seq(-100,100,10)) +
-  labs(x = "Median of CTL mean PAS usage %",
-       y = "Median of change in usage (TDP-43 KD - CTL)",
+  labs(x = "Median of CTRL mean PAS usage %",
+       y = "Median of change in usage (TDP43KD - CTRL)",
        colour = "") +
-  theme_bw(base_size = 16) + 
+  theme_bw(base_size = 20) + 
   guides(alpha = "none"
          ) +
-  theme(axis.title.x = element_text(size = rel(1.5)),
-        axis.title.y = element_text(size = rel(1.5)),
-        axis.text.x = element_text(size = rel(1.2)),
-        axis.text.y = element_text(size = rel(1.2)),
-        legend.position = "top",
-        legend.text = element_text(size = rel(1.25))
-  )
+  theme(legend.position = "top") #+ 
+  # theme(axis.title.x = element_text(size = rel(1.5)),
+  #       axis.title.y = element_text(size = rel(1.5)),
+  #       axis.text.x = element_text(size = rel(1.2)),
+  #       axis.text.y = element_text(size = rel(1.2)),
+  #       legend.text = element_text(size = rel(1.25))
+  # )
 
 
 med_scatter_lab_1dataset
@@ -357,17 +351,17 @@ ggsave(filename = "2024-11-17_tdp_kd_collection_sig_isoform_gene_counts_bar.pdf"
 ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
        plot = med_scatter,
        path = "processed",
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.svg",
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.svg",
        plot = med_scatter,
        path = "processed",
        device = svg,
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
@@ -379,39 +373,71 @@ ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_
        units = "in",
        dpi = "retina")
 
-
-
 ggsave(filename = "2023-10-06_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
        plot = med_scatter_lab_1dataset,
        path = "processed",
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-06_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.svg",
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.svg",
        plot = med_scatter_lab_1dataset,
        path = "processed",
        device = svg,
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
+
+
+# rasterise scatter plots & save (smaller files)
+
+med_scatter_rast <- rasterise(med_scatter, layers = 'Point', dpi = 200)
+med_scatter_lab_1dataset_rast <- rasterise(med_scatter_lab_1dataset, layers = 'Point', dpi = 200) # slightly lower res vs others to reduce size - at 300 bigger than SVG?
+
+# save to svg
+
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_rast.svg",
+       plot = med_scatter_rast,
+       path = "processed",
+       device = svg,
+       width = 10,
+       height = 10,
+       units = "in",
+       dpi = "retina")
+
+
+ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name_rast.svg",
+       plot = med_scatter_lab_1dataset_rast,
+       path = "processed",
+       device = svg,
+       width = 10,
+       height = 10,
+       units = "in",
+       dpi = "retina")
+
 
 
 # write tsv of median values for each cryptic/regulated evetn
 plot_med_df %>%
   select(le_id, groupID, gene_name, contains("median"), contains("cryptic"), simple_event_type, contains("plot")) %>%
-  write_tsv("processed/2023-09-15_cryptics_scatter_standard_plot_tbl.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptics_scatter_standard_plot_tbl.tsv", col_names = T)
 
 cryp_any_not_med_df %>%
-  write_tsv("processed/2023-09-15_cryptics_1dataset_not_median_base_delta_tbl.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptics_1dataset_not_median_base_delta_tbl.tsv", col_names = T)
 
 cryp_type_med_df %>%
-  write_tsv("processed/2023-10-12_cryptic_median_exprn_category_tbl.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptic_median_exprn_category_tbl.tsv", col_names = T)
 
 cryp_type_med_df_counts %>%
-  write_tsv("processed/2023-10-12_cryptic_median_exprn_category_counts.tsv", col_names = T)
+  write_tsv("processed/2024-01-10_cryptic_median_exprn_category_counts.tsv", col_names = T)
+
+# write counts by cryptic category
+cryp_any_med_df %>%
+  count(cryptic_any, cryptic_med) %>%
+  write_tsv("processed/2024-01-10_cryptics_median_category_summary_counts.tsv", col_names = T)
+
 
 # save to Rdata
 save(med_scatter_lab_1dataset, med_scatter, plot_med_df, cryp_any_not_med_df, sig_med_df, cryp_type_med_df_counts, cryp_type_med_df, file = "processed/2024-11-14_fig1_cryptics_scatter.Rdata")

@@ -6,7 +6,7 @@ facet_heatmap <- function(df,
                           plot_subtitle = "** = cryptic criteria, * = padj < 0.05, blank = padj > 0.05",
                           plot_x = "Dataset",
                           plot_y = "Last exon ID",
-                          plot_fill = "PolyA site usage % (KD - CTL)") {
+                          plot_fill = "PolyA site usage % (TDP43KD - CTRL)") {
   df %>%
   ggplot(aes(x = experiment_name_simple, y = plot_le_id, fill = delta_PPAU_treatment_control, label = plot_label)) + 
     facet_wrap("~ plot_event_type", ncol = 3, scales = "free_y") +
@@ -28,28 +28,9 @@ facet_heatmap <- function(df,
 }
 
 
-df <- read_tsv("data/2023-05-24_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
+df <- read_tsv("data/2023-12-10_i3_cortical_zanovello.all_datasets.dexseq_apa.results.processed.cleaned.tsv")
 mv_df <- read_tsv("data/bleedthrough_manual_validation.tsv")
-
-# remove some of the intermediate depletion curve datasets (i.e. keep highest KD only)
-# zanovello_skndz_curve_1
-# zanovello_shsy5y_curve_0075
-
-exp_to_keep <- unique(df$experiment_name)[str_detect(unique(df$experiment_name), "_curve_",negate = T) | 
-                                            unique(df$experiment_name) %in% c("zanovello_skndz_curve_1", "zanovello_shsy5y_curve_0075")]
-
-df <- filter(df, experiment_name %in% exp_to_keep)
-# experiment_name = factor(experiment_name, levels = c("humphrey_i3_cortical",
-#                                                      "brown_i3_cortical",
-#                                                      "seddighi_i3_cortical",
-#                                                      "klim_i3_motor",
-#                                                      "zanovello_shsy5y_curve_0075",
-#                                                      "zanovello_shsy5y_chx_kd_only",
-#                                                      "brown_shsy5y",
-#                                                      "zanovello_skndz_curve_1",
-#                                                      "brown_skndz",
-#                                                      "appocher_skndz"
-# )
+cryptics_df <- read_tsv("data/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation_complex.tsv")
 
 
 # remove manually validated isoforms
@@ -57,7 +38,7 @@ mv_fail_ids <- filter(mv_df, event_manual_validation != "yes") %>% pull(le_id)
 df <- filter(df, !le_id %in% mv_fail_ids)
 
 # annotate cryptic events (any dataset)
-df <- mutate(df, cryptic_any = padj < 0.05 & mean_PPAU_base < 0.1 & delta_PPAU_treatment_control > 0.1)
+df <- mutate(df, cryptic_any = le_id %in% unique(cryptics_df$le_id))
 
 # Define a cleaned df mapping experiment names to plot names
 experiment_names <- tibble(experiment_name = c("humphrey_i3_cortical",
@@ -98,7 +79,7 @@ experiment_names <- tibble(experiment_name = c("humphrey_i3_cortical",
 
 #1. number of datasets cryptic, regulated, expressed/evaluated (and fractions)
 
-# annotate regulated, cryptic & expressed for each event
+# annotate regulated, cryptic & expressed for each event + dataset
 df <- df %>%
   mutate(cryptic = padj < 0.05 & mean_PPAU_base < 0.1 & delta_PPAU_treatment_control > 0.1,
          regulated = !cryptic & padj < 0.05,
@@ -118,22 +99,34 @@ le_exper_summ_counts <- df_all_combos %>%
   summarise(n_cryptic = sum(cryptic),
             n_regulated = sum(regulated),
             n_evaluated = sum(evaluated),
-            n_experiments = n())
+            n_experiments = n()) %>%
+  ungroup()
+
+# double check number of cryptic events is the same
+le_exper_summ_counts %>%
+  filter(n_cryptic > 0) %>%
+  nrow()
+# [1] 227
   
 plot_cryptic_vs_expressed_counts <- le_exper_summ_counts %>%
   filter(n_cryptic > 0 & n_evaluated > 0) %>%
-  ggplot(aes(x = n_cryptic, y = n_evaluated)) +
-  geom_bin2d(binwidth = c(1,1)) +
-  stat_bin2d(geom = "text", aes(label = after_stat(count)), size = rel(6), binwidth = c(1,1)) +
+  count(n_evaluated, n_cryptic) %>%
+  ggplot(aes(x = n_cryptic, y = n_evaluated, label = n, fill = n)) +
+  geom_tile() +
   scale_fill_gradient(low = "#fee8c8", high = "#e34a33") +
-  scale_x_continuous(breaks = seq(0,10,1)) +
-  scale_y_continuous(breaks = seq(0,10,1)) +
+  geom_text(size = rel(6)) +
+  scale_x_continuous(labels = seq(1,10,1),
+                     breaks = seq(1,10,1)) +
+  scale_y_continuous(labels = seq(1,10,1),
+                     breaks = seq(1,10,1)) +
   labs(title = "Cryptics are rarely called in >1 dataset",
        x = "Number of datasets cryptic",
-       y = "Number of datasets expressed") +
+       y = "Number of datasets expressed",
+       fill = "Count") +
   theme_classic(base_size = 20)
 
 plot_cryptic_vs_expressed_counts
+
 
 plot_cryptic_vs_expressed_counts_notitle <- plot_cryptic_vs_expressed_counts + 
   labs(title = "")
@@ -360,11 +353,12 @@ cryptics_sum_score_sort_heatmap_nolab
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
+
 ggsave(filename = "2024-11-15_ndatasets_cryptic_vs_expressed_binplot.png",
        plot = plot_cryptic_vs_expressed_counts,
               path = "processed",
-              width = 12,
-              height = 12,
+              width = 10,
+              height = 10,
               units = "in",
               dpi = "retina")
 
@@ -372,17 +366,16 @@ ggsave(filename = "2024-11-15_ndatasets_cryptic_vs_expressed_binplot.svg",
        plot = plot_cryptic_vs_expressed_counts,
        device = svg,
        path = "processed",
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
-
 
 ggsave(filename = "2024-11-15_ndatasets_cryptic_vs_expressed_binplot_notitle.png",
        plot = plot_cryptic_vs_expressed_counts_notitle,
        path = "processed",
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
@@ -390,8 +383,8 @@ ggsave(filename = "2024-11-15_ndatasets_cryptic_vs_expressed_binplot_notitle.svg
        plot = plot_cryptic_vs_expressed_counts_notitle,
        device = svg,
        path = "processed",
-       width = 12,
-       height = 12,
+       width = 10,
+       height = 10,
        units = "in",
        dpi = "retina")
 
@@ -447,7 +440,6 @@ ggsave(filename = "2024-11-15_cryptics_sum_regn_score_sort_facet_heatmap_nolabs.
        units = "in",
        dpi = "retina")
 
-
 # cryptic counts and overlap plots
 
 ggsave(filename = "2024-11-14_cryptics_count_barplot.png",
@@ -494,7 +486,15 @@ ggsave(filename = "2024-11-14_cryptics_upsetplot.svg",
 
 
 # write enrichment scores to tsv (summarised)
-write_tsv(regn_score_sum, "processed/2023-09-18_last_exon_regulation_scores.tsv", col_names = T)
+write_tsv(regn_score_sum, "processed/2024-01-10_last_exon_regulation_scores.tsv", col_names = T)
+
+# write df with cryptic, detected and regulated counts across datasets for each event
+le_exper_summ_counts <- le_exper_summ_counts %>%
+  left_join(distinct(df, le_id, gene_name)) %>%
+  relocate(gene_name, .after = le_id) %>%
+  arrange(desc(n_cryptic), desc(n_regulated), desc(n_evaluated))
+
+write_tsv(le_exper_summ_counts, "processed/2024-01-10_last_exon_dataset_regulation_summary_counts.tsv", col_names = T)
 
 # save to Rdata
 regn_score_all <- working_df

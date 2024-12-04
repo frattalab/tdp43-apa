@@ -1,6 +1,7 @@
 library(tidyverse)
 library(fgsea)
 library(ggrepel)
+library(ggrastr)
 source("helpers.R")
 set.seed(123)
 
@@ -51,7 +52,7 @@ plot_df_elk1_volc %>%
                      breaks = seq(-4,4,1)) +
   guides(alpha = "none", colour = "none") +
   labs(title = "i3 Cortical Neuron Riboseq Differential expression",
-       x = "Log2FoldChange (KD / WT)",
+       x = "Ribo-seq Log2FoldChange (TDP43KD / CTRL)",
        y = "-log10(padj)")
 
 
@@ -89,7 +90,7 @@ plot_df_d3utr_volc %>%
                      breaks = seq(-4,4,1)) +
   guides(alpha = "none", colour = "none") +
   labs(title = "i3 Cortical Neuron Ribo-seq Differential expression",
-       x = "Log2FoldChange (KD / WT)",
+       x = "Ribo-seq Log2FoldChange (TDP43KD / CTRL)",
        y = "-log10(padj)")
 
 ggsave("processed/2023-06-29_riboseq_de_volcano_elk1_six3_tlx1.png",
@@ -207,12 +208,13 @@ base_volcano <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
   scale_colour_manual(values = c("#d95f02","#1f78b4","#a6cee3", "#33a02c", "#bdbdbd")) +
   theme_bw(base_size = 12) +
   guides(alpha = "none") +
-  labs(x = "Log2FoldChange (TDP-43 KD / CTRL)",
+  labs(x = "Ribo-seq Log2FoldChange (TDP-43 KD / CTRL)",
        y = "-log10(padj)",
        colour = "Event Type") +
   theme(legend.position = "top")
 
 base_volcano
+base_volcano_rast <- rasterise(base_volcano, layers = "Point", dpi = 300)
 
 ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_no_gn.png",
        height = 100,
@@ -229,7 +231,8 @@ ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_no_gn.pdf",
 )
 
 # volcano with no colour legend
-base_volcano + guides(colour = "none")
+base_volcano_noguide <- base_volcano + guides(colour = "none")
+base_volcano_noguide_rast <- rasterise(base_volcano_noguide, layers = "Point",dpi = 300)
 
 ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_no_gn_no_leg.png",
        height = 100,
@@ -246,7 +249,7 @@ ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_no_gn_no_leg.pdf",
 )
 
 # volcano with text labels
-base_volcano +
+base_volcano_gn <- base_volcano +
   geom_text_repel(data = filter(plot_df_cryp_volc, simple_event_type != "other"),
                   max.overlaps = 10000,
                   force = 30,
@@ -304,7 +307,7 @@ write_tsv(plot_df_cryp_volc,file = "processed/2024-11-26_riboseq_volcano_plot_df
 #   geom_point(data = filter(plot_df_cryp_volc, simple_event_type != "other"), size = 2.5) +
 #   theme_bw(base_size = 16) +
 #   guides(alpha = "none") +
-#   labs(x = "Log2FoldChange (KD / WT)",
+#   labs(x = "Log2FoldChange (TDP43KD / CTRL)",
 #        y = "-log10(padj)",
 #        colour = "Event type")
 
@@ -325,7 +328,7 @@ write_tsv(plot_df_cryp_volc,file = "processed/2024-11-26_riboseq_volcano_plot_df
 #   scale_colour_manual(values = c("#33a02c", "#a6cee3", "#d95f02", "#bdbdbd", "#1f78b4")) +
 #   theme_bw(base_size = 16) +
 #   guides(alpha = "none") +
-#   labs(x = "Log2FoldChange (KD / WT)",
+#   labs(x = "Log2FoldChange (TDP43KD / CTRL)",
 #        y = "-log10(padj)",
 #        colour = "Event type")
 # 
@@ -355,7 +358,7 @@ volc_ribo_gn_base <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "othe
   scale_colour_manual(values = c("#33a02c", "#a6cee3", "#d95f02", "#bdbdbd", "#1f78b4")) +
   theme_bw(base_size = 20) +
   guides(alpha = "none") +
-  labs(x = "Log2FoldChange (KD / WT)",
+  labs(x = "Ribo-seq Log2FoldChange (TDP43KD / CTRL)",
        y = "-log10(padj)",
        colour = "Event type") +
   theme(legend.position = "top")
