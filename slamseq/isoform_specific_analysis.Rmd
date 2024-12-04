@@ -1,0 +1,143 @@
+
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(EZbakR)
+library(data.table)
+library(ggplot2)
+library(nls2)
+
+
+```
+
+```{r}
+
+# Function to estimate half-life using weighted regression
+estimate_half_life_weighted <- function(data, 
+                                        time_col = "tl", 
+                                        logit_fraction_col = "logit_fraction_highTC", 
+                                        se_logit_fraction_col = "se_logit_fraction_highTC", 
+                                        group_col = "group") {
+  
+  # Transform the logit fraction and calculate weights
+  data <- data %>%
+    mutate(
+      fraction_highTC = exp(!!sym(logit_fraction_col)) / (1 + exp(!!sym(logit_fraction_col))),
+      fraction_remaining = 1 - fraction_highTC,
+      weight = 1 / (!!sym(se_logit_fraction_col))^2 
+    )
+  
+  
+  result <- data %>%
+    group_by(across(all_of(group_col))) %>%
+    summarise(
+      # grouped nls regression
+      results = list(purrr::map(
+        list(cur_data()), ~ {
+          decay_model <- nls(
+            formula = fraction_remaining ~ exp(-exp(k) * !!sym(time_col)),
+            start = list(k = log(0.1)),
+            data = .x,
+            weights = .x$weight
+          )
+          
+          # Calculate the confidence intervals for the decay constant `k`
+          ci_k <- confint(decay_model, parm = "k")
+          
+          # Return the `k` value and its confidence intervals 
+          tibble(
+            decay_constant = coef(decay_model)["k"],
+            ci_decay_constant_lower = ci_k[1],
+            ci_decay_constant_upper = ci_k[2]
+          )
+        })
+      )
+    ) %>%
+    unnest(results) %>% unnest()  # Unnest the results to return k and ci_k columns
+  
+  result = result  %>% 
+    mutate(across(c(decay_constant, ci_decay_constant_lower, 
+                    ci_decay_constant_upper), ~ log(2) / exp(.x), .names = "half_life_{.col}")) %>% # calculate half-life - give some better names
+    dplyr::rename(half_life = half_life_decay_constant,
+                  half_life_upper_estimate = half_life_ci_decay_constant_lower,
+                  half_life_lower_estimate = half_life_ci_decay_constant_upper)
+  return(result)
+}
+
+```
+
+
+
+Read in the data
+
+```{r}
+### Load data 
+
+cB <- read_csv("data/isoform_stability/cB.csv.gz")
+
+metadf = tibble(sample = (unique(unique(cB$sample)))) |> 
+  separate(sample, into = c("condition","rep",'time'),remove = FALSE,convert = TRUE) |> 
+  mutate(time = parse_number(time)) |> 
+  dplyr::rename(tl = time) 
+
+
+
+
+ezbdo <- EZbakRData(cB, metadf)
+ezbdo <- EstimateFractions(ezbdo,
+                           features = "exon_bin",
+                           pold_from_nolabel = FALSE,
+                           grouping_factors = 'condition')
+
+ezbdo <- CorrectDropout(ezbdo, 
+                        grouping_factors = "condition")
+
+
+
+```
+
+quick plots
+
+```{r}
+elk1_bins = EZget(ezbdo,
+                  type = "fractions") %>%  
+  mutate(exon_bin = case_when(
+    exon_bin == 'EENSG00000126767.18_2__distal+ENSG00000126767.18_2002' ~ "Short UTR",
+    exon_bin == 'EENSG00000126767.18_2__distal+ENSG00000126767.18_2001' ~ "Long UTR",
+    TRUE ~ "other")) %>% 
+  filter(exon_bin != "other") %>% 
+  separate(sample, into = c("cond",'rep','tl')) %>% 
+  mutate(tl = parse_number(tl)) %>% 
+  mutate(fraction_remaining = 1 - fraction_highTC) %>% 
+  select(tl,cond,rep,fraction_remaining,exon_bin,fraction_highTC,logit_fraction_highTC,se_logit_fraction_highTC,n) %>%
+  dplyr::filter(tl > 0)
+  
+# just ELK1
+elk1_bin_half = estimate_half_life_weighted(data = elk1_bins, 
+                                     time_col = 'tl', 
+                                     group_col = c('exon_bin', 'cond'))
+
+
+elk1_bin_half %>% 
+  ungroup() %>% 
+  # mutate(half_life_lower_estimate = ifelse(is.na(half_life_lower_estimate),0,half_life_lower_estimate)) %>%  #for plotting
+  ggplot(aes(x = exon_bin,
+             y = half_life,
+             color = cond)) +
+  geom_point() +
+  geom_errorbar(aes(ymin=half_life_lower_estimate, 
+                    ymax = half_life_upper_estimate), width=.2,
+                position=position_dodge(0.05)) + 
+  theme_classic() + 
+  ylab("Half-life (h)") +
+  facet_wrap(~cond,scales = 'free_y') +
+  scale_colour_manual(values = c("#bdbdbd", "#d95f02")) +
+  theme(legend.position = 'none') +
+  xlab(element_blank())
+  
+
+```
+
