@@ -16,6 +16,7 @@ ppau_order_cryp <- ppau_delta_paired_median_all %>%
          rank_median_up = min_rank(desc(median_paired_delta_ppau))) %>%
   arrange(rank_median_up, rank_mean_up)
 
+
 # get ranked order of IDs from most enriched to least enriched 
 ppau_order_cryp_median_gn <- ppau_order_cryp %>%
   arrange(rank_median_up) %>%
@@ -88,27 +89,6 @@ median5_other_events_heatmap <- plot_df_median_5_delta %>%
 
 median5_other_events_heatmap
 
-
-# # Heatmap for NYGC selective events that aren't found in FACS-seq (manually curated)
-# nygc_sel_only <- c("SYNJ2", "PHF2", "SERGEF", "PATJ", "DLGAP1") %>%
-#   fct_inorder()
-# 
-# plot_df_nygc_sel_only <- ppau_delta_paired_cryp %>%
-#   filter(gene_name %in% nygc_sel_only) %>%
-#   prep_heatmap_df(le_id_order = rev(levels(nygc_sel_only)))
-# 
-# nygc_sel_only_heatmap <- plot_heatmap(plot_df_nygc_sel_only) +
-#   geom_text(aes(label = round(paired_delta_ppau_neg_pos, 2))) +
-#   scale_fill_gradient2(name = "Delta polyA usage % (TDPnegative - TDPpositive)",
-#                        low = "#998ec3",
-#                        mid = "#f7f7f7",
-#                        high = "#f1a340",
-#                        midpoint = 0,
-#                        # limits = c(-1, 1),
-#                        breaks = seq(-20, 20, 5)
-#   )
-
-
 if (!dir.exists("processed/liu_facs")) {dir.create("processed/liu_facs", recursive = T)}
 
 # standard heatmaps
@@ -152,23 +132,6 @@ ggsave("2024-11-21_liu_facs_cryptic_median_delta_05_facet.other_event_types.pdf"
        width = 15,
        units = "in",
        dpi = "retina")
-
-# NYGC selective only
-# ggsave("2024-11-21_liu_facs_nygc_selective_only.ales.png",
-#        plot = nygc_sel_only_heatmap,
-#        path = "processed/liu_facs",
-#        height = 8,
-#        width = 12,
-#        units = "in",
-#        dpi = "retina")
-# 
-# ggsave("2024-11-21_liu_facs_nygc_selective_only.ales.pdf",
-#        plot = nygc_sel_only_heatmap,
-#        path = "processed/liu_facs",
-#        height = 8,
-#        width = 12,
-#        units = "in",
-#        dpi = "retina")
 
 # enriched count tables
 write_tsv(cryp_median_min_delta_nevent_by_type, "processed/liu_facs/2024-11-21_liu_facs_min_delta_range_numevents_eventtype.tsv", col_names = T)

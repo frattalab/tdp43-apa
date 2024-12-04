@@ -1,8 +1,11 @@
 library(tidyverse)
+library(rstatix)
+library(ggprism)
 
 normed_counts_npc <- read_tsv("processed/fracseq/2024-04-30_summarised_pas.counts.normalised.npc.tsv")
 le2name <- read_tsv("../postmortem/processed/2023-06-22_cryptics_plus_decoys.decoys_full_fix_tx2le.le2name.tsv")
 sample_tbl <- read_csv("data/fracseq/ritter_short_read_fracseq_sample_sheet_minus_esc_hp_rep3.csv")
+outdir <- "processed/fracseq"
 
 # quant done with rnaseq-single-steps, which uses basenames of files as sample names
 # need to prepend SRR accession to sample name to ensure matches
@@ -155,6 +158,7 @@ ppau_3exts_npc_cyto_normed <- ppau_3exts %>%
   # introduces NAs for fraction + other fraction combos
   drop_na(cytosol_normed_ppau)
 
+
 ppau_3exts_npc_cyto_normed %>%
   mutate(cytosol_normed_ppau = cytosol_normed_ppau * 100) %>%
   mutate(group = case_when(str_detect(sample_name_clean, "cytosol") ~ "cytosol",
@@ -201,14 +205,70 @@ ppau_3exts_npc_cyto_normed %>%
   geom_col(position = "dodge") +
   labs(title = "ELK1 cryptic PAS",
        subtitle = "Individual fractions",
-       x = "Fraction",
+       x = "Replicate",
        y = "Cytosol normalised PAS usage (%)",
-       fill = "Replicate") +
+       fill = "Fraction") +
   scale_y_continuous(limits = c(0,200),
                      breaks = seq(0,200,25)) +
   scale_fill_brewer(type = "qual",palette = "Paired") +
   theme_bw(base_size = 14) +
   theme(legend.position = "bottom")
+
+# plot individual fractions on x axis, summarising replicates with a bar and jittering individual replicates
+
+# clean up names for plotting
+ppau_3exts_npc_cyto_normed_plot_df <- ppau_3exts_npc_cyto_normed %>%
+  # mutate(cytosol_normed_ppau = cytosol_normed_ppau * 100) %>%
+  mutate(group = case_when(str_detect(sample_name_clean, "cytosol") ~ "Cytosol",
+                           str_detect(sample_name_clean, "monosome") ~ "Monosome",
+                           str_detect(sample_name_clean, "2-4_ribosomes") ~ "Light polysome",
+                           str_detect(sample_name_clean, "5_ribosomes") ~ "Heavy polysome"),
+         group = factor(group, levels = c("Cytosol",
+                                          "Monosome",
+                                          "Light polysome",
+                                          "Heavy polysome"),
+         ),
+         replicate = str_remove_all(replicate, "^rep")
+  )
+
+# plot
+npc_cyto_normed_elk1_bar <- ggpubr::ggbarplot(ppau_3exts_npc_cyto_normed_plot_df,
+                  x = "group",
+                  y = "cytosol_normed_ppau",
+                  add = c("median"),
+                  ggtheme = theme_bw(base_size = 14)
+                  ) +
+  geom_point(data = ppau_3exts_npc_cyto_normed_plot_df,
+             aes(x = group,
+                 y = cytosol_normed_ppau,
+                 shape = replicate),
+             position = position_dodge(width = 0.4),
+             size = 3
+             ) +
+  theme(legend.position = "top") +
+  labs(x = "Fraction",
+       y = "Cytosol-normalised ELK1 cryptic PAS usage",
+       shape = "Replicate")
+  
+npc_cyto_normed_elk1_bar
+# ppau_3exts_npc_cyto_normed_plot_df %>%
+#   ggplot(aes(x = group,
+#              y = cytosol_normed_ppau,
+#              fill = group,
+#   )) +
+#   geom_col(position = "dodge") +
+#   labs(title = "ELK1 cryptic PAS",
+#        subtitle = "Individual fractions",
+#        x = "Replicate",
+#        y = "Cytosol normalised PAS usage (%)",
+#        fill = "Fraction") +
+#   scale_y_continuous(limits = c(0,2),
+#                      breaks = seq(0,2,0.25)) +
+#   scale_fill_brewer(type = "qual",palette = "Paired") +
+#   theme_bw(base_size = 14) +
+#   theme(legend.position = "bottom")
+
+
 
 #
 # group all 'some' fractions together vs cytosol
@@ -261,47 +321,70 @@ ppau_npc_elk1_some_cyto_cyto_normed <- ppau_some_cyto_3exts %>%
   filter(gene_name == "ELK1",
          str_ends(le_id, "_2")) %>%
   # each ppau column, divide against cytosol usage
-  mutate(across(starts_with("ppau_"), ~ (.x / ppau_cytosol) * 100)) %>%
+  mutate(across(starts_with("ppau_"), ~ (.x / ppau_cytosol))) %>%
   arrange(replicate) %>% 
-  pivot_longer(cols = starts_with("ppau_"), names_prefix = "ppau_", names_to = "group", values_to = "cytosol_normed_ppau")
-  
+  pivot_longer(cols = starts_with("ppau_"), names_prefix = "ppau_", names_to = "group", values_to = "cytosol_normed_ppau") %>%
+  mutate(group = str_to_title(group),
+         replicate = str_remove_all(replicate, "^rep"))
 
-# bar plot of cytosol normalised usage
-ppau_npc_elk1_some_cyto_cyto_normed %>%
-  ggplot(aes(x = replicate,
-             y = cytosol_normed_ppau,
-             fill = group,
-             replicate)) +
-  geom_col(position = "dodge") +
-  labs(title = "ELK1 cryptic PAS",
-       subtitle = "ribosome = monosome + polysome",
-       x = "Replicate",
-       y = "Cytosol normalised PAS usage (%)",
-       fill = "Fraction") +
-  scale_y_continuous(limits = c(0,180),
-                     breaks = seq(0,200,20)) +
-  scale_fill_brewer(type = "qual", palette = "Paired") +
+# Calculate p-value for enrichment ratio
+# 1 sample t.test of log-transformed ratios, assessing null that true difference is 1
+some_cyto_normed_pval <- ppau_npc_elk1_some_cyto_cyto_normed %>%
+  filter(group == "Ribosome") %>%
+  mutate(cytosol_normed_ppau = log(cytosol_normed_ppau)) %>%
+  t_test(cytosol_normed_ppau ~ 0) %>% # log(1) = 0
+  # standardise group labels for plotting
+  mutate(group1 = "Ribosome", group2 = "Cytosol") %>%
+  add_significance(p.col = "p", output.col = "p.signif")
+
+# Frac-seq pooled ribosome-associated vs cytosol bar plot
+npc_cyto_normed_elk1_pooledall_bar <- ggpubr::ggbarplot(ppau_npc_elk1_some_cyto_cyto_normed,
+                  x = "group",
+                  y = "cytosol_normed_ppau",
+                  add = c("mean"),
+                  ggtheme = theme_bw(base_size = 14)
+) +
+  geom_point(data = ppau_npc_elk1_some_cyto_cyto_normed,
+             aes(x = group,
+                 y = cytosol_normed_ppau,
+                 shape = replicate),
+             position = position_dodge(width = 0.4),
+             size = 3
+  ) +
+  scale_y_continuous(limits = c(0, 1.5), breaks = seq(0, 1.5, 0.25)) +
+  theme(legend.position = "top") +
+  labs(x = "Fraction",
+       y = "Cytosol-normalised ELK1 cryptic PAS usage",
+       shape = "Replicate")
+
+npc_cyto_normed_elk1_pooledall_bar
+
+# Frac-seq pooled ribosome-associated vs cytosol - represent median with line instead of bar
+npc_cyto_normed_elk1_pooledall_line <- ggplot(ppau_npc_elk1_some_cyto_cyto_normed,
+                                              aes(x = group, y = cytosol_normed_ppau)) +
+  ggprism::add_pvalue(some_cyto_normed_pval,
+                      label = "p.signif",
+                      y.position = 1.525,
+                      tip.length = 0,
+                      label.size = 5) +
+  geom_point(aes(shape = replicate), position = position_dodge(width = 0.4),
+             size = 3,) +
+  stat_summary(
+    fun = mean, geom = "point", 
+    shape = 95, size = 15, colour = "#1f78b4", alpha = 0.75
+  ) +
+  scale_y_continuous(breaks = seq(1, 1.5, 0.1)) +
   theme_bw(base_size = 14) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "top") +
+  labs(x = "Fraction",
+       y = "Cytosol-normalised ELK1 cryptic PAS usage",
+       shape = "Replicate")
 
-# same, but plotting fractioons on x
-ppau_npc_elk1_some_cyto_cyto_normed %>%
-  ggplot(aes(fill = replicate,
-             y = cytosol_normed_ppau,
-             x = group,
-             replicate)) +
-  geom_col(position = "dodge") +
-  labs(title = "ELK1 cryptic PAS",
-       subtitle = "ribosome = monosome + polysome",
-       x = "Replicate",
-       y = "Cytosol normalised PAS usage (%)",
-       fill = "Fraction") +
-  scale_y_continuous(limits = c(0,160),
-                     breaks = seq(0,200,20)) +
-  scale_fill_brewer(type = "qual", palette = "Paired") +
-  theme_bw(base_size = 14) +
-  theme(legend.position = "bottom")
+npc_cyto_normed_elk1_pooledall_line
 
+ 
+# extract the computed mean value from the plot
+npc_cyto_normed_elk1_pooledall_mean <- ggplot_build(npc_cyto_normed_elk1_pooledall_line)$data[[2]]
 
 # Repeat but for cytosol, monosome + 2-4/5+ polysomes
 sum_tpm_polysome_cyto_3exts <- tpm_long_3exts %>%
@@ -369,18 +452,57 @@ ppau_npc_elk1_polysome_cyto_cyto_normed %>%
   theme_bw(base_size = 14) +
   theme(legend.position = "bottom")
 
-# filter(gene_name == "ELK1",
-  #        str_ends(le_id, "_2")) %>%
-  # mutate(ppau = ppau * 100) %>%
-  # ggplot(aes(x = group, y = ppau, group = replicate, shape = replicate)) +
-  # facet_wrap("~ cell_type") +
-  # geom_line() +
-  # geom_point() +
-  # scale_y_continuous(limits = c(0, 20),
-  #                    breaks = seq(0,20, 2)
-  # ) +
-  # labs(x = "Fraction",
-  #      y = "Cryptic PAS usage (%)",
-  #      shape = "Replicate") +
-  # theme_bw(base_size = 14) +
-  # theme(legend.position = "bottom")
+# median bar plot with replicates labelled as different points
+npc_cyto_normed_elk1_pooled_bar <- ggpubr::ggbarplot(ppau_npc_elk1_polysome_cyto_cyto_normed,
+                  x = "group",
+                  y = "cytosol_normed_ppau",
+                  add = c("median"),
+                  ggtheme = theme_bw(base_size = 14)
+) +
+  geom_point(data = ppau_npc_elk1_polysome_cyto_cyto_normed,
+             aes(x = group,
+                 y = cytosol_normed_ppau,
+                 shape = replicate),
+             position = position_dodge(width = 0.4),
+             size = 3
+  ) +
+  theme(legend.position = "top") +
+  labs(x = "Fraction",
+       y = "Cytosol-normalised ELK1 cryptic PAS usage",
+       shape = "Replicate")
+
+npc_cyto_normed_elk1_pooled_bar
+
+# Save plots to disk
+
+if (!dir.exists(outdir)) {dir.create(outdir, recursive = T)}
+
+ggsave(file.path(outdir,
+                 "2024-11-11_fracseq.npc.elk1.cytosol_normed.median_bar.all_fractions.png"),
+       plot = npc_cyto_normed_elk1_bar, width = 150, height = 150, units = "mm", dpi = "retina")
+
+
+ggsave(file.path(outdir,
+                 "2024-11-11_fracseq.npc.elk1.cytosol_normed.median_bar.polysome_pooled.png"),
+       plot = npc_cyto_normed_elk1_pooled_bar, width = 150, height = 150, units = "mm", dpi = "retina")
+
+ggsave(file.path(outdir,
+                 "2024-11-22_fracseq.npc.elk1.cytosol_normed.mean_bar.ribosome_pooled.png"),
+       plot = npc_cyto_normed_elk1_pooledall_bar, 
+       width = 150, height = 150,
+       units = "mm", dpi = "retina")
+
+ggsave(file.path(outdir,
+                 "2024-11-22_fracseq.npc.elk1.cytosol_normed.mean_line.ribosome_pooled.png"),
+       plot = npc_cyto_normed_elk1_pooledall_line,
+       width = 150, height = 150,
+       units = "mm", dpi = "retina")
+
+ggsave(file.path(outdir,
+                 "2024-11-22_fracseq.npc.elk1.cytosol_normed.mean_line.ribosome_pooled.pdf"),
+       plot = npc_cyto_normed_elk1_pooledall_line,
+       width = 150, height = 150,
+       units = "mm", dpi = "retina")
+
+
+write_tsv(some_cyto_normed_pval, file.path(outdir, "2024-11-22_fracseq_cytosol_normed.ribosome_pooled.ttest.tsv"))

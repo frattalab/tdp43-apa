@@ -135,7 +135,7 @@ create_enhanced_love_plot <- function(bal, variable_df, comparison_df,
   # Create the plot
   ggplot(plot_data, aes(x = Diff.Un, y = !!sym(variable_col))) +
     geom_vline(xintercept = 0, color = "black", linetype = "dashed") +
-    geom_boxplot(aes(color = !!sym(comparison_col)), alpha = 0.7) +
+    geom_boxplot(aes(color = !!sym(comparison_col)), alpha = 0.7, outlier.size = 0.5, linewidth = 0.25) +
     # facet_wrap(~ Comparison, scales = "free_x", ncol = 1) +
     # scale_color_manual(values = c("Unadjusted" = "red", "Adjusted" = "blue"),
     #                    name = "Sample") +
@@ -194,35 +194,47 @@ summ_all_uniq_pw_median_strat <- uniq_pw_median_strat %>%
 
 # evaluate balancing of covariates from each iteration of matchRanges (standardised mean differences)
 bal_median_strat <- map(median_tpm_annot_matched_strat, evaluate_balancing_cobalt, .progress = T)
-bal_median_strat[["1"]]
+# bal_median_strat[["1"]]
 
 # example love.plot using only a single iteration
-love.plot(bal_median_strat[["1"]], drop.distance = T)
+# love.plot(bal_median_strat[["1"]], drop.distance = T)
 
 # Generate a love.plot using values from all iterations (visualising distribution as a box plot)
 # Exploring efficacy of matching and whether consistently an improvement on the initial pool of events
 
 # add cleaned covariate column names for plotting
-covariate_cols_clean <- c("Number of PAS", "Brown i3 Cortical", "Brown SH-SY5Y", "Brown SK-N-BE(2)", "Humphrey i3 Cortical", "Seddighi i3 Cortical", "Zanovello i3 Cortical", "Zanovello SH-SY-5Y (CHX)", "Zanovello SH-SY5Y (Curve)", "Zanovello SK-N-BE(2)")
+covariate_cols_clean <- c("Number of PAS", "TPM Brown i3 Cortical", "TPM Brown SH-SY5Y", "TPM Brown SK-N-BE(2)", "TPM Humphrey i3 Cortical", "TPM Seddighi i3 Cortical", "TPM Zanovello i3 Cortical", "TPM Zanovello SH-SY-5Y (CHX)", "TPM Zanovello SH-SY5Y (Curve)", "TPM Zanovello SK-N-BE(2)")
 covar_name_df <- tibble(variable = covariate_cols, variable_clean = covariate_cols_clean)
 covar_name_df
 
 # boxplot of standardised mean differences for all iterations (matched subset & all annotated)
 compar_name_df <- tibble(comparison = c("matched vs. focal", "pool vs. focal"),
-                         comparison_clean = c("Matched vs Cryptic", "All Annotated vs Cryptic"))
+                         comparison_clean = c("Matched Annotated\nvs Cryptic", "All Annotated\nvs Cryptic"))
 
 
 annot_cryptic_love_boxplot <- create_enhanced_love_plot(bal_median_strat, covar_name_df, compar_name_df, comparison_vals = compar_name_df$comparison)
 
+# Update labelling & and add annotation
 annot_cryptic_love_boxplot <- annot_cryptic_love_boxplot +
-  labs(colour = "Comparison") +
-  scale_colour_manual(values = c("#7570b3", "#1b9e77"))
+  labs(colour = "Comparison",
+       title = NULL) +
+  scale_colour_manual(values = c( "#7570b3", "#1b9e77")) +
+  scale_x_continuous(limits = c(-1.2,1.2), breaks = seq(-1,1,0.5)) +
+  annotate(geom = "text", x = -1, y = "TPM Zanovello SK-N-BE(2)", label = "Higher in\nCryptic set", size = 3) +
+  
+  annotate(geom = "text", x = 1, y = "TPM Zanovello SK-N-BE(2)", label = "Higher in\nAnnotated set", size = 3)
 
 annot_cryptic_love_boxplot
 
+
 if (!dir.exists(outdir)) {dir.create(outdir, recursive = T)}
 
-ggsave(filename = file.path(outdir, "2024-09-16_covariate_balance.love_plot.boxplot.png"),
+ggsave(filename = file.path(outdir, "2024-11-14_covariate_balance.love_plot.boxplot.png"),
+       plot = annot_cryptic_love_boxplot,
+       dpi = "retina",
+       units = "mm", width = 150, height = 100)
+
+ggsave(filename = file.path(outdir, "2024-11-14_covariate_balance.love_plot.boxplot.pdf"),
        plot = annot_cryptic_love_boxplot,
        dpi = "retina",
        units = "mm", width = 150, height = 100)
