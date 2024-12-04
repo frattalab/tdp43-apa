@@ -39,10 +39,10 @@ plot_junction = function(junc,plotin_table = spliced_counts_ale){
 
 
 #' Just plot the dots of splicee reads in samples
-plot_junction_simple = function(junc,plotin_table = spliced_counts_ale, facet_scales = "free"){
+plot_junction_simple = function(junc,plotin_table = spliced_counts_ale, facet_scales = "free", pch=21, stroke=0.15){
   
-  vals = c(`ALS-TDP` = "#E1BE6A", CTL = "#40B0A6", `FTD-TDP` = "#E1BE6A", 
-           `ALS\nnon-TDP` = "#408A3E", `FTD\nnon-TDP` = "#408A3E")
+  vals = c(`ALS-\nTDP` = "#E1BE6A", CTL = "#40B0A6", `FTD-\nTDP` = "#E1BE6A", 
+           `ALS-\nnon-\nTDP` = "#408A3E", `FTD-\nnon-\nTDP` = "#408A3E")
   
   gene_name = plotin_table[paste_into_igv_junction == junc,unique(gene_name)]
   
@@ -54,15 +54,15 @@ plot_junction_simple = function(junc,plotin_table = spliced_counts_ale, facet_sc
     filter(str_detect(disease, "FTD", negate = T) | 
              (str_detect(disease, "FTD") & tissue_clean %in% c("Cerebellum", "Frontal_Cortex"))
     ) |>
-    mutate(disease =  gsub("-n","\nn",disease),
+    mutate(disease =  gsub("-","-\n",disease),
            disease = if_else(disease == "Control", "CTL", disease)) |> 
-    mutate(disease = fct_relevel(disease,"CTL", "ALS\nnon-TDP","ALS-TDP", "FTD\nnon-TDP", "FTD-TDP"),
+    mutate(disease = fct_relevel(disease,"CTL", "ALS-\nnon-\nTDP","ALS-\nTDP", "FTD-\nnon-\nTDP", "FTD-\nTDP"),
            tissue_clean = fct_relevel(tissue_clean, "Cervical_Spinal_Cord", "Lumbar_Spinal_Cord", "Motor_Cortex", "Cerebellum", "Frontal_Cortex")) |>
     ggplot(aes(x = disease, y = spliced_reads, fill = disease)) +
-    geom_jitter(height = 0,alpha = 0.7, pch = 21) +
+    geom_jitter(height = 0, pch=pch, stroke=stroke) + #  alpha = 0.7, pch = 21
     facet_wrap(~tissue_clean, scales = facet_scales) +
     scale_fill_manual(values = vals)  +
-    ylab("N spliced reads") +
+    ylab("Number of spliced reads") +
     xlab("") +
     theme_bw(base_size = 20) +
     theme(legend.position = 'none') #+
@@ -84,8 +84,9 @@ path_summ_ale_counts <- read_tsv("processed/nygc/expression_by_pathology_ale_cou
 
 
 # Make Bar plot of frac detected
-path_summ_comb <- bind_rows("AS-ALE" = path_summ_ale,
-          "Other SJs" = path_summ_seddighi, .id = "event_type") 
+path_summ_comb <- bind_rows("ALE" = path_summ_ale,
+                            "Other SJs" = path_summ_seddighi,
+                            .id = "event_type") 
 
 
 # How many ALE junctions are identical to MAJIQ?
@@ -140,7 +141,7 @@ sel_bar_jnc_gn <- path_summ_comb %>%
   geom_col() +
   scale_fill_manual(values = c("#d95f02", "#7570b3")) +
   theme_bw(base_size = 14) +
-    labs(title = "Selective AS-ALE junctions",
+    labs(title = "Selective ALE junctions",
          subtitle = "Non path detected fraction < 0.005, path detected > 0.01. Min spliced reads = 2",
          x = "% of TDP-43 pathological tissues cryptic detected",
          y = "Junction|Gene name",
@@ -149,10 +150,10 @@ sel_bar_jnc_gn <- path_summ_comb %>%
 sel_bar_gn <- path_summ_comb %>%
   filter(selective) %>%
   ggplot(aes(x = fraction_path * 100, y = plot_name_simple, fill = event_type)) +
-  geom_col() +
+  geom_col(colour = "black") +
   scale_fill_manual(values = c("#d95f02", "#7570b3")) +
   theme_bw(base_size = 20) +
-  labs(title = "Selective AS-ALE junctions",
+  labs(title = "Selective ALE junctions",
        subtitle = "Non path detected fraction < 0.005, path detected > 0.01. Min spliced reads = 2",
        x = "% of TDP-43 pathological tissues cryptic detected",
        y = "Event ID",
@@ -164,13 +165,16 @@ sel_bar_gn_simple <- sel_bar_gn +
   labs(title = "",
        subtitle = "",
        y = "")
+
+# sel_bar_gn
+# sel_bar_gn_simple
   
 dir.create("processed/nygc/selective_jncs/ale/svg", recursive = T)
 dir.create("processed/nygc/selective_jncs/ale/png", recursive = T)
 dir.create("processed/nygc/enriched_jncs/ale/svg", recursive = T)
 dir.create("processed/nygc/enriched_jncs/ale/png", recursive = T)
 
-ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_jnc_gn_bar.png",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.png",
        plot = sel_bar_jnc_gn,
        path = "processed/nygc/",
        width = 12,
@@ -178,7 +182,7 @@ ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_jnc_gn_bar.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar.png",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.png",
        plot = sel_bar_gn,
        path = "processed/nygc/",
        width = 12,
@@ -186,7 +190,7 @@ ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
        device = svg,
        plot = sel_bar_jnc_gn,
        path = "processed/nygc/",
@@ -195,7 +199,7 @@ ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar.svg",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
        plot = sel_bar_gn,
        device = svg,
        path = "processed/nygc/",
@@ -205,7 +209,7 @@ ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar.svg",
        dpi = "retina")
 
 
-ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_gn_bar.svg",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
        plot = sel_bar_gn,
        device = svg,
        path = "processed/nygc/",
@@ -214,7 +218,7 @@ ggsave(filename = "2023-09-20_nygc_papa_seddighi_selective_gn_bar.svg",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar_simple.png",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.png",
        plot = sel_bar_gn_simple,
        path = "processed/nygc/",
        width = 7.5,
@@ -223,7 +227,7 @@ ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar_simple.png",
        dpi = "retina")
 
 
-ggsave(filename = "2023-10-09_nygc_papa_seddighi_selective_gn_bar_simple.svg",
+ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.svg",
        plot = sel_bar_gn_simple,
        device = svg,
        path = "processed/nygc/",
@@ -244,10 +248,10 @@ path_summ_seddighi_counts %>%
 
 
 sel_path_sum_ale <- path_summ_comb %>%
-  filter(selective & event_type == "AS-ALE") 
+  filter(selective & event_type == "ALE") 
 
 enr_path_sum_ale <- path_summ_comb %>%
-  filter(enriched & event_type == "AS-ALE") 
+  filter(enriched & event_type == "ALE") 
 
 # create named lists of selective & enriched splice junctions
 selective_jnc_ale <- sel_path_sum_ale %>%
@@ -267,7 +271,10 @@ sel_jnc_ale_plots <- map(selective_jnc_ale,
                      ~ plot_junction(.x))
 
 sel_jnc_ale_plots_simple <- map(selective_jnc_ale,
-                         ~ plot_junction_simple(.x,facet_scales = "free_x"))
+                         ~ plot_junction_simple(.x,
+                                                facet_scales = "free_x"))
+
+sel_jnc_ale_plots_simple$chr8_79611214_79616822_STMN2
 
 enr_jnc_ale_plots <- map(enriched_jnc_ale,
                           ~ plot_junction(.x))
@@ -321,12 +328,12 @@ walk2(sel_jnc_ale_plots,
 
 walk2(sel_jnc_ale_plots_simple,
       names(sel_jnc_ale_plots_simple),
-      ~ ggsave(filename = glue::glue("2023-10-09_nygc_papa_as_ale.selective.spliced_reads.simple_plot.{.y}.svg"),
+      ~ ggsave(filename = glue::glue("2023-12-17_nygc_papa_as_ale.selective.spliced_reads.simple_plot.{.y}.svg"),
                path = "processed/nygc/selective_jncs/ale/svg/",
                device = svg,
                plot = .x,
-               height = 5,
-               width = 10,
+               height = 8 * 0.8,
+               width = 12 * 0.8,
                units = "in",
                dpi = "retina"
       ),

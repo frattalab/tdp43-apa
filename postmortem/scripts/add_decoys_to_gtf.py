@@ -556,6 +556,17 @@ def _df_add_event_type(df, id_col, rank_col, rkey2key, collapse_by_id=True):
             return pd.Series(decisions, index=df.index)
 
 
+def no_overlap_3p_ids(gr, overlaps_gr, id_col="transcript_id"):
+    '''
+    Return set of IDs (str) from gr for 3'ends of regions that do not overlap at all with regions in overlaps_gr
+    '''
+
+    gr_3p = gr.three_end()
+
+    gr_3p = gr_3p.overlap(overlaps_gr, strandedness="same", invert=True)
+
+    return set(gr_3p.as_df()[id_col])
+
 
 # def find_extension_events(novel_le,
 #                           ref_exons,
@@ -692,16 +703,15 @@ def main(in_gtf,
     # Get reference last exons
     ref_le = get_terminal_regions(exons)
 
-
     # Get all non-last reference exons
     ref_e_nl = pr.concat([get_terminal_regions(exons, which_region="first"),
                           get_internal_regions(exons)]
                          )
-
-    # Remove sections of ref exons overlapping first/internal exons
-    # This is so matches exactly with how did previously for PAPA
-    ref_le = ref_le.subtract(ref_e_nl, strandedness="same")
-    # ref_le.event_type_temp = "NULL"
+    
+    # Remove LEs with 3'end overlapping first/internal exons
+    # (performed by PAPA when annotate event types)
+    # e.g. https://github.com/frattalab/PAPA/blob/04a10a04824de25b06064938de68746429f1366b/scripts/get_combined_quant_gtf.py#L670
+    ref_le = ref_le.subset(lambda df: df.transcript_id.isin(no_overlap_3p_ids(ref_le, ref_e_nl)))
 
     eprint("Reading in input last exons")
     le = pr.read_gtf(in_le_gtf)
@@ -805,6 +815,9 @@ def main(in_gtf,
     ref_le.gene_name_common = ref_le.gene_name
     le.gene_name_common = le.ref_gene_name
 
+    ref_le.tmp_annot_status = "ref"
+    le.tmp_annot_status = "input"
+
     le_comb = pr.concat([ref_le, le])
     le_comb = check_concat(le_comb)
     
@@ -817,14 +830,21 @@ def main(in_gtf,
     eprint("Annotating le_ids for downstream quantification...")
     le_comb = annotate_le_ids_ext(le_comb, id_col="gene_id_common", event_type_col="event_type_common", ext_key="distal_3utr_extension").drop("event_type_common")
 
+    # Remove sections of ref exons overlapping first/internal exons
+    # This is so matches exactly with how did previously for PAPA
+    le_comb_ref_msk = le_comb.tmp_annot_status == "ref"
+    le_comb_c = pr.concat([le_comb[~le_comb_ref_msk],
+                         le_comb[le_comb_ref_msk].subtract(ref_e_nl, strandedness="same")]).drop("tmp_annot_status")
+    # ref_le = ref_le.subtract(ref_e_nl, strandedness="same")
+    # ref_le.event_type_temp = "NULL"
 
     # To line up with PAPA GTF, need to remove last exons completely contained w/in annotated internal exons
     # (After assigning le_ids (why I've done this I do not know...))
-
-    le_comb_c = le_comb.overlap(ref_e_nl, strandedness="same", how="containment", invert=True)
+    # redundant now that 
+    # le_comb_c = le_comb.overlap(ref_e_nl, strandedness="same", how="containment", invert=True)
 
     # Some le_ids can be dropped if they are completely contained within non-last exons
-    le_ids_dropped = set(le_comb_c.le_id) - set(le_comb.le_id)
+    le_ids_dropped = set(le_comb.le_id) - set(le_comb_c.le_id)
     eprint(f"Number of last exon IDs dropped due to complete containment inside ref overlapping exons - {len(le_ids_dropped)}")
 
 

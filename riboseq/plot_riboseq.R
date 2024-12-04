@@ -20,49 +20,6 @@ event_type_complex_mc <- read_tsv("../postmortem/data/cryptics_summary_complex_m
 # riboseq gsea results 
 gsea_riboseq_cryp_df <- read_tsv("processed/2023-09-26_riboseq_gsea_ale_types_results.tsv")
 
-
-# ELK1 riboseq counts plot
-plot_df_elk1_nc <- normed_count_mtx %>%
-filter(gene_name == "ELK1") %>%
-pivot_longer(cols = contains("sh"), values_to = "normed_counts", names_to = "sample_id") %>%
-mutate(condition = if_else(str_detect(sample_id, "tdp"), "KD", "CTL"))
-
-plot_df_elk1_nc %>%
-  ggplot(aes(x = condition, y = normed_counts, colour = condition)) +
-  geom_jitter(width = 0.25, size = rel(2.5)) +
-  scale_colour_manual(name = "Condition",
-                      values = c("#1b9e77", "#d95f02")) +
-  scale_y_continuous(breaks = seq(20,120,10)) +
-  labs(title = "ELK1 Ribo-seq CDS counts",
-       subtitle = "Counts adjusted for variable library depth/composition with DESeq2's size factor method",
-       x = "Condition",
-       y = "CDS counts") +
-  theme_bw() +
-  theme(axis.title = element_text(size = rel(1.5)),
-        axis.text = element_text(size = rel(1.5)),
-        legend.title = element_text(size = rel(1.5)),
-        legend.text = element_text(size = rel(1.5)),
-        title = element_text(size = rel(1.5)))
-
-
-ggsave(last_plot(),
-       filename = "2023-05-08_elk1_riboseq_counts_plot_all.png",
-       path = "processed/",
-       device = "png",
-       width = 10,
-       height = 10,
-       units = "in",
-       dpi = "retina")
-
-ggsave(last_plot(),
-       filename = "2023-05-08_elk1_riboseq_counts_plot_all.svg",
-       path = "processed/",
-       device = svg,
-       width = 10,
-       height = 10,
-       units = "in",
-       dpi = "retina")
-
 # ELK1 
 plot_df_elk1_volc <- deseq_res_df %>%
   drop_na(padj) %>%
@@ -227,7 +184,10 @@ plot_df_cryp_volc <- deseq_res_df %>%
                                      simple_event_type == "other" ~ "None",
                                      simple_event_type == "spliced" ~ "ALE"),
          plot_event_type = factor(plot_event_type, levels = c("3'Ext", "ALE", "IPA", "Complex", "None"))
-  ) 
+  ) %>%
+  # cryptic genes with multiple events will be duplicated
+  distinct(gene_name, .keep_all = T) %>%
+  filter(gene_name != "TRAPPC12") # know this is a FP due to improper annotation TODO: properly use final cryptic annotation
 
 # volcabno plot with cryptic ALE genes annotated
 # add background and cryptic ALE points in layers so different event types are plotted on top of background
@@ -239,16 +199,16 @@ base_volcano <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
            alpha=plot_alpha)) + 
   geom_point() +
   # overlay cryptic event types
-  geom_point(data = filter(plot_df_cryp_volc, simple_event_type != "other"),  size = 3) +
+  geom_point(data = filter(plot_df_cryp_volc, simple_event_type != "other"),  size = 2) +
   geom_hline(yintercept = -log10(0.05), linetype = "dashed", "alpha" = 0.5) +
   scale_x_continuous(limits = c(-4,4),
                      breaks = seq(-4,4,1)) +
   scale_y_continuous(limits = c(0,10.5),
                      breaks = seq(0,10,1)) +
   scale_colour_manual(values = c("#d95f02","#1f78b4","#a6cee3", "#33a02c", "#bdbdbd")) +
-  theme_bw(base_size = 20) +
+  theme_bw(base_size = 12) +
   guides(alpha = "none") +
-  labs(x = "Ribo-seq Log2FoldChange (TDP43KD / CTRL)",
+  labs(x = "Ribo-seq Log2FoldChange (TDP-43 KD / CTRL)",
        y = "-log10(padj)",
        colour = "Event Type") +
   theme(legend.position = "top")
@@ -256,60 +216,36 @@ base_volcano <- ggplot(filter(plot_df_cryp_volc, simple_event_type == "other"),
 base_volcano
 base_volcano_rast <- rasterise(base_volcano, layers = "Point", dpi = 300)
 
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_no_gn.png",
-       plot = base_volcano,
-       height = 8,
-       width = 8,
-       units = "in",
+ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_no_gn.png",
+       height = 100,
+       width = 100,
+       units = "mm",
        dpi = "retina"
 )
 
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_no_gn.svg",
-       plot = base_volcano,
-       height = 8,
-       width = 8,
-       units = "in",
+ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_no_gn.pdf",
+       height = 100,
+       width = 100,
+       units = "mm",
        dpi = "retina",
-       device = svg
-)
-
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_no_gn_rast.svg",
-       plot = base_volcano_rast,
-       height = 8,
-       width = 8,
-       units = "in",
-       dpi = "retina",
-       device = svg
 )
 
 # volcano with no colour legend
 base_volcano_noguide <- base_volcano + guides(colour = "none")
 base_volcano_noguide_rast <- rasterise(base_volcano_noguide, layers = "Point",dpi = 300)
 
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_no_gn_no_leg.png",
-       plot = base_volcano_noguide,
-       height = 8,
-       width = 8,
-       units = "in",
+ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_no_gn_no_leg.png",
+       height = 100,
+       width = 100,
+       units = "mm",
        dpi = "retina"
 )
 
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_no_gn_no_leg.svg",
-       plot = base_volcano_noguide,
-       height = 8,
-       width = 8,
-       units = "in",
-       dpi = "retina",
-       device = svg
-)
-
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_no_gn_no_leg_rast.svg",
-       plot = base_volcano_noguide_rast,
-       height = 8,
-       width = 8,
-       units = "in",
-       dpi = "retina",
-       device = svg
+ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_no_gn_no_leg.pdf",
+       height = 100,
+       width = 100,
+       units = "mm",
+       dpi = "retina"
 )
 
 # volcano with text labels
@@ -322,37 +258,49 @@ base_volcano_gn <- base_volcano +
                   seed = 123
   )
 
-base_volcano_gn_rast <- rasterise(base_volcano_gn, layers = "Point", dpi = 300)
-
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_gn.png",
-       plot = base_volcano_gn,
-       height = 8,
-       width = 8,
-       units = "in",
+ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_gn.png",
+       height = 100,
+       width = 100,
+       units = "mm",
        dpi = "retina"
 )
 
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_gn.svg",
-       plot = base_volcano_gn,
-       height = 8,
-       width = 8,
-       units = "in",
-       dpi = "retina",
-       device = svg
+ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_gn.pdf",
+       height = 100,
+       width = 100,
+       units = "mm",
+       dpi = "retina"
 )
 
-ggsave("processed/2024-01-11_riboseq_ale_events_volcano_clean_gn_rast.svg",
-       plot = base_volcano_gn_rast,
-       height = 8,
-       width = 8,
-       units = "in",
-       dpi = "retina",
-       device = svg
+# gene names labelled but no legend
+base_volcano +
+  geom_text_repel(data = filter(plot_df_cryp_volc, simple_event_type != "other"),
+                  max.overlaps = 10000,
+                  force = 30,
+                  size = rel(4),
+                  min.segment.length = 0,
+                  seed = 123
+  ) + 
+  guides(colour = "none")
+
+
+ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_gn_no_leg.png",
+       height = 100,
+       width = 100,
+       units = "mm",
+       dpi = "retina"
+)
+
+ggsave("processed/2024-11-26_riboseq_ale_events_volcano_clean_gn_no_leg.pdf",
+       height = 100,
+       width = 100,
+       units = "mm",
+       dpi = "retina"
 )
 
 
 # save plotting df to file
-write_tsv(plot_df_cryp_volc,file = "processed/2023-09-26_riboseq_volcano_plot_df.tsv", col_names = T)
+write_tsv(plot_df_cryp_volc,file = "processed/2024-11-26_riboseq_volcano_plot_df.tsv", col_names = T)
 
 # volcano with no text labels, but larger points 
 # base_volcano +
@@ -492,9 +440,9 @@ ggsave("processed/2023-10-31_riboseq_d3utr_all_labels_big_larger_points.png",
 
 # generate dot plot of GSEA results - gene sets, NES as x-y, size of dot indicates significance
 plot_df_gsea_riboseq <- gsea_riboseq_cryp_df %>%
-  mutate(plot_pathway = case_when(pathway == "spliced" ~ "AS-ALE",
-                                  pathway == "distal_3utr_extension" ~ "3'UTR-ALE",
-                                  pathway == "bleedthrough" ~ "Bleedthrough-ALE")) %>%
+  mutate(plot_pathway = case_when(pathway == "spliced" ~ "ALE",
+                                  pathway == "distal_3utr_extension" ~ "3'Ext",
+                                  pathway == "bleedthrough" ~ "IPA")) %>%
   mutate(sig = padj < 0.05,
          plot_pathway = fct_reorder(plot_pathway, -log10(padj)),
          plot_size = -log10(padj)
@@ -514,20 +462,20 @@ plot_df_gsea_riboseq %>%
        size = "-log10(padj)") +
   theme(legend.position = "top")
 
-ggsave("processed/2023-10-20_gsea_cryptics_dotplot.png",
+ggsave("processed/2024-01-05_gsea_cryptics_dotplot.png",
        height = 8,
        width = 8,
        units = "in",
        dpi = "retina")
 
-ggsave("processed/2023-10-20_gsea_cryptics_dotplot.svg",
+ggsave("processed/2024-01-05_gsea_cryptics_dotplot.svg",
        height = 8,
        width = 8,
        units = "in",
        dpi = "retina",
        device = svg)
 
-ggsave("processed/2023-10-20_gsea_cryptics_dotplot_wide.svg",
+ggsave("processed/2024-01-05_gsea_cryptics_dotplot_wide.svg",
        height = 5.33,
        width = 8,
        units = "in",

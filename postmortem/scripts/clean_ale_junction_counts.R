@@ -132,6 +132,10 @@ write_tsv(filter(expression_by_pathology_ale, selective), "processed/nygc/expres
 write_tsv(filter(expression_by_pathology_ale, enriched), "processed/nygc/expression_by_pathology_ale_enrichedfrac.tsv")
 write_tsv(counts_enriched_selective_ale, "processed/nygc/expression_by_pathology_ale_counts.tsv")
 
+# output formatted metadata
+meta_data_form <- create_formated_metadata(meta_data)
+write_tsv(meta_data_form, "processed/nygc/NYGC_all_RNA_samples_support_formatted.tsv")
+
 ## Process Seddighi df
 
 raw_spliced_seddighi <- fread("data/nygc/2023-09-19_seddighi_all_cryptics.aggregated.clean.annotated.bed")

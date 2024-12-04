@@ -63,7 +63,8 @@ process_cv_cov_kmer <- function(base_dir, kmers, return_paths = FALSE) {
                              col_names = c("rel_posn", "rel_occur"),
                              skip = 1, # skip defined header
                              show_col_types = F
-                  )
+                  ), .progress = T
+                  
   ) %>%
     bind_rows(.id = "comparison_id")  
   
@@ -79,11 +80,11 @@ yg_6mers <- c("UGUGUG", "GUGUGU","UGUGCG", "UGCGUG","CGUGUG","GUGUGC")
 ya_6mers <- c("AUGUGU", "GUAUGU", "GUGUAU", "UGUGUA", "UGUAUG", "UGCAUG")
 aa_6mers <- c("GUGUGA", "AAUGAA", "GAAUGA", "UGAAUG", "AUGAAU", "GUGAAU", "GAAUGU", "UUGAAU")
 
-yg_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-11-27_papa_cryptics_fixed_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", yg_6mers) %>%
+yg_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-12-15_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", yg_6mers) %>%
   mutate(kmer_group = "yg_6mer")
-ya_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-11-27_papa_cryptics_fixed_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", ya_6mers) %>%
+ya_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-12-15_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", ya_6mers) %>%
   mutate(kmer_group = "ya_6mer")
-aa_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-11-27_papa_cryptics_fixed_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", aa_6mers) %>%
+aa_6mer_dbrn_tbl <- process_cv_cov_kmer("data/peka_papa/2023-12-15_papa_cryptics_kmer6_window_250_distal_window_500_relpos_0/cv_coverage", aa_6mers) %>%
   mutate(kmer_group = "aa_6mer")
 
 # remove any previous background types
@@ -104,13 +105,13 @@ setdiff(aa_6mers, unique(aa_6mer_dbrn_tbl$kmer))
 if (!dir.exists("processed/peka/papa")) {dir.create("processed/peka/papa", recursive = T)}
 
 write_tsv(yg_6mer_dbrn_tbl,
-         "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.yg_6mers.per_kmer_distribution_genome.tsv",
+         "processed/peka/papa/2023-12-15_papa_cryptics_cvcoverage_window_500.yg_6mers.per_kmer_distribution_genome.tsv",
          col_names = T)
 
 write_tsv(ya_6mer_dbrn_tbl,
-         "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.ya_6mers.per_kmer_distribution_genome.tsv",
+         "processed/peka/papa/2023-12-15_papa_cryptics_cvcoverage_window_500.ya_6mers.per_kmer_distribution_genome.tsv",
          col_names = T)
 
 write_tsv(aa_6mer_dbrn_tbl,
-          "processed/peka/papa/2023-11-27_papa_cryptics_cvcoverage_window_500.aa_6mers.per_kmer_distribution_genome.tsv",
+          "processed/peka/papa/2023-12-15_papa_cryptics_cvcoverage_window_500.aa_6mers.per_kmer_distribution_genome.tsv",
           col_names = T)
