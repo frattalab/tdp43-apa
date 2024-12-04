@@ -6,22 +6,38 @@ set.seed(123)
 
 #' Convert dataframe of median delta usages for signficiant events into df reading for scatter plot
 #' Can label genes of interest with vector of gene_names (pass as 2nd argument)
-get_scatter_df <- function(df, genes_to_label) {
+#' Optionally labelling only cryptic events (label_all = F, default) or all events
+get_scatter_df <- function(df, genes_to_label, label_all = F) {
   
-  df %>%
-    mutate(plot_name = if_else(abs(median_delta) > 0.1 & median_ctl < 0.1 & gene_name %in% genes_to_label,
-                               gene_name,
-                               ""),
-           plot_alpha = case_when(plot_name != "" ~ 1,
+  if (label_all) {
+    
+    df_out <- mutate(df, plot_name = if_else(gene_name %in% genes_to_label,
+                                                 gene_name,
+                                                 "")
+    )
+    
+  } else {
+    # only label cryptics of provided genes
+    df_out <- mutate(df, plot_name = if_else(abs(median_delta) > 0.1 & median_ctl < 0.1 & gene_name %in% genes_to_label,
+                                                 gene_name,
+                                                 "")
+                     )
+    
+  }
+  
+  
+  df_out <- df_out %>%
+    mutate(plot_alpha = case_when(plot_name != "" ~ 1,
                                   abs(median_delta) > 0.1 & median_ctl < 0.1 ~ 0.5,
                                   abs(median_delta) > 0.1 & median_ctl > 0.1 ~ 0.2,
                                   TRUE ~ 0.01),
            plot_colour = if_else(plot_alpha == 1 | plot_alpha == 0.5,
-                                 "orange", "grey"),
-           plot_name = if_else(plot_alpha == 1 & gene_name %in% genes_to_label,
-                               gene_name, "")
-    )
+                                 "orange", "grey"))
   
+
+  
+  df_out
+
 }
 
 
@@ -160,6 +176,71 @@ med_scatter <- plot_med_df %>%
 
 med_scatter
 
+# Alternative - plot gene names for all significant genes (to highlight mirroring)
+# highlight the top n cryptic genes where separation is more obvious
+highlight_genes_mirror <- cryp_any_med_df %>%
+  filter(median_ctl < 0.1) %>%
+  slice_max(median_delta, n = 10) %>%
+  pull(gene_name)
+
+plot_med_df_all_gn <- get_scatter_df(cryp_any_med_df, highlight_genes_mirror, label_all = T)
+# plot_med_df_all_gn
+
+med_scatter_all_gn <- plot_med_df_all_gn %>%
+  ggplot(aes(x = median_ctl*100,
+             y = median_delta*100, 
+             alpha = plot_alpha,
+             colour = plot_colour, label = plot_name)) + 
+  geom_point() +
+  geom_hline(yintercept = -10, linetype = "dashed") +
+  geom_hline(yintercept = 10, linetype = "dashed") +
+  geom_vline(xintercept = 10, linetype = "dashed") +
+  scale_colour_manual(values = c("#000000", "#d95f02")) +
+  geom_text_repel(max.overlaps = 1000, 
+                  size = rel(6),
+                  force = 80,
+                  force_pull = 0.5,
+                  direction = "both",
+                  min.segment.length = 0,
+                  seed = 123,
+                  xlim = c(0,100)
+                  ) +
+  scale_x_continuous(breaks = seq(0,100,10)) + 
+  scale_y_continuous(limits = c(-100,100),
+                     breaks = seq(-100,100,10)) +
+  labs(x = "Median of CTL mean PAS usage %",
+       y = "Median of change in usage (TDP-43 KD - CTL)") +
+  theme_bw(base_size = 16) + 
+  guides(alpha = "none",
+         colour = "none") +
+  theme(axis.title.x = element_text(size = rel(1.75)),
+        axis.title.y = element_text(size = rel(1.75)),
+        axis.text.x = element_text(size = rel(1.5)),
+        axis.text.y = element_text(size = rel(1.5))
+  )
+
+med_scatter_all_gn
+
+
+# first, get counts of unique IDs per gene
+cryp_id_counts <- cryp_any_med_df %>%
+  distinct(gene_id, gene_name, le_id) %>%
+  count(gene_name, sort = T)
+
+# visualise isoform counts across genes
+plot_cryp_id_counts <- cryp_id_counts %>%
+  ggplot(aes(x = n)) +
+  geom_bar() +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
+  scale_x_continuous(breaks = seq(1,10,1)) +
+  scale_y_continuous(limits = c(0,2250)) +
+  theme_bw(base_size = 14) +
+  labs(x = "Unique Isoform Count",
+       y = "Gene Count")
+
+plot_cryp_id_counts
+
+
 # Alternative plot - highlight events that are cryptic in at least one dataset (so can still highlight these, useful for later discussion)
 x <- cryp_any_med_df %>%
   mutate(plot_name = if_else(cryptic_any, gene_name, ""),
@@ -172,7 +253,8 @@ x <- cryp_any_med_df %>%
                                  cryptic_any & !cryptic_med ~ "purple",
                                  T ~ "grey"
                                  )
-         ) 
+         )
+
 
 # x %>%
 #   ggplot(aes(x = median_ctl*100,
@@ -233,7 +315,40 @@ med_scatter_lab_1dataset
 
 if (!dir.exists("processed")) {dir.create("processed", recursive = T)}
 
-ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
+ggsave(filename = "2024-11-17_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.png",
+       plot = med_scatter_all_gn,
+       path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-17_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name_mirror_eg.pdf",
+       plot = med_scatter_all_gn,
+       path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-17_tdp_kd_collection_sig_isoform_gene_counts_bar.png",
+       plot = plot_cryp_id_counts,
+       path = "processed",
+       width = 125,
+       height = 75,
+       units = "mm",
+       dpi = "retina")
+
+ggsave(filename = "2024-11-17_tdp_kd_collection_sig_isoform_gene_counts_bar.pdf",
+       plot = plot_cryp_id_counts,
+       path = "processed",
+       width = 125,
+       height = 75,
+       units = "mm",
+       dpi = "retina")
+
+
+ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.png",
        plot = med_scatter,
        path = "processed",
        width = 10,
@@ -250,7 +365,15 @@ ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_medians_
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-01-10_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
+ggsave(filename = "2023-10-02_tdp_kd_collection_cryptics_scatter_colour_medians_only_gene_name.pdf",
+       plot = med_scatter,
+       path = "processed",
+       width = 12,
+       height = 12,
+       units = "in",
+       dpi = "retina")
+
+ggsave(filename = "2023-10-06_tdp_kd_collection_cryptics_scatter_colour_any_cryptic_no_gene_name.png",
        plot = med_scatter_lab_1dataset,
        path = "processed",
        width = 10,
@@ -317,7 +440,7 @@ cryp_any_med_df %>%
 
 
 # save to Rdata
-save(med_scatter_lab_1dataset, med_scatter, plot_med_df, cryp_any_not_med_df, sig_med_df, cryp_type_med_df_counts, cryp_type_med_df, file = "processed/fig1_cryptics_scatter.Rdata")
+save(med_scatter_lab_1dataset, med_scatter, plot_med_df, cryp_any_not_med_df, sig_med_df, cryp_type_med_df_counts, cryp_type_med_df, file = "processed/2024-11-14_fig1_cryptics_scatter.Rdata")
 
 
 

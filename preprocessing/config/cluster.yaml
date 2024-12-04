@@ -1,0 +1,17 @@
+__default__:
+  h_vmem: 4G
+  tmem: 4G
+  h_rt:  2:00:00
+  submission_string: " "
+
+bam_to_stranded_bigwig:
+  h_vmem: 12G
+  tmem: 12G
+  h_rt:  24:00:00
+  submission_string: " "
+
+megadepth:
+  h_vmem: 8G
+  tmem: 8G
+  h_rt:  2:00:00
+  submission_string: " "

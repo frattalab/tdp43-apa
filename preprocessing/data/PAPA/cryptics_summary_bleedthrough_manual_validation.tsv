@@ -1,0 +1,56 @@
+le_id	gene_name	simple_event_type	n_exper_cryptic	experiment_name	annot_status	chromosome	start	end	strand	event_manual_validation	dataset	notes
+ENSG00000137161.18_1	CNPY3	bleedthrough	13	humphrey_i3_cortical,seddighi_i3_cortical,zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl,zanovello_shsy5y_curve_00187,zanovello_shsy5y_curve_0021,zanovello_shsy5y_curve_0025,zanovello_shsy5y_curve_0075,zanovello_skndz_curve_003,zanovello_skndz_curve_004,zanovello_skndz_curve_005,zanovello_skndz_curve_0075,zanovello_skndz_curve_01,zanovello_skndz_curve_1	novel	chr6	4.29E+55	4.29E+55	+			
+ENSG00000151461.20_1	UPF2	bleedthrough	10	brown_skndz,zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl,zanovello_shsy5y_curve_0025,zanovello_shsy5y_curve_0075,zanovello_skndz_curve_003,zanovello_skndz_curve_004,zanovello_skndz_curve_005,zanovello_skndz_curve_0075,zanovello_skndz_curve_01,zanovello_skndz_curve_1	novel	chr10	1192750011927562	1192998511929985	-	no	zanovello_shsy5y_curve_0075	intron retention. Appears to be lowly expressed cryptic internal exon in same intron
+ENSG00000103404.15_1	USP31	bleedthrough	8	humphrey_i3_cortical,zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl,zanovello_skndz_curve_003,zanovello_skndz_curve_004,zanovello_skndz_curve_005,zanovello_skndz_curve_0075,zanovello_skndz_curve_01,zanovello_skndz_curve_1	novel	chr16	2.31E+63	2.31E+63	-			
+ENSG00000104881.16_2	PPP1R13L	bleedthrough	8	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl,zanovello_shsy5y_curve_0025,zanovello_shsy5y_curve_0075,zanovello_skndz_curve_004,zanovello_skndz_curve_005,zanovello_skndz_curve_0075,zanovello_skndz_curve_01,zanovello_skndz_curve_1	novel	chr19	45393239	45395886	-	no	zanovello_shsy5y_curve_0075,zanovello_skndz_curve_1	extension of annotated retained intron transcript. low level of intron retention at 3'end, but coverage drop at 3'end. Spliced reads into and out of region too. Coverage suggests cryptic (SH-SY5Y). Doesn't look cryptic or real in SKNDZs
+ENSG00000053524.13_2	MCF2L2	bleedthrough	5	zanovello_skndz_curve_002,zanovello_skndz_curve_003,zanovello_skndz_curve_005,zanovello_skndz_curve_01,zanovello_skndz_curve_1	annotated	chr3	183298426183299776	183300196183300160	-	no	zanovello_skndz_curve_1	intron retention. annotated retained intron event
+ENSG00000064309.16_2	CDON	bleedthrough	5	brown_i3_cortical,seddighi_i3_cortical,zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl,zanovello_skndz_curve_01,zanovello_skndz_curve_1	novel	chr11	125982109125982080	125984093125984080	-			
+ENSG00000105186.16_3	ANKRD27	bleedthrough	5	brown_i3_cortical,humphrey_i3_cortical,seddighi_i3_cortical,zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl,zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	novel	chr19	32635458	32639488	-			
+ENSG00000110514.19_3	MADD	bleedthrough	5	zanovello_shsy5y_curve_0075,zanovello_skndz_curve_005,zanovello_skndz_curve_0075,zanovello_skndz_curve_01,zanovello_skndz_curve_1	annotated	chr11	47326737	47327186	+	no	zanovello_shsy5y_curve_0075	intron retention. annotated retained intron transcript
+ENSG00000067057.18_1	PFKP	bleedthrough	4	humphrey_i3_cortical,zanovello_shsy5y_curve_0021,zanovello_shsy5y_curve_0025,zanovello_shsy5y_curve_0075	novel	chr10	3.12E+20	3.12E+20	+	no	zanovello_shsy5y_curve_0075	intron retention. novel transcript. Likely cryptic due to ratio (NMD-sensitive cryptic exon)
+ENSG00000142794.19_3	NBPF3	bleedthrough	4	brown_skndz,humphrey_i3_cortical,zanovello_shsy5y_curve_0021,zanovello_shsy5y_curve_0075	novel	chr1	21453372	21457150	+			
+ENSG00000078124.13_1	ACER3	bleedthrough	3	brown_i3_cortical,seddighi_i3_cortical,zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl	novel	chr11	7.69E+55	7.69E+55	+			
+ENSG00000119392.16_1	GLE1	bleedthrough	3	zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl,zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl,zanovello_shsy5y_curve_0075	novel	chr9	1.29E+26	1.29E+26	+	yes	zanovello_shsy5y_curve_0075	3'end of bleedthroughs are truncated. lowly expressed in SH-SY5Ys
+ENSG00000127511.10_2	SIN3B	bleedthrough	3	brown_i3_cortical,humphrey_i3_cortical,seddighi_i3_cortical	novel	chr19	16854142	16857420	+			
+ENSG00000242715.8_6	CCDC169	bleedthrough	3	humphrey_i3_cortical,zanovello_shsy5y_curve_00187,zanovello_shsy5y_curve_0075	novel	chr13	3.62E+31	3.62E+31	-			
+ENSG00000081760.17_1	AACS	bleedthrough	2	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl,zanovello_shsy5y_curve_0075	novel	chr12	125136661	125138573	+	yes	zanovello_shsy5y_curve_0075	low level or intron retention but much below 5'end coverage
+ENSG00000116128.12_2	BCL9	bleedthrough	2	brown_i3_cortical,zanovello_shsy5y_curve_0075	novel	chr1	1.48E+26	1.48E+26	+			
+ENSG00000151208.17_3	DLG5	bleedthrough	2	brown_i3_cortical,seddighi_i3_cortical	annotated	chr10	77793543	77794117	-			
+ENSG00000155897.10_1	ADCY8	bleedthrough	2	humphrey_i3_cortical,zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl	novel	chr8	1.31E+35	1.31E+35	-			
+ENSG00000162944.11_1	RFTN2	bleedthrough	2	humphrey_i3_cortical,zanovello_i3_cortical_upf1_tdp_tdpkd_upf1ctl_vs_tdpctl_upf1ctl	novel	chr2	197630635197630400	197631220197631200	-			
+ENSG00000180190.13_2	TDRP	bleedthrough	2	zanovello_shsy5y_curve_0075,zanovello_skndz_curve_0075	novel	chr8	4.90E+29	4.93E+29	-	no	zanovello_shsy5y_curve_0075	misannotation as bleedthrough/unusual event (basically a conventional distal 3'UTR with some overlapping isoforms). coverage doesn't support event
+ENSG00000206530.11_1	CFAP44	bleedthrough	2	zanovello_shsy5y_curve_0075,zanovello_skndz_curve_01	novel	chr3	113424907113425840	113426277113426272	-	no?	zanovello_shsy5y_curve_0075	coverage too low to tell
+ENSG00000262246.6_2	CORO7	bleedthrough	2	zanovello_skndz_curve_01,zanovello_skndz_curve_1	novel	chr16	4383374	4388068	-	?	zanovello_skndz_curve_1	can't tell without stranded coverage. Definitely upregulated/cryptic by coverage. Extension of annotated retained intron transcript
+ENSG00000020426.11_2	MNAT1	bleedthrough	1	seddighi_i3_cortical	annotated	chr14	60808324	60809015	+			
+ENSG00000089682.17_2	RBM41	bleedthrough	1	zanovello_shsy5y_curve_0075	novel	chrX	107087378	107088839	-	yes?	zanovello_shsy5y_curve_0075	gene-level coverage halves. low level basal intron retention. coverage does increase in bin
+ENSG00000101624.11_3	CEP76	bleedthrough	1	brown_i3_cortical	annotated	chr18	1267262412673096	1267350312673503	-			
+ENSG00000102290.23_3	PCDH11X	bleedthrough	1	humphrey_i3_cortical	novel	chrX	91882906	91891321	+			
+ENSG00000106069.24_2	CHN2	bleedthrough	1	zanovello_skndz_curve_005	annotated	chr7	29400542	29401281	+	yes	zanovello_skndz_curve_1	event real but truncated compared to coverage. Not sure truly cryptic
+ENSG00000107672.15_3	NSMCE4A	bleedthrough	1	seddighi_i3_cortical	annotated	chr10	121959917	121960406	-			
+ENSG00000107798.18_2	LIPA	bleedthrough	1	humphrey_i3_cortical	novel	chr10	8.93E+47	8.93E+47	-			
+ENSG00000108469.15_2	RECQL5	bleedthrough	1	zanovello_skndz_curve_1	annotated	chr17	7.57E+31	7.57E+31	-	no	zanovello_skndz_curve_1	very lowly covered, basal intron retention
+ENSG00000117151.13_1	CTBS	bleedthrough	1	humphrey_i3_cortical	novel	chr1	84561927	84563418	-			
+ENSG00000126088.14_1	UROD	bleedthrough	1	klim_i3_motor	annotated	chr1	4501313545013291	4.50139E+15	+	no	klim_i3_motor	annotated retained intron transcript
+ENSG00000131196.18_2	NFATC1	bleedthrough	1	zanovello_skndz_curve_1	annotated	chr18	7.95E+23	7.95E+23	+	no	zanovello_skndz_curve_1	very lowly covered
+ENSG00000138375.13_1	SMARCAL1	bleedthrough	1	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	annotated	chr2	216450845	216451601	+	no	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	very lowly expressed. annotated retained intron transcript
+ENSG00000138686.10_4	BBS7	bleedthrough	1	humphrey_i3_cortical	novel	chr4	121826264	121828269	-			
+ENSG00000139880.21_1	CDH24	bleedthrough	1	seddighi_i3_cortical	novel	chr14	2.31E+23	2.31E+23	-			
+ENSG00000144460.13_2	NYAP2	bleedthrough	1	humphrey_i3_cortical	novel	chr2	225651431	225658565	+			
+ENSG00000151923.18_1	TIAL1	bleedthrough	1	brown_i3_cortical	novel	chr10	1.20E+35	1.20E+35	-			
+ENSG00000157045.9_1	NTAN1	bleedthrough	1	seddighi_i3_cortical	annotated	chr16	1504742715047215	1.50476E+15	-			
+ENSG00000158604.15_1	TMED4	bleedthrough	1	humphrey_i3_cortical	annotated	chr7	4457989644579903	4458123944581239	-			
+ENSG00000160193.12_1	WDR4	bleedthrough	1	zanovello_skndz_curve_003	annotated	chr21	4.28E+23	4.29E+23	-	no	zanovello_skndz_curve_1	bizarre. strong intron retention in controls that decreases in KD (so if real likely cryptic by ratio). Weird splicing immediatly downstream
+ENSG00000163319.11_1	MRPS18C	bleedthrough	1	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	annotated	chr4	83456908	83459144	+	no	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	no coverage. annotated retained intron transcript
+ENSG00000164418.22_3	GRIK2	bleedthrough	1	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	novel	chr6	1.02E+26	1.02E+26	+	no	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	very low coverage
+ENSG00000164919.11_3	COX6C	bleedthrough	1	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	novel	chr8	99885716	99886382	-	no	zanovello_shsy5y_chx_kd_ctl_vs_ctl_ctl	very low coverage. extension of annotated last exon. Possibly upregulated but very low usage 
+ENSG00000166333.14_1	ILK	bleedthrough	1	brown_skndz	annotated	chr11	6604179	6604726	+	no	brown_skndz	upregulated intron retention
+ENSG00000168502.18_3	MTCL1	bleedthrough	1	brown_skndz	annotated	chr18	8809447	8810002	+	no	brown_skndz	upregulated region but intron retention
+ENSG00000170634.13_4	ACYP2	bleedthrough	1	zanovello_skndz_curve_01	novel	chr2	5407993154079931	5408096854085422	+	?	zanovello_skndz_curve_1	event annotation is correct, although unclear if cryptic as expressed in controls (possibly by ratio though)
+ENSG00000172687.14_3	ZNF738	bleedthrough	1	zanovello_shsy5y_curve_0021	novel	chr19	2.14E+23	2.14E+23	+	no	zanovello_shsy5y_curve_0075	intron retention
+ENSG00000180182.11_3	MED14	bleedthrough	1	zanovello_shsy5y_curve_0075	novel	chrX	4065364140653676	4065455640654556	-	yes	zanovello_shsy5y_curve_0075	very lowly expressed. Likely cryptic by ratio rather than expression
+ENSG00000186047.11_2	DLEU7	bleedthrough	1	humphrey_i3_cortical	novel	chr13	5.0815E+15	5.08235E+15	-			
+ENSG00000204764.14_10	RANBP17	bleedthrough	1	seddighi_i3_cortical	novel	chr5	171271150	171272579	+			
+ENSG00000213468.7_1	FIRRE	bleedthrough	1	brown_i3_cortical	novel	chrX	131823775131823760	131825365131825360	-			
+ENSG00000214548.18_1	MEG3	bleedthrough	1	brown_skndz	annotated	chr14	100845457	100847301	+	no	brown_skndz	upregulated intron retention
+ENSG00000247199.6_1	FBXO38-DT	bleedthrough	1	humphrey_i3_cortical	novel	chr5	1.48E+44	1.48E+44	-			
+ENSG00000270882.3_2	H4C14	bleedthrough	1	humphrey_i3_cortical	novel	chr1	149834134	149835093	+			
