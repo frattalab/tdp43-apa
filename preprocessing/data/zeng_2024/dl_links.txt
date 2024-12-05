@@ -1,0 +1,2 @@
+curl -o supplementary_table_s5.csv https://www.biorxiv.org/content/biorxiv/early/2024/01/22/2024.01.22.575730/DC5/embed/media-5.csv?download=true
+curl -o supplementary_table_s3.csv https://www.biorxiv.org/content/biorxiv/early/2024/01/22/2024.01.22.575730/DC3/embed/media-3.csv?download=true

@@ -75,6 +75,14 @@ cryp_summ_f %>%
   count(simple_event_type, sort = T) %>%
   mutate(frac = n / sum(n)) %>%
   write_tsv("processed/2023-12-10_cryptics_summary_counts_bleedthrough_manual_validation.tsv")
+# A tibble: 5 × 3
+# simple_event_type           n   frac
+# <chr>                   <int>  <dbl>
+#   1 spliced                    92 0.405 
+# 2 distal_3utr_extension      86 0.379 
+# 3 bleedthrough               20 0.0881
+# 4 proximal_3utr_extension    20 0.0881
+# 5 bleedthrough,spliced        9 0.0396
 
 cryp_summ_f_c %>%
   count(simple_event_type, sort = T) %>%
