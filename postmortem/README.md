@@ -1,3 +1,17 @@
+# Liu et al. FACS-seq and NYGC RNA-seq analysis
+
+## Prerequesites
+
+- If its your first time running R code from this project, run `renv::restore()` in your R console to install the required dependencies
+- Python/command line scripts can be executed using the general `pybioinfo` conda environment. Please see base repository README for installation instructions
+
+Running the `tx_to_polya_quant.R` script for the FACS-seq analysis requires a custom conda environment based on the R dependencies of the PAPA pipeline. This can be installed and activated using the following commands:
+
+```bash
+<conda/mamba> env create -f papa_r.yaml # chose one of conda or mamba
+conda activate papa_pipeline_r
+```
+
 ### Generating decoy index
 
 Commands used:
