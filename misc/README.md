@@ -2,6 +2,8 @@
 
 Scripts that don't quite fit into formal analysis directories. Largely related to formatting/generating supplementary tables
 
+If its your first time running code from this project, run `renv::restore()` in your R console to install the required dependencies
+
 ## clean_event_coordinates.R
 
 Taking the PAPA quantification GTF as input, this script collapses unique intervals to semi-colon separated strings for each le_id.
