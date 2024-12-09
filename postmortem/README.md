@@ -1,5 +1,10 @@
 # Liu et al. FACS-seq and NYGC RNA-seq analysis
 
+- [Prerequesites](#prerequesites)
+- [FACS-seq analysis](#facs-seq-analysis)
+- [NYGC analysis](#nygc-analysis)
+- [NYGC vs FACS-seq target comparison](#nygc-vs-facs-seq-target-comparison)
+
 ## Prerequesites
 
 - If its your first time running R code from this project, run `renv::restore()` in your R console to install the required dependencies
@@ -33,7 +38,6 @@ The workflow broadly proceeds as follows:
 
 - Cryptic event summary table (produced by `../preprocessing/scripts/manual_validation_summary.R`) - `data/2023-12-10_cryptics_summary_all_events_bleedthrough_manual_validation.tsv`
 - PAPA quantification GTF - `data/novel_ref_combined.quant.last_exons.gtf`
-
 
 ```bash
 conda activate pybioinfo # if applicable
@@ -94,24 +98,30 @@ bash scripts/summarise_quant.sh
 
 `plot_liu_facs.R` generates the heatmap of cryptic APAs with consistently enriched usage in TDPnegative populations across patients (Fig. 2A). Also outputs TSVs of summary statistics and whether events pass/miss the enrichment threshold
 
-### PAPA to splice junctions
+## NYGC analysis
 
+### Generating splice junctions from PAPA GTF
 
-Commands used:
+Due to a fairly stupid design decision on my part, PAPA doesn't output novel SJs associated with each ALE. `scripts/last_exons_to_sj.py` therefore returns the cryptic ALEs to the reference transcript annotation, defining the SJ as the 'block' between the upstream annotated exon (at the start of the overlapping intron) and the 5'end of the ALE
 
-`python scripts/last_exons_to_sj.py data/2023-09-06_papa_cryptic_spliced.last_exons.cryptic_only.blacklist_filtered.bed data/reference_filtered.gtf processed/2023-09-12_papa_as_ale_cryptic &> processed/2023-09-12_papa_as_ale_cryptic.last_exons_to_sj.log.txt`
+```bash
+conda activate pybioinfo # if applicable
+python scripts/last_exons_to_sj.py data/2023-09-06_papa_cryptic_spliced.last_exons.cryptic_only.blacklist_filtered.bed data/reference_filtered.gtf processed/2023-09-12_papa_as_ale_cryptic &> processed/2023-09-12_papa_as_ale_cryptic.last_exons_to_sj.log.txt
+```
 
-Notes: 
+Notes:
 
-- 1 missing event - `ENSG00000002746.15_3|HECW1|spliced|cryptic` - which is better described as a novel IPA event that an ALE, but has been categorised as annotated by this script in this case 
+- This uses an older, possibly outdated set of cryptic APA coordinates. It is possible that some ALEs have been excluded from the analysis
+- 1 missing event - `ENSG00000002746.15_3|HECW1|spliced|cryptic` - which is better described as a novel IPA event that an ALE, but has been categorised as annotated by this script in this case
   - 5'end is shifted 1 nucleotide upstream relative to annotated internal exon
   - No annotated intron/SJ that contains this exon
   - Probably initially classified as spliced because of novel exon 5'end (+ 3'end being contained within intron), but 5'end of last intron matches a known intron
 
-### BED file of SJs from Seddighi counts table
+### Generating a BED file of non-APA cryptic SJs from Seddighi et al. counts table
 
-Count table AL provided was missign ~ 200 samples (they quantified subset of NYGC), so need to re-run.
-Luckily the SJ coordinates are first 6 columns in table, although want to replace Name field with 'Symbol' from df
+Seddighi et al. quantified SJ detection in a smaller subset of the NYGC data, so needed a BED of SJ coordinates to requantify alongside the ALEs
+The provided file contains the SJ coordinates in the first 6 columns in table, although want to replace Name field with 'Symbol' from df
+
 Provided file is a CSV file, but some fields of the 'disease_full' column contain commas, which breaks a simple awk parsing of CSV files (but readr can handle)
 
 ```{r}
@@ -120,6 +130,25 @@ df <- read_csv("data/nygc/seddighi_cryptics_nygc.csv")
 write_tsv(df, "data/nygc/seddighi_cryptics_nygc.tsv")
 ``` 
 
-Then ran this one-liner to extract fields of interest then drop duplicate rows
+Then ran this one-liner to extract fields of interest then drop duplicate rows:
 
-`awk -F"\t" 'BEGIN {OFS=FS} {if (NR > 1) {print $1,$2,$3,$21,".",$6}}' data/nygc/seddighi_cryptics_nygc.tsv | sort -u -k1,1 -k2,2n -k3,3n -k6,6 > data/nygc/seddighi_cryptics_sjs.bed`
+```bash
+awk -F"\t" 'BEGIN {OFS=FS} {if (NR > 1) {print $1,$2,$3,$21,".",$6}}' data/nygc/seddighi_cryptics_nygc.tsv | sort -u -k1,1 -k2,2n -k3,3n -k6,6 > data/nygc/seddighi_cryptics_sjs.bed
+```
+
+### Splice junction quantification
+
+Used the external [bedops_parse_star_junctions](https://github.com/SamBryce-Smith/bedops_parse_star_junctions) pipeline to quantify SJ counts. In brief, this pipeline parses STAR's 'SJ.out.tab' tables to match input junctions, returning a BED file with the score column populated with the read count per sample. Please see repo for usage instructions
+
+### NYGC selective detection analysis
+
+`scripts/clean_ale_junction_counts.R` integrates sample-level metadata with SJ counts to define 'detected counts' for each disease group and expected TDP-43 pathology status. Detection in a sample defined as >= 2 spliced reads.
+
+`scripts/plot_nygc_ale` generates the bar plot and per-junction SJ read counts shown in Fig. 2B-D.
+
+## NYGC vs FACS-seq target comparison
+
+`scripts/overlap_liu_nygc.R` labels shared and dataset specific target ALEs highlighted in each analysis. Generates Venn diagram to visualise the overlap, and plots detection/delta PPAUs for dataset-specific targets (i.e. where not represented in the main figure). Requires as input:
+
+- Summary of detection statistics for all ALE SJs in NYGC data (produced by `scripts/clean_ale_junction_counts.R`)
+- Differences in PPAU between TDP populations per sample (produced by `scripts/ppau_liu_facs.R`) and summarised across samples (`scripts/plot_liu_facs.R`)
