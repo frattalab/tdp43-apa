@@ -177,39 +177,3 @@ write_tsv(expression_by_pathology_seddighi, "processed/nygc/expression_by_pathol
 write_tsv(filter(expression_by_pathology_seddighi, selective), "processed/nygc/expression_by_pathology_seddighi_selective.tsv")
 write_tsv(filter(expression_by_pathology_seddighi, enriched), "processed/nygc/expression_by_pathology_seddighi_enrichedfrac.tsv")
 write_tsv(counts_enriched_selective_seddighi, "processed/nygc/expression_by_pathology_seddighi_counts.tsv")
-
-# another way to check enrichment -----------------------------------------
-
-# obvserved_enough = spliced_counts_ale[spliced_reads >=2] %>% 
-#     group_by(paste_into_igv_junction) %>% 
-#     mutate(n_obs = n_distinct(sample)) %>% 
-#     filter(n_obs > 10) %>% 
-#     pull(paste_into_igv_junction) |> unique()
-# 
-# long_rpm = spliced_counts_ale |> 
-#     filter(paste_into_igv_junction %in% obvserved_enough) |> 
-#     left_join(library_depth) |> 
-#     mutate(rpm = 10^6 * (spliced_reads / library_size)) |> 
-#     filter(disease_tissue == TRUE) |> 
-#     mutate(predict_path = ifelse(disease %in% c('ALS-TDP','FTD-TDP'),
-#                                  "TDP-path",
-#                                  "non-TDP path")) 
-# 
-# # spliced reads per million - sig different between TDP-path and non-TDP path?
-# wilcox_rpm = long_rpm |> 
-#     group_by(paste_into_igv_junction) |> 
-#     nest() %>%
-#     mutate(lm_obj = map(data, ~wilcox.test(rpm~predict_path,data = .))) %>%
-#     mutate(lm_tidy = map(lm_obj, broom::tidy)) %>%
-#     ungroup() |> 
-#     unnest(cols = c(lm_tidy)) |> 
-#     select(-data) |>
-#   mutate(p.value.adj = p.adjust(p.value, method = "BH")) %>%
-#   arrange(p.value.adj)
-#   
-# 
-# sig_wil = wilcox_rpm |> filter(p.value < 0.01) |> pull(paste_into_igv_junction)
-# 
-# ale_enriched_by_rpm = expression_by_pathology_ale[paste_into_igv_junction %in% sig_wil]
-
-
