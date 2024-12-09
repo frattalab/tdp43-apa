@@ -1,0 +1,18 @@
+## path to directory containing input BAM files
+input_dir: tests/coverage_smk/input/bams
+# suffix to strip from file names to identify samples to run and infer sample names
+bam_suffix: ".STMN2_ELK1.bam"
+# path to base output directory
+output_dir: tests/coverage_smk/output/
+
+# Input BED file of PAS of interest
+pas_bed: tests/coverage_smk/input/eg_cryptic_pas.bed
+# length of window to extend up and downstream of PAS coordinates (and calculate mean coverage)
+# (Note: final length of region checked is window_size + 1, because PAS coordinates should be single nucleotide length)
+window_size: 200
+# Whether to exclude the PAS coordinate from upstream/downstream windows (i.e. the windows start +/- 1 from PAS and have no overlap)
+exclude_pas: False
+# strandedness of input BAM files (rf = reverse stranded, fr = forward stranded)
+strandedness: "rf"
+# summary operation to provide to megadepth --op (sum, mean, min, or max)
+megadepth_operation: "mean"

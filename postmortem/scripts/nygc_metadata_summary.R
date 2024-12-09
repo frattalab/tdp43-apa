@@ -47,7 +47,6 @@ nygc_metadata %>%
   summarise(median_age = median(age, na.rm=T),
             iqr_age = IQR(age, na.rm = T))
 
-  count(simple_disease)
 
 
 # get a table with sample counts by TDP path subtype
@@ -84,3 +83,89 @@ write_tsv(dataset_wide_counts, "processed/nygc/2023-12-20_nygc_disease_counts.ts
 write_tsv(dataset_wide_counts_path, "processed/nygc/2023-12-20_nygc_disease_pathology_counts.tsv")
 write_tsv(tissue_subtype_counts, "processed/nygc/2023-12-20_nygc_disease_tissue_subtype_counts.tsv")
 write_tsv(tissue_counts, "processed/nygc/2023-12-20_nygc_disease_tissue_total_counts.tsv")
+
+### Supplementary table with NYGC sample characteristics
+
+
+raw_nygc_metadata_filtered <- raw_nygc_metadata %>%
+  left_join(distinct(nygc_metadata, sample, disease_tissue, tdp_path, disease, simple_disease), by = "sample", suffix = c(".raw", ".clean")) %>%
+  # subset to analysed samples only
+  filter(sample %in% nygc_metadata$sample) %>%
+  # subset to disease tissues analysed
+  filter(disease_tissue) 
+
+# summarise distribution of numeric values
+disease_metadata_summ_stats <- raw_nygc_metadata_filtered %>%
+  group_by(disease.clean) %>%
+  summarise(
+    across(
+      c(rin, pmi, age, onset), # Specify the columns you want to summarise
+      list(
+        median = ~median(.x, na.rm = TRUE),
+        q1 = ~quantile(.x, 1/4, na.rm = T),
+        q3 = ~quantile(.x, 3/4, na.rm = T),
+        min = ~min(.x, na.rm = TRUE),
+        max = ~max(.x, na.rm = TRUE),
+        missing = ~sum(is.na(.x))
+      ),
+      .names = "{.fn}_{.col}" # Specify the naming pattern for new columns
+    )
+  )
+
+dplyr::last_dplyr_warnings()
+
+disease_metadata_summ_stats <- disease_metadata_summ_stats %>%
+  mutate(across(ends_with("rin"), ~ round(.x, 3)),
+         across(ends_with("pmi"), ~ round(.x, 3))
+         )
+
+disease_metadata_summ_stats <- disease_metadata_summ_stats %>%
+  mutate(
+    rin_summary = glue::glue("{median_rin} ({q1_rin}, {q3_rin}, missing = {missing_rin})"),
+    pmi_summary = glue::glue("{median_pmi} ({q1_pmi}, {q3_pmi}, missing = {missing_pmi})"),
+    age_summary = glue::glue("{median_age} ({q1_age}, {q3_age}, missing = {missing_age})"),
+    onset_summary = glue::glue("{median_onset} ({q1_onset}, {q3_onset}, missing = {missing_onset})")
+  ) %>%
+  select(disease.clean,ends_with("_summary")) %>%
+  rename_with(
+    .fn = ~ str_remove(.x, "_summary"), 
+    .cols = ends_with("_summary")       
+  )
+
+disease_metadata_summ_stats
+
+# calculate number of samples and individuals across disease types
+disease_summ_counts <- raw_nygc_metadata_filtered %>%
+  group_by(disease.clean) %>%
+  summarise(n_individuals = n_distinct(individual),
+            n_samples = n_distinct(sample)
+            )
+# individual counts split by sex
+disease_summ_counts_sex <-  raw_nygc_metadata_filtered %>%
+  distinct(disease.clean, individual, sex) %>%
+  group_by(disease.clean) %>%
+  summarise(n_male = sum(sex == "Male"),
+            n_female = sum(sex == "Female")
+            ) %>%
+  ungroup()
+
+
+# add counts to 
+disease_metadata_summ_stats <- disease_summ_counts %>%
+  left_join(disease_summ_counts_sex, by = "disease.clean", relationship = "one-to-one") %>%
+  relocate(n_samples, .after = everything()) %>%
+  left_join(disease_metadata_summ_stats, by = "disease.clean", relationship = "one-to-one")
+
+# final clean up
+disease_metadata_summ_stats <- disease_metadata_summ_stats %>%
+  rename(subtype = disease.clean, age_of_onset = onset) %>%
+  mutate(subtype = factor(subtype, levels = c("Control", "ALS-non-TDP", "ALS-TDP", "FTD-non-TDP", "FTD-TDP"))) %>%
+  arrange(subtype)
+
+
+write_tsv(disease_metadata_summ_stats, "processed/nygc/2024-11-27_nygc_metadata_summary.tdp_subtypes.tsv")
+  
+
+
+
+

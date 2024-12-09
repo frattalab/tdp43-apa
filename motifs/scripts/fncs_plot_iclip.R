@@ -1,5 +1,33 @@
 library(tidyverse)
 
+parse_coverage <- function(file, flank_interval, average = TRUE) {
+  f <- read_tsv(file, col_names = c("chr", "start", "end", "name", ".", "strand", "position", "coverage"), show_col_types = F)
+  # make sure positions are strand-aware
+  f$position[f$strand == "-"] <- (2 + flank_interval*2) - f$position[f$strand == "-"]
+  
+  if (average) {
+    
+    average_coverage <- f %>%
+      group_by(position) %>%
+      summarize(avg_coverage = mean(coverage),
+                se = sd(coverage) / sqrt(n()),
+                # 95 % confidence intervals
+                lwr = avg_coverage - 1.96*se, 
+                upr = avg_coverage + 1.96*se,
+                n_overlaps = sum(coverage),
+                n_events = n(),
+                frac_overlaps = sum(coverage) / n()
+      )
+    return(average_coverage)
+  }
+  
+  else {
+    return(f)
+  }
+  
+}
+
+
 plot_coverage_df <- function(df, ci_se_mult = 1.96, event_col = "plot_type", group_col = "plot_cryptic", loess_span = 0.2) {
   
   group_cols <- c(event_col, group_col)

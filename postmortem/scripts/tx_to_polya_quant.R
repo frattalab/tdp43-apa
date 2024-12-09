@@ -1,8 +1,4 @@
 suppressPackageStartupMessages(library(optparse))
-suppressPackageStartupMessages(library(tximport))
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(tidyr))
-suppressPackageStartupMessages(library(glue))
 
 option_list <- list(make_option(c("-s", "--sample-table"),
                                 type="character",
@@ -26,12 +22,19 @@ option_list <- list(make_option(c("-s", "--sample-table"),
 
 opt_parser <- OptionParser(option_list = option_list)
 
+
 if (length(commandArgs(trailingOnly = TRUE)) == 0) {
   print_help(opt_parser)
   stop()
 }
 
 opt <- parse_args(opt_parser)
+
+# Load in remaining packages now that commiting to execution
+suppressPackageStartupMessages(library(tximport))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+suppressPackageStartupMessages(library(glue))
 
 #1. Read in sample table & construct paths to all Salmon quantification files
 
