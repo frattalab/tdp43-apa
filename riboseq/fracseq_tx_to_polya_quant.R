@@ -1,4 +1,3 @@
-suppressPackageStartupMessages(library(optparse))
 suppressPackageStartupMessages(library(tximport))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(stringr))
