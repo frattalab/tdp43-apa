@@ -19,6 +19,7 @@ The minimal pre-requesites are:
 - git
 - [conda](https://conda.io/projects/conda/en/latest/user-guide/install/index.html)/[mamba](https://mamba.readthedocs.io/en/latest/installation.html) (mamba recommended as much quicker!)
 - R 4.3.2
+  - [renv](https://rstudio.github.io/renv/index.html) - run `install.packages("renv")` in the R console. We used renv version 1.0.3
 - RStudio (you may be able to use another IDE compatible with R projects, but I have no experience of these)
 
 Once these are satisfied, clone and enter the repo locally using the following commands:
@@ -47,13 +48,11 @@ conda activate pybioinfo
 Every individual subdirectory has its own [RStudio project](https://support.posit.co/hc/en-us/articles/200526207-Using-RStudio-Projects) and [Renv](https://rstudio.github.io/renv/articles/renv.html) files.
 
 - Open R project of interest (i.e. subdirectory here in repo)
-
   - [See guide here](https://support.posit.co/hc/en-us/articles/200526207-Using-RStudio-Projects), can open via RStudio's 'Open Project' command or by opening the '.Rproject' file in your system's file browser.
 - The correct version renv should automatically be downloaded and installed upon opening the project (if not already installed). You can then run `renv::restore()` in the console to install the required packages for the given project.
 
 ## Assorted notes
 
-- Subdirectories contain a mix of essential and WIP/experimental scripts. Check the **README** in each subdirectory for a description of the scripts required to reproduce analyses in the main manuscript. Assume any other scripts not listed in the README are non-essential (clean-up is on the to-do list...).
+- Subdirectories contain a mix of essential and WIP/experimental scripts. Check the **README** in each subdirectory for a description of the scripts required to reproduce analyses in the main manuscript. Assume any other analysis scripts not listed in the README are non-essential to reporduce analyses presented in the manuscript.
 - The input dependencies of each script are not well documented (apologies). Generally, should assume that will need to run `preprocessing` scripts first to generate minimal outputs for other steps, and `misc` subdirectory contains scripts that should be run last (to generate supplementary tables). Eventual plan is to produce a Snakemake pipeline to automate running different steps (and document the required running order).
-- Minimal data to reproduce analysis is still a work in progress (again apologies). Eventual plan is to integrate with Zenodo (possibly using SciDataFlow).
 - Scripts have varying levels of generalisability. If you'd like to adapt some of the code to your inputs, please do get in touch and I'll do my best to give you some advice/help out.
