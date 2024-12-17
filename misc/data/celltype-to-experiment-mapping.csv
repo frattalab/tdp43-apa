@@ -1,0 +1,6 @@
+﻿cell_type,kd_method,experiments
+SH-SY5Y,DOX-induced shRNA,"RNA-seq (Fig. 1), iCLIP (Fig. 1), Subcellular fractionation (Fig. 3)"
+SK-N-BE(2),DOX-induced shRNA,"RNA-seq (Fig. 1),  ELK1 3’-UTR APA reporter library (Supplementary Fig. 8)"
+i3Neuron,dCas9,"RNA-seq (Fig. 1), 3'RACE (Supplementary Fig. 3), Ribo-seq (Fig. 3B), SLAM-seq (Fig. 3), FISH (Fig. 3)"
+Halo-i3Neuron,PROTAC,ELK1 western blot (Fig. 3C)
+iPSC MN,siRNA,RNA-seq (Fig. 1)

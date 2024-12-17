@@ -3,6 +3,26 @@
     "Version": "4.3.2",
     "Repositories": [
       {
+        "Name": "BioCsoft",
+        "URL": "https://bioconductor.org/packages/3.18/bioc"
+      },
+      {
+        "Name": "BioCann",
+        "URL": "https://bioconductor.org/packages/3.18/data/annotation"
+      },
+      {
+        "Name": "BioCexp",
+        "URL": "https://bioconductor.org/packages/3.18/data/experiment"
+      },
+      {
+        "Name": "BioCworkflows",
+        "URL": "https://bioconductor.org/packages/3.18/workflows"
+      },
+      {
+        "Name": "BioCbooks",
+        "URL": "https://bioconductor.org/packages/3.18/books"
+      },
+      {
         "Name": "CRAN",
         "URL": "https://packagemanager.posit.co/cran/latest"
       }
@@ -78,6 +98,31 @@
         "methods"
       ],
       "Hash": "b2866e62bab9378c3cc9476a1954226b"
+    },
+    "EZbakR": {
+      "Package": "EZbakR",
+      "Version": "0.0.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "isaacvock",
+      "RemoteRepo": "EZbakR",
+      "RemoteRef": "main",
+      "RemoteSha": "6c686bd1cf7ce8b62dd67a6cd495699293d857a9",
+      "Requirements": [
+        "R",
+        "arrow",
+        "data.table",
+        "dplyr",
+        "ggplot2",
+        "magrittr",
+        "methods",
+        "purrr",
+        "rlang",
+        "tidyr",
+        "tximport"
+      ],
+      "Hash": "88edfd4d44bb4c0d79421b92ee576542"
     },
     "MASS": {
       "Package": "MASS",
@@ -206,6 +251,28 @@
       ],
       "Hash": "4f57884290cc75ab22f4af9e9d4ca862"
     },
+    "arrow": {
+      "Package": "arrow",
+      "Version": "18.1.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "R",
+        "R6",
+        "assertthat",
+        "bit64",
+        "cpp11",
+        "glue",
+        "methods",
+        "purrr",
+        "rlang",
+        "stats",
+        "tidyselect",
+        "utils",
+        "vctrs"
+      ],
+      "Hash": "d83c5ed8c1a89c5fd5788a8da714364e"
+    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.2.0",
@@ -215,6 +282,16 @@
         "sys"
       ],
       "Hash": "cad6cf7f1d5f6e906700b9d3e718c796"
+    },
+    "assertthat": {
+      "Package": "assertthat",
+      "Version": "0.2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "tools"
+      ],
+      "Hash": "50c838a310445e954bc13f26f26a6ecf"
     },
     "backports": {
       "Package": "backports",
@@ -1441,6 +1518,17 @@
       ],
       "Hash": "277c67a08f358f42b6a77826e4492f79"
     },
+    "nls2": {
+      "Package": "nls2",
+      "Version": "0.3-4",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Requirements": [
+        "proto",
+        "stats"
+      ],
+      "Hash": "99bdbfcb3d1000bd00424c009b4c2ac0"
+    },
     "nnet": {
       "Package": "nnet",
       "Version": "7.3-18",
@@ -1649,6 +1737,13 @@
         "prettyunits"
       ],
       "Hash": "14dc9f7a3c91ebb14ec5bb9208a07061"
+    },
+    "proto": {
+      "Package": "proto",
+      "Version": "1.0.0",
+      "Source": "Repository",
+      "Repository": "RSPM",
+      "Hash": "5cb1623df69ee6102d011c7f78f5791d"
     },
     "ps": {
       "Package": "ps",
@@ -2190,6 +2285,17 @@
         "xfun"
       ],
       "Hash": "8f96d229b7311beb32b94cf413b13f84"
+    },
+    "tximport": {
+      "Package": "tximport",
+      "Version": "1.30.0",
+      "Source": "Bioconductor",
+      "Requirements": [
+        "methods",
+        "stats",
+        "utils"
+      ],
+      "Hash": "6e9621b0f1bf9398255f32c7000a7e16"
     },
     "tzdb": {
       "Package": "tzdb",
