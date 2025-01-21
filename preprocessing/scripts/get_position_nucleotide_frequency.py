@@ -3,11 +3,12 @@
 import argparse
 import pandas as pd
 import pyranges as pr
+from pyfaidx import Fasta
 from functools import reduce
 
 import sys
 
-def get_sequences(bed_file, fasta_file):
+def get_sequences(bed_file, fasta_file, strict=False):
     """
     Extract sequences for intervals in BED file from FASTA file using PyRanges
     """
@@ -21,6 +22,21 @@ def get_sequences(bed_file, fasta_file):
             raise ValueError("All intervals must have the same length")
             
         # Extract sequences using PyRanges
+        # check that Chromosome names are found in the FASTA file
+        fa = Fasta(fasta_file)
+        fa_chroms = set(fa.keys())
+        gr_missing_chroms = set(gr.Chromosome).difference(fa_chroms)
+        if len(gr_missing_chroms) > 0:
+            print(f"Chromosomes in BED file are missing from the FASTA file - {len(gr_missing_chroms)} - listing missing chroms...")
+            print(gr_missing_chroms)
+
+            if strict:
+                raise Exception("All chromosomes in BED file must be present in the provided fasta file")
+            else:
+                print("Removing missing chroms from BED file...")
+                gr = gr.subset(lambda df: ~df.Chromosome.isin(gr_missing_chroms))
+        
+        print("Extracting sequence for input intervals...")
         seq = pr.get_sequence(gr, fasta_file)
         gr.seq = seq
         
@@ -109,13 +125,16 @@ def main():
     gr = get_sequences(args.bed_file, args.fasta_file)
     
     # Calculate frequency matrix
+    print("Calculating per-position nucleotide frequencies...")
     freq_matrix = per_bp_nucleotide_content(gr, return_counts=True)
     
     # Adjust position labels based on alignment mode
+    print("Adjusting position labels (if not 'start')")
     interval_length = gr.lengths().iloc[0]
     freq_matrix = adjust_position_labels(freq_matrix, args.align, interval_length)
-    
+
     # Save to TSV
+    print(f"Writing matrix to TSV - {args.output_file}")    
     freq_matrix.to_csv(args.output_file, sep='\t', header=True, index=True)
 
 if __name__ == '__main__':
