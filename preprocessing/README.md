@@ -102,7 +102,9 @@ python scripts/get_patr_matches.py --papa-gtf data/novel_ref_combined.last_exons
 
 `scripts/compare_cryptic_annot_patr_matches.R` visualises the % overlap reported for cryptic relative to the 1k annotated PAS samples. Also computes an empirical p-value at each distance threshold assessing the null that cryptic and annotated PAS originate from the same distribution.
 
-### Get a BED file of PATR cluster representative coordinates
+### Nucleotide frequency around PATR-defined PAS 
+
+#### Get a BED file of PATR cluster representative coordinates & extend intervals by a specified distance
 
 Simple script to swap the representative coordinates (position with most supporting reads) of PATR PAS clusters with the representative coordinates stored in the Name field. Requi
 
@@ -111,8 +113,16 @@ Input: PATR BED file from KD samples - data/bulk_polya_reads/tdp_ko_collection/p
 ```bash
 mkdir -p processed/curation/patr_internal_priming
 python scripts/patr_clusters_to_rep_bed.py -i data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed -o processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.bed
-
 ```
+
+#### Extend intervals by 50nt either side of PAS
+
+```bash
+python scripts/extend_bed.py --length 50 --direction downstream processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.bed processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_downstream.bed
+python scripts/extend_bed.py --length 50 --direction both processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.bed processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.bed
+```
+
+
 
 ## DaPars2 comparison
 
