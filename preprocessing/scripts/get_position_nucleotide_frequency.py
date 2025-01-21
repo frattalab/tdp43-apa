@@ -39,10 +39,11 @@ def _df_per_bp_nucleotide_freq(df, seq_col):
                          .apply(lambda x: list(x))
                          .values
                          .tolist())
-           
+
     # Calculate frequency of each nucleotide at every position
-    freq_df = seq_df.apply(pd.Series.value_counts).fillna(0)
-    
+    # set a default index to ensure consistency across chroms/positions
+    freq_df = seq_df.apply(lambda x: x.value_counts().reindex(['A', 'C', 'G', 'T', 'N'], fill_value=0))
+
     # Convert index to column
     freq_df = freq_df.reset_index().rename(columns={'index': 'nucleotide'})
               
@@ -58,7 +59,7 @@ def per_bp_nucleotide_content(gr, seq_col="seq", return_counts=False):
     # Calculate frequencies across all intervals
     freq_dfs = gr.apply(lambda df: _df_per_bp_nucleotide_freq(df, seq_col),
                        as_pyranges=False)
-    
+
     # Sum counts across all chromosomes/strands
     freq_df = reduce(lambda a,b: a.add(b),
                     [df.set_index('nucleotide') for df in freq_dfs.values()])
