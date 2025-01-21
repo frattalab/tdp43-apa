@@ -122,7 +122,14 @@ python scripts/extend_bed.py --length 50 --direction downstream processed/curati
 python scripts/extend_bed.py --length 50 --direction both processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.bed processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.bed
 ```
 
+#### Compute nucleotide frequency at each position in intervals
 
+Note: In rare cases, the representative coordinates stored in PATR BED files are not single-nt coordinates (bug). There does not appear to be a strand, chromosome or length bias. In each case, since it's such a tiny proportion (~2k / ~250k intervals), I've removed these from the BED files prior to running this script ('expected_length.bed' suffixed files) 
+
+```bash
+python scripts/get_position_nucleotide_frequency.py --align start processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_downstream.expected_length.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_downstream.align_start.tsv
+python scripts/get_position_nucleotide_frequency.py --align center processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.expected_length.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_both.align_center.tsv
+```
 
 ## DaPars2 comparison
 
