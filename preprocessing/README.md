@@ -129,6 +129,7 @@ Note: In rare cases, the representative coordinates stored in PATR BED files are
 ```bash
 python scripts/get_position_nucleotide_frequency.py --align start processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_downstream.expected_length.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_downstream.align_start.tsv
 python scripts/get_position_nucleotide_frequency.py --align center processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.expected_length.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_both.align_center.tsv
+python scripts/get_position_nucleotide_frequency.py --align center processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.expected_length.min_3_reads.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_both.min_3_reads.align_center.tsv
 ```
 
 ## DaPars2 comparison
