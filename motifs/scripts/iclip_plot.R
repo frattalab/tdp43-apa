@@ -103,13 +103,15 @@ iclip_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
                      title_lab = NULL,
                      # title_lab = .y, 
                      loess_span = 0.1,
-                     y_scales = scale_y_continuous(limits = c(NA, 0.1),
-                                                   breaks = seq(0, 0.10, 0.025)),
+                     y_scales = scale_y_continuous(limits = c(NA, 0.08),
+                                                   breaks = seq(0, 0.08, 0.02)),
                      theme_base_size = 11
                      )
 )
 
 iclip_maps_1se$`3'Ext`
+iclip_maps_1se$ALE
+
 
 # get underlying dfs
 iclip_dfs_maps_1se <- map2(.x = event_lists, .y = names(event_lists),
