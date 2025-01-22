@@ -244,3 +244,38 @@ kd_patr_stats %>%
   group_by(dataset) %>%
   summarise(median_perc = median(patr_percentage)) %>%
   arrange(desc(median_perc))
+
+
+### PolyASite overlap
+nygc_pasite_overlap <- read_tsv("data/nygc/patrs/2025-01-18.two_class_simple.patr_clusters.polyasite_overlap.tsv")
+kd_pasite_overlap <- read_tsv("data/nygc/patrs/tdp_ko_collection.two_class_simple.patr_clusters.polyasite_overlap.tsv")
+
+nygc_pasite_overlap <- nygc_pasite_overlap %>%
+  mutate(file_name = str_remove_all(file_name, ".polya_clusters.bed$")) %>%
+  rename(sample_name = file_name)
+
+kd_pasite_overlap <- kd_pasite_overlap %>%
+  mutate(file_name = str_remove_all(file_name, ".polya_clusters.bed$")) %>%
+  rename(sample_name = file_name)
+
+comb_pasite_overlap <- bind_rows(nygc = nygc_pasite_overlap, kds = kd_pasite_overlap, .id = "origin")
+
+comb_pasite_overlap %>%
+  ggplot(aes(x = origin, y = percent_overlapping)) +
+  geom_violin() +
+  geom_boxplot(outlier.shape = NA, width = 0.1) +
+  scale_y_continuous(limits = c(0,100))
+
+
+comb_pasite_overlap %>%
+  ggplot(aes(x = origin, y = percent_overlapping)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(position = position_jitter(width = 0.3, seed = 123), alpha = 0.25) +
+  scale_y_continuous(limits = c(0,100)) +
+  labs(y = "% PATR PAS overlapping with PolyASite") +
+    theme_bw(base_size = 14)
+
+# No read filtering, systematically higher for KDs. Outliers in KDs are the brown et al SH & SK samples, where polyA+/rrna depletion is not directly reported and cannot be easily
+
+# Simple - count PATRs overlapping with annotated PAS - compare proportion of library vs KDs?
+# Need to modify shell script to report total count of PAS
