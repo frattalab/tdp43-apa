@@ -354,24 +354,28 @@ per_event_yg_group_sum_maps_fixedy_ci <- unique(dbrn_tbls_sum_ci$`YG-containing-
         plot_coverage(ci_se_mult = 1,
                       loess_span = 0.1,
                       y_scales = scale_y_continuous(),
-                      title_lab = .x,
-                      facet_scales = "fixed")
+                      title_lab = NULL,
+                      facet_scales = "fixed",
+                      theme_base_size = 11
+                      )
       )
         
+per_event_yg_group_sum_maps_fixedy_ci$`3'Ext`
+per_event_yg_group_sum_maps_fixedy_ci$ALE
 
 # save to SVG
 walk2(.x = per_event_yg_group_sum_maps_fixedy_ci,
       .y = names(per_event_yg_group_sum_maps_fixedy_ci),
-      ~ ggsave(filename = paste("2023-12-20_papa_cvcoverage.yg_group_summed_map_horiz_stack.",
+      ~ ggsave(filename = paste("2025-01-22_papa_cvcoverage.yg_group_summed_map_horiz_stack.",
                                 str_replace_all(.y, "'|-|[[:space:]]","_"),
-                                ".ci_fixed.svg",
+                                ".ci_fixed.pdf",
                                 sep = ""),
                plot = .x,
                path = "processed/peka/papa/plots/",
-               device = svg,
-               height = 6*0.8,
-               width = 18*0.8,
-               units = "in",
+               device = "pdf",
+               height = 60,
+               width = 180,
+               units = "mm",
                dpi = "retina")
                )
 
