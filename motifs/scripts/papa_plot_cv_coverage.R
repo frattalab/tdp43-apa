@@ -353,7 +353,8 @@ per_event_yg_group_sum_maps_fixedy_ci <- unique(dbrn_tbls_sum_ci$`YG-containing-
         ) %>%
         plot_coverage(ci_se_mult = 1,
                       loess_span = 0.1,
-                      y_scales = scale_y_continuous(),
+                        y_scales = scale_y_continuous(limits = c(NA, 0.23),
+                                                      breaks = seq(0, 0.2, 0.05)),
                       title_lab = NULL,
                       facet_scales = "fixed",
                       theme_base_size = 11
@@ -363,10 +364,29 @@ per_event_yg_group_sum_maps_fixedy_ci <- unique(dbrn_tbls_sum_ci$`YG-containing-
 per_event_yg_group_sum_maps_fixedy_ci$`3'Ext`
 per_event_yg_group_sum_maps_fixedy_ci$ALE
 
+# make custom scale just for 3'exts
+ext3_yg_group_sum_map_fixedy_ci <- dbrn_tbls_sum_ci$`YG-containing-motifs` %>%
+  filter(plot_event_type == "3'Ext") %>%
+  rename(position = rel_posn) %>%
+  mutate(plot_cryptic = if_else(group == "cryptic", "Cryptic", "Background"),
+         plot_type = plot_region_type,
+         position = position + 500
+  ) %>%
+  plot_coverage(ci_se_mult = 1,
+                loess_span = 0.1,
+                y_scales = scale_y_continuous(limits = c(NA, 0.16),
+                                              breaks = seq(0, 0.16, 0.04)),
+                title_lab = NULL,
+                facet_scales = "fixed",
+                theme_base_size = 11
+  )
+
+ext3_yg_group_sum_map_fixedy_ci
+
 # save to SVG
 walk2(.x = per_event_yg_group_sum_maps_fixedy_ci,
       .y = names(per_event_yg_group_sum_maps_fixedy_ci),
-      ~ ggsave(filename = paste("2025-01-22_papa_cvcoverage.yg_group_summed_map_horiz_stack.",
+      ~ ggsave(filename = paste("2025-01-23_papa_cvcoverage.yg_group_summed_map_horiz_stack.",
                                 str_replace_all(.y, "'|-|[[:space:]]","_"),
                                 ".ci_fixed.pdf",
                                 sep = ""),
@@ -379,5 +399,15 @@ walk2(.x = per_event_yg_group_sum_maps_fixedy_ci,
                dpi = "retina")
                )
 
-
+ggsave(filename = paste("2025-01-23_papa_cvcoverage.yg_group_summed_map_horiz_stack.",
+                        "3ext_custom_ylim.",
+                        ".ci_fixed.pdf",
+                        sep = ""),
+       plot = ext3_yg_group_sum_map_fixedy_ci,
+       path = "processed/peka/papa/plots/",
+       device = "pdf",
+       height = 60,
+       width = 180,
+       units = "mm",
+       dpi = "retina")
 
