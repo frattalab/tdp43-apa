@@ -39,7 +39,7 @@ plot_junction = function(junc,plotin_table = spliced_counts_ale){
 
 
 #' Just plot the dots of splicee reads in samples
-plot_junction_simple = function(junc,plotin_table = spliced_counts_ale, facet_scales = "free", pch=21, stroke=0.15){
+plot_junction_simple = function(junc,plotin_table = spliced_counts_ale, facet_scales = "free", pch=21, stroke=0.15, plot_base_size = 11){
   
   vals = c(`ALS-\nTDP` = "#E1BE6A", CTL = "#40B0A6", `FTD-\nTDP` = "#E1BE6A", 
            `ALS-\nnon-\nTDP` = "#408A3E", `FTD-\nnon-\nTDP` = "#408A3E")
@@ -62,9 +62,9 @@ plot_junction_simple = function(junc,plotin_table = spliced_counts_ale, facet_sc
     geom_jitter(height = 0, pch=pch, stroke=stroke) + #  alpha = 0.7, pch = 21
     facet_wrap(~tissue_clean, scales = facet_scales) +
     scale_fill_manual(values = vals)  +
-    ylab("Number of spliced reads") +
-    xlab("") +
-    theme_bw(base_size = 20) +
+    ylab("Spliced reads") +
+    xlab(NULL) +
+    theme_bw(base_size = plot_base_size) +
     theme(legend.position = 'none') #+
     # theme(text = element_text(size = 20)) 
   
@@ -152,37 +152,46 @@ sel_bar_gn <- path_summ_comb %>%
   ggplot(aes(x = fraction_path * 100, y = plot_name_simple, fill = event_type)) +
   geom_col(colour = "black") +
   scale_fill_manual(values = c("#d95f02", "#7570b3")) +
-  theme_bw(base_size = 20) +
+  theme_bw(base_size = 10) +
   labs(title = "Selective ALE junctions",
        subtitle = "Non path detected fraction < 0.005, path detected > 0.01. Min spliced reads = 2",
-       x = "% of TDP-43 pathological tissues cryptic detected",
+       x = "TDP-43 pathological tissues\ndetected (%)",
        y = "Event ID",
        fill = "Event type")
 
 # remove unnecessary axis labels + legends
 sel_bar_gn_simple <- sel_bar_gn +
   guides(fill = "none") +
-  labs(title = "",
-       subtitle = "",
-       y = "")
+  labs(title = NULL,
+       subtitle = NULL,
+       y = NULL)
 
-# sel_bar_gn
-# sel_bar_gn_simple
+sel_bar_gn
+sel_bar_gn_simple
   
-dir.create("processed/nygc/selective_jncs/ale/svg", recursive = T)
-dir.create("processed/nygc/selective_jncs/ale/png", recursive = T)
-dir.create("processed/nygc/enriched_jncs/ale/svg", recursive = T)
-dir.create("processed/nygc/enriched_jncs/ale/png", recursive = T)
+dir.create("processed/nygc/selective_jncs/ale/revisions/svg", recursive = T)
+dir.create("processed/nygc/selective_jncs/ale/revisions/png", recursive = T)
+dir.create("processed/nygc/enriched_jncs/ale/revisions/svg", recursive = T)
+dir.create("processed/nygc/enriched_jncs/ale/revisions/png", recursive = T)
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.png",
-       plot = sel_bar_jnc_gn,
-       path = "processed/nygc/",
-       width = 12,
-       height = 12,
-       units = "in",
-       dpi = "retina")
+# ggsave(filename = "2025-01-23_nygc_papa_seddighi_selective_jnc_gn_bar.png",
+#        plot = sel_bar_jnc_gn,
+#        path = "processed/nygc/",
+#        width = 12,
+#        height = 12,
+#        units = "in",
+#        dpi = "retina")
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.png",
+# ggsave(filename = "2025-01-23_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
+#        device = svg,
+#        plot = sel_bar_jnc_gn,
+#        path = "processed/nygc/",
+#        width = 12,
+#        height = 12,
+#        units = "in",
+#        dpi = "retina")
+
+ggsave(filename = "2025-01-23_nygc_papa_seddighi_selective_gn_bar.png",
        plot = sel_bar_gn,
        path = "processed/nygc/",
        width = 12,
@@ -190,18 +199,10 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.png",
        units = "in",
        dpi = "retina")
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_jnc_gn_bar.svg",
-       device = svg,
-       plot = sel_bar_jnc_gn,
-       path = "processed/nygc/",
-       width = 12,
-       height = 12,
-       units = "in",
-       dpi = "retina")
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
+ggsave(filename = "2025-01-23_nygc_papa_seddighi_selective_gn_bar.pdf",
        plot = sel_bar_gn,
-       device = svg,
+       device = "pdf",
        path = "processed/nygc/",
        width = 12,
        height = 12,
@@ -209,31 +210,22 @@ ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
        dpi = "retina")
 
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar.svg",
-       plot = sel_bar_gn,
-       device = svg,
-       path = "processed/nygc/",
-       width = 12,
-       height = 12,
-       units = "in",
-       dpi = "retina")
-
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.png",
+ggsave(filename = "2025-01-23_nygc_papa_seddighi_selective_gn_bar_simple.png",
        plot = sel_bar_gn_simple,
        path = "processed/nygc/",
-       width = 7.5,
-       height = 15,
-       units = "in",
+       width = 70,
+       height = 140,
+       units = "mm",
        dpi = "retina")
 
 
-ggsave(filename = "2024-05-01_nygc_papa_seddighi_selective_gn_bar_simple.svg",
+ggsave(filename = "2025-01-23_nygc_papa_seddighi_selective_gn_bar_simple.pdf",
        plot = sel_bar_gn_simple,
-       device = svg,
+       device = "pdf",
        path = "processed/nygc/",
-       width = 7.5,
-       height = 15,
-       units = "in",
+       width = 75,
+       height = 150,
+       units = "mm",
        dpi = "retina")
 
 #
