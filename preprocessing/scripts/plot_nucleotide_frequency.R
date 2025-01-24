@@ -137,7 +137,7 @@ bind_rows(patrs_min3 = long_kd_min3_pfm_prop_withoutn, polyadb = long_polyadb_pf
 
 # slightly more stringent
 comb_line_patr_min5 <- bind_rows(list("PATRs (>= 5 reads)" = long_kd_min5_pfm_prop_withoutn,
-               "PolyADB" = long_polyadb_pfm_prop_withoutn),
+               "PolyA_DB" = long_polyadb_pfm_prop_withoutn),
           .id = "origin") %>%
   ggplot(aes(x = position, y = fraction, colour = nucleotide, group = nucleotide)) +
   facet_wrap(~ origin, ncol = 2) +
