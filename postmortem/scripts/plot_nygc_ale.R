@@ -265,7 +265,7 @@ sel_jnc_ale_plots <- map(selective_jnc_ale,
 
 sel_jnc_ale_plots_simple <- map(selective_jnc_ale,
                          ~ plot_junction_simple(.x,
-                                                facet_scales = "free_x", plot_base_size = 9, size = 1))
+                                                facet_scales = "free_x", plot_base_size = 8, size = 1))
 
 sel_jnc_ale_plots_simple$chr8_79611214_79616822_STMN2
 sel_jnc_ale_plots_simple$chr6_158017290_158019984_SYNJ2
