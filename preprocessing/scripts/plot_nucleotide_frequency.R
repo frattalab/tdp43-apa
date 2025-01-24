@@ -38,9 +38,6 @@ calc_nucleotide_proportions <- function(pfm,
                                         return_long = TRUE,
                                         nucleotide_col = "nucleotide") {
   
-  # Initial data processing
-  pfm
-  
   # Filter out Ns if requested
   if (remove_Ns) {
     pfm <- pfm %>%
@@ -70,18 +67,19 @@ kd_patrs_pfm <- read_tsv("processed/curation/patr_internal_priming/nuc_freq.poly
 kd_patrs_min3_pfm <- read_tsv("processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_both.min_3_reads.align_center.tsv")
 kd_patrs_min5_pfm <- read_tsv("processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_both.min_5_reads.align_center.tsv")
 polyadb_pfm <- read_tsv("processed/curation/patr_internal_priming/nuc_freq.polyadb_v3.extend_50_both.align_center.tsv")
+outdir <- "processed/curation/patr_internal_priming/"
 
 # Across all positions, calculate nucleotide proportions
 # do separately with and without Ns
-pg_kd_pfm_prop_withn <- kd_patrs_pfm %>%
+kd_pfm_prop_withn <- kd_patrs_pfm %>%
   mutate(across(-nucleotide, ~ .x / sum(.x)))
 
-pg_kd_pfm_prop_withoutn <- kd_patrs_pfm %>%
+kd_pfm_prop_withoutn <- kd_patrs_pfm %>%
   filter(nucleotide != "N") %>%
   mutate(across(-nucleotide, ~ .x / sum(.x)))
 
-kd_pfm_prop_withn
-kd_pfm_prop_withoutn
+# kd_pfm_prop_withn
+# kd_pfm_prop_withoutn
 
 # as difference so small, continue without Ns
 long_kd_pfm_prop_withoutn <- calc_nucleotide_proportions(kd_pfm_prop_withoutn)
@@ -138,12 +136,38 @@ bind_rows(patrs_min3 = long_kd_min3_pfm_prop_withoutn, polyadb = long_polyadb_pf
   theme(legend.position = "top")
 
 # slightly more stringent
-bind_rows(patrs_min5 = long_kd_min5_pfm_prop_withoutn, polyadb = long_polyadb_pfm_prop_withoutn, .id = "origin") %>%
+comb_line_patr_min5 <- bind_rows(list("PATRs (>= 5 reads)" = long_kd_min5_pfm_prop_withoutn,
+               "PolyADB" = long_polyadb_pfm_prop_withoutn),
+          .id = "origin") %>%
   ggplot(aes(x = position, y = fraction, colour = nucleotide, group = nucleotide)) +
   facet_wrap(~ origin, ncol = 2) +
   geom_line() +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  scale_x_continuous(breaks = seq(-50,50,5)) +
+  scale_x_continuous(breaks = seq(-50,50,10)) +
+  labs(x = "Position relative to PAS (nt)",
+       y = "Fraction",
+       colour = "Nucleotide") +
   theme_classic(base_size = 14) +
   theme(legend.position = "top")
 
+comb_line_patr_min5
+
+if (!dir.exists(outdir)) {dir.create(outdir)}
+
+ggsave("2025-01-24_plot_nuc_freq.patrs_min5.polyadb.png",
+       plot = comb_line_patr_min5,
+       path = outdir,
+       width = 180,
+       heigh = 90,
+       units = "mm",
+       dpi = "retina"
+       )
+
+ggsave("2025-01-24_plot_nuc_freq.patrs_min5.polyadb.pdf",
+       plot = comb_line_patr_min5,
+       path = outdir,
+       width = 180,
+       heigh = 90,
+       units = "mm",
+       dpi = "retina"
+)
