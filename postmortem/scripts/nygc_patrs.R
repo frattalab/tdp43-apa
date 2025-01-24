@@ -81,8 +81,18 @@ comb_patr_stats <- comb_patr_stats %>%
                                  )
          )
 
+
+comb_patr_stats %>%
+  group_by(origin) %>%
+  summarise(median = median(overlap_total_percentage),
+            mean = mean(overlap_total_percentage)) %>%
+  pivot_wider(names_from = "origin", values_from = -origin) %>%
+  mutate(median_ratio_kd_nygc = median_kds / median_nygc,
+         mean_ratio_kd_nygc = mean_kds / mean_nygc)
+
 ### PLOTS
 
+#  % of libary that overlap with annotated PAS
 kd_nygc_db_overlap_boxplot <- comb_patr_stats %>%
   # filter out the outlier sample
   filter(overlap_total_percentage < 0.2,
@@ -191,7 +201,7 @@ comb_patr_stats %>%
   ggplot(aes(x = plot_libsize, y = overlap_total_percentage, colour = experiment_name)) +
   geom_point() +
   geom_smooth(mapping = aes(x = plot_libsize, y = overlap_total_percentage),inherit.aes = F,
-                            method = "lm")
+                            method = "lm") +
   scale_x_continuous(limits = c(0,250)) +
   scale_y_continuous(limits = c(0, 0.07))
 
@@ -250,7 +260,7 @@ ggsave(filename = "2025-01-24_kds_nygc.patr_polysite_overlap_percentage.boxplot.
        dpi = "retina"
        )
 
-ggsave(filename = "2025-01-24_kds_nygc.patr_polysite_overlap_percentage.boxplot.png",
+ggsave(filename = "2025-01-24_kds_nygc.patr_polysite_overlap_percentage.boxplot.pdf",
        plot = kd_nygc_db_overlap_boxplot,
        device = "pdf",
        path = outdir,
