@@ -44,6 +44,7 @@ slamseq_patr_stats <- process_combine_tbls("data/nygc/patrs/slamseq_second_i3_co
                                            "data/nygc/patrs/slamseq_second_i3_cortical/i3cortical_slamseq_sample_table.csv",
                                            "data/nygc/patrs/slamseq_second_i3_cortical.two_class_simple.patr_clusters.polyasite_overlap.wcounts.tsv"
                                            )
+outdir <- "processed/nygc/patrs/"
 
 ## add metadat fro the nygc and kd datasets
 
@@ -82,17 +83,21 @@ comb_patr_stats <- comb_patr_stats %>%
 
 ### PLOTS
 
-comb_patr_stats %>%
+kd_nygc_db_overlap_boxplot <- comb_patr_stats %>%
   # filter out the outlier sample
-  filter(overlap_total_percentage < 0.2) %>%
+  filter(overlap_total_percentage < 0.2,
+         plot_origin != "SLAM-seq") %>%
+  mutate(plot_alpha = if_else(origin == "kds", 0.5, 0.01)) %>%
   ggplot(aes(x = plot_origin, y = overlap_total_percentage)) +
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(position = position_jitter(width = 0.3, seed = 123), alpha = 0.2) +
-  labs(y = "PATRs overlapping with PolyASite (% library)",
+  geom_jitter(aes(alpha = plot_alpha), position = position_jitter(width = 0.35, seed = 123),show.legend = F, size = 1
+              #alpha = 0.1
+              ) +
+  labs(y = "PATRs overlapping with PolyASite\n(% library)",
        x = "Dataset") +
   theme_bw(base_size = 14)
 
-
+kd_nygc_db_overlap_boxplot
 
 # colour by prep for NYGC data
 comb_patr_stats %>%
@@ -231,3 +236,26 @@ comb_patr_stats %>%
   geom_smooth(method = "lm")
   
 
+### SAVING TO DISK
+
+if (!dir.exists(outdir)) {dir.create(outdir)}
+
+ggsave(filename = "2025-01-24_kds_nygc.patr_polysite_overlap_percentage.boxplot.png",
+       plot = kd_nygc_db_overlap_boxplot,
+       device = "png",
+       path = outdir,
+       height = 100,
+       width = 100,
+       units = "mm",
+       dpi = "retina"
+       )
+
+ggsave(filename = "2025-01-24_kds_nygc.patr_polysite_overlap_percentage.boxplot.png",
+       plot = kd_nygc_db_overlap_boxplot,
+       device = "pdf",
+       path = outdir,
+       height = 100,
+       width = 100,
+       units = "mm",
+       dpi = "retina"
+)
