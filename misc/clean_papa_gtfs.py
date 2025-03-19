@@ -10,7 +10,7 @@ import argparse
 import pyranges as pr
 import pandas as pd
 import sys
-from typing import List
+from typing import List, Optional
 
 def process_gtf_file(file_path: str) -> pr.PyRanges:
     """
@@ -46,13 +46,17 @@ def process_gtf_file(file_path: str) -> pr.PyRanges:
     return gr
         
 
-def combine_and_process_gtfs(input_files: List[str], output_file: str) -> None:
+def combine_and_process_gtfs(input_files: List[str], output_file: str, 
+                            event_type_table: Optional[str] = None,
+                            event_type_col: str = "event_type") -> None:
     """
     Process multiple GTF files and combine them into a single output.
     
     Args:
         input_files: List of paths to input GTF files
         output_file: Path to the output GTF file
+        event_type_table: Optional path to a TSV file containing event type information
+        event_type_col: Column name for event type in the event_type_table (default: "event_type")
     """
     processed_grs = []
     
@@ -80,6 +84,23 @@ def combine_and_process_gtfs(input_files: List[str], output_file: str) -> None:
     print("Dropping duplicate intervals by le_id...")
     combined_gr = combined_gr.apply(lambda df: df.drop_duplicates(subset=["le_id", "Start", "End"]))
     
+    # Add event type information if provided
+    if event_type_table:
+        print(f"Adding 'cleaned' event type information from {event_type_table}...")
+        # Read the event type table
+        event_df = pd.read_csv(event_type_table, sep='\t')
+        
+        # Subset to required columns
+        event_df = event_df[['le_id', event_type_col]]
+        
+        # Rename event_type_col to 'simple_event_type'
+        event_df = event_df.rename(columns={event_type_col: 'simple_event_type'})
+        
+        # Merge event type information with the combined GTF
+        combined_gr = combined_gr.apply(lambda df: pd.merge(
+            df, event_df, on='le_id', how='left'
+        ))
+    
     # Sort the GTF and write to output file
     print(f"Sorting the combined GTF and writing to {output_file}...")
     combined_gr.sort().to_gtf(output_file)
@@ -102,11 +123,26 @@ def main():
         required=True, 
         help="Path to output combined GTF file"
     )
+
+    parser.add_argument(
+        "-e", "--event_type_table",
+        required=False,
+        help="Path to a TSV file containing event type information"
+    )
+    parser.add_argument(
+        "-c", "--event_type_col",
+        default="event_type",
+        help="Column name for event type in the event_type_table (default: 'event_type')"
+    )
+    
+    if len(sys.argv) == 1:
+        parser.print_help()
+        parser.exit()
     
     args = parser.parse_args()
     
-    combine_and_process_gtfs(args.input, args.output)
-
+    combine_and_process_gtfs(args.input, args.output, args.event_type_table, args.event_type_col)
+    
 
 if __name__ == "__main__":
     main()
