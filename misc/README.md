@@ -54,7 +54,7 @@ The PAPA GTF files,particularly the attribute fields, are a little messy. This s
 
 ### Cryptic events
 
-Use GTF files of cryptic & non-cryptic events of cryptic genes generated when building decoy transcript models as input. Generate a single cleaned GTF file just containing cryptic genes.
+Use GTF files of cryptic & non-cryptic events of cryptic genes generated when building decoy transcript models as input. Generate a single cleaned GTF file just containing cryptic genes. Cryptic events are annotated with additional 'simple_event_type' attribute, which corresponds to cleaned event type categories used in the manuscript.
 
 ```bash
 ls -l data/split_cryptic_gtfs/*.gtf
@@ -67,7 +67,8 @@ lrwxrwxrwx 1 sam sam 87 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.
 ```
 
 ```bash
-python clean_papa_gtfs.py -i data/split_cryptic_gtfs/*.gtf -o processed/cleaned.cryptics.all.novel_ref_combined.quant.gtf
+python clean_papa_gtfs.py -i data/split_cryptic_gtfs/*.gtf -o processed/cleaned.cryptics.all.novel_ref_combined.quant.gtf -e processed/2024-11-28_Supplementary
+_Table_2.tsv
 Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ale.ids.gtf...
 Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.all.non_cryptic_ids.gtf...
 Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.complex.ids.gtf...
@@ -76,6 +77,7 @@ Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ipa.ids.gtf
 Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.proxext3.ids.gtf...
 Combining GTF files...
 Dropping duplicate intervals by le_id...
+Adding 'cleaned' event type information from processed/2024-11-28_Supplementary_Table_2.tsv...
 Sorting the combined GTF and writing to processed/cleaned.cryptics.all.novel_ref_combined.quant.gtf...
 Successfully processed 6 GTF files.
 ```
