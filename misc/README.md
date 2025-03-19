@@ -41,3 +41,41 @@ Script to generate supplemental data file (XLSX and individual supplementary TSV
 - BED files of representative last exon coordinates for each APA category (produced by `../motifs/notebooks/define_iclip_regions_<ale|d3utr>.ipynb` - both scripts used)
 - Summary dataframe of cryptic event annotation and expression across in-vitro datasets (produced by `../preprocessing/scripts/manual_validation_summary.R`)
 - List of target genes for ELK1 & ELK4 in HeLa ChIP-seq data (produced by `../tf_activity/scripts/write_lists_hela_ko.R`)
+
+
+## clean_papa_gtfs.py
+
+The PAPA GTF files,particularly the attribute fields, are a little messy. This script simplifies to more conventional GTF attribute values, and removes duplicated gene_name values (stupidly) reported in the ref_gene_name field
+
+- Keeping the standard GTF columns Source,Feature and Score, subsets to the following attribute columns (comma separated) - ref_gene_id,transcript_id,ref_gene_name,le_id,event_type
+- ref_gene_name column can contain duplicated values separated by a comma. Remove duplicate values from the GTF after splitting by a comma, retaining the order of appearance. If multiple unique values are still present, they are concatenated by a comma into a single string
+- ref_gene_id and ref_gene_name columns are renamed by removing the 'ref' prefix
+- Duplicate intervals (Start + End) for each le_id are removed to ensure only unique coordinates are reported
+
+### Cryptic events
+
+Use GTF files of cryptic & non-cryptic events of cryptic genes generated when building decoy transcript models as input. Generate a single cleaned GTF file just containing cryptic genes.
+
+```bash
+ls -l data/split_cryptic_gtfs/*.gtf
+lrwxrwxrwx 1 sam sam 82 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ale.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.ale.ids.gtf
+lrwxrwxrwx 1 sam sam 94 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.all.non_cryptic_ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.all.non_cryptic_ids.gtf
+lrwxrwxrwx 1 sam sam 86 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.complex.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.complex.ids.gtf
+lrwxrwxrwx 1 sam sam 83 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ext3.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.ext3.ids.gtf
+lrwxrwxrwx 1 sam sam 82 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ipa.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.ipa.ids.gtf
+lrwxrwxrwx 1 sam sam 87 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.proxext3.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.proxext3.ids.gtf
+```
+
+```bash
+python clean_papa_gtfs.py -i data/split_cryptic_gtfs/*.gtf -o processed/cleaned.cryptics.all.novel_ref_combined.quant.gtf
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ale.ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.all.non_cryptic_ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.complex.ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ext3.ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ipa.ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.proxext3.ids.gtf...
+Combining GTF files...
+Dropping duplicate intervals by le_id...
+Sorting the combined GTF and writing to processed/cleaned.cryptics.all.novel_ref_combined.quant.gtf...
+Successfully processed 6 GTF files.
+```
