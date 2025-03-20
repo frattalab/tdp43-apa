@@ -94,7 +94,7 @@ def combine_and_process_gtfs(input_files: List[str], output_file: str,
         event_df = event_df[['le_id', event_type_col]]
         
         # Rename event_type_col to 'simple_event_type'
-        event_df = event_df.rename(columns={event_type_col: 'simple_event_type'})
+        event_df = event_df.rename(columns={event_type_col: 'simple_event_type'}).drop_duplicates()
         
         # Merge event type information with the combined GTF
         combined_gr = combined_gr.apply(lambda df: pd.merge(
