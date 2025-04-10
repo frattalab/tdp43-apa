@@ -41,3 +41,73 @@ Script to generate supplemental data file (XLSX and individual supplementary TSV
 - BED files of representative last exon coordinates for each APA category (produced by `../motifs/notebooks/define_iclip_regions_<ale|d3utr>.ipynb` - both scripts used)
 - Summary dataframe of cryptic event annotation and expression across in-vitro datasets (produced by `../preprocessing/scripts/manual_validation_summary.R`)
 - List of target genes for ELK1 & ELK4 in HeLa ChIP-seq data (produced by `../tf_activity/scripts/write_lists_hela_ko.R`)
+
+
+## clean_papa_gtfs.py
+
+The PAPA GTF files,particularly the attribute fields, are a little messy. This script simplifies to more conventional GTF attribute values, and removes duplicated gene_name values (stupidly) reported in the ref_gene_name field
+
+- Keeping the standard GTF columns Source,Feature and Score, subsets to the following attribute columns (comma separated) - ref_gene_id,transcript_id,ref_gene_name,le_id,event_type
+- ref_gene_name column can contain duplicated values separated by a comma. Remove duplicate values from the GTF after splitting by a comma, retaining the order of appearance. If multiple unique values are still present, they are concatenated by a comma into a single string
+- ref_gene_id and ref_gene_name columns are renamed by removing the 'ref' prefix
+- Duplicate intervals (Start + End) for each le_id are removed to ensure only unique coordinates are reported
+
+### Cryptic events
+
+Use GTF files of cryptic & non-cryptic events of cryptic genes generated when building decoy transcript models as input. Generate a single cleaned GTF file just containing cryptic genes. Cryptic events are annotated with additional 'simple_event_type' attribute, which corresponds to cleaned event type categories used in the manuscript.
+
+```bash
+ls -l data/split_cryptic_gtfs/*.gtf
+lrwxrwxrwx 1 sam sam 82 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ale.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.ale.ids.gtf
+lrwxrwxrwx 1 sam sam 94 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.all.non_cryptic_ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.all.non_cryptic_ids.gtf
+lrwxrwxrwx 1 sam sam 86 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.complex.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.complex.ids.gtf
+lrwxrwxrwx 1 sam sam 83 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ext3.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.ext3.ids.gtf
+lrwxrwxrwx 1 sam sam 82 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ipa.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.ipa.ids.gtf
+lrwxrwxrwx 1 sam sam 87 Mar 19 13:02 data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.proxext3.ids.gtf -> ../../../postmortem/processed/decoys/novel_ref_combined.quant.cryptics.proxext3.ids.gtf
+```
+
+```bash
+python clean_papa_gtfs.py -i data/split_cryptic_gtfs/*.gtf -o processed/cleaned.cryptics.all.novel_ref_combined.quant.gtf -e processed/2024-11-28_Supplementary
+_Table_2.tsv
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ale.ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.all.non_cryptic_ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.complex.ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ext3.ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.ipa.ids.gtf...
+Processing data/split_cryptic_gtfs/novel_ref_combined.quant.cryptics.proxext3.ids.gtf...
+Combining GTF files...
+Dropping duplicate intervals by le_id...
+Adding 'cleaned' event type information from processed/2024-11-28_Supplementary_Table_2.tsv...
+Sorting the combined GTF and writing to processed/cleaned.cryptics.all.novel_ref_combined.quant.gtf...
+Successfully processed 6 GTF files.
+```
+
+### Non-cryptic APA events
+
+```bash
+$ mkdir -p data/split_noncrypticapa_gtfs
+# update the header to match hardcoding in script 
+$ sed '0,/event_type/s//simple_event_type/' processed/2024-11-28_Supplementary_Table_3.tsv > processed/2024-11-28_simple_event_type_Supplementary_Table_3.tsv
+# event type codes are also hardcoded to pipeline settings - update here
+$ awk -F'\t' -v OFS='\t' '{if ($3 == "3'\''Ext") $3 = "distal_3utr_extension"; else if ($3 == "3'\''Shortening") $3 = "proximal_3utr_extension"; else if ($3 == "ALE") $3 = "spliced"; else if ($3 == "IPA") $3 = "bleedthrough"; else if ($3 == "Complex") $3 = "complex,complex"; print}' processed/2024-11-28_simple_event_type_Supplementary_Table_3.tsv > processed/2024-11-28_simple_event_type_mod_Supplementary_Table_3.tsv
+# run script used for cryptics to split per event (basically a fancy filter for the non-cryptic APA genes)
+$ python ../postmortem/scripts/split_gtf_by_cryptic_and_event_status.py data/novel_ref_combined.quant.last_exons.gtf processed/2024-11-28_simple_event_type_mod_Supplementary_Table_3.tsv data/split_noncrypticapa_gtfs/novel_ref_combined.quant
+Reading in input GTF...
+Filtering input GTF for cryptics/non-cryptics
+Outputting non-cryptics GTF
+Outputting cryptic le_ids to GTF (split by event type, 1 per file)
+Outputting GTF of cryptic-containing genes (with cryptic IDs excluded)
+# get cleaned combined GTF as done previously (using original supplementary table for)
+$ python clean_papa_gtfs.py -i data/split_noncrypticapa_gtfs/*.cryptics*.gtf -o processed/cleaned.noncryptic_apa.all.novel_ref_combined.quant.gtf -e processed/2024-11-28_Supplementary_Table_3.tsv
+Processing data/split_noncrypticapa_gtfs/novel_ref_combined.quant.cryptics.ale.ids.gtf...
+Processing data/split_noncrypticapa_gtfs/novel_ref_combined.quant.cryptics.all.non_cryptic_ids.gtf...
+Processing data/split_noncrypticapa_gtfs/novel_ref_combined.quant.cryptics.complex.ids.gtf...
+Processing data/split_noncrypticapa_gtfs/novel_ref_combined.quant.cryptics.ext3.ids.gtf...
+Processing data/split_noncrypticapa_gtfs/novel_ref_combined.quant.cryptics.ipa.ids.gtf...
+Processing data/split_noncrypticapa_gtfs/novel_ref_combined.quant.cryptics.proxext3.ids.gtf...
+Combining GTF files...
+Dropping duplicate intervals by le_id...
+Adding 'cleaned' event type information from processed/2024-11-28_Supplementary_Table_3.tsv...
+Sorting the combined GTF and writing to processed/cleaned.noncryptic_apa.all.novel_ref_combined.quant.gtf...
+Successfully processed 6 GTF files.
+```
