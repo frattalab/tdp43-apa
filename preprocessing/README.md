@@ -102,6 +102,68 @@ python scripts/get_patr_matches.py --papa-gtf data/novel_ref_combined.last_exons
 
 `scripts/compare_cryptic_annot_patr_matches.R` visualises the % overlap reported for cryptic relative to the 1k annotated PAS samples. Also computes an empirical p-value at each distance threshold assessing the null that cryptic and annotated PAS originate from the same distribution.
 
+### Nucleotide frequency around PATR-defined PAS
+
+(Reviewer only) Plot the genomic nucleotide frequency centred on PAS defined by poly(A)-tail containing reads to evaluate evidence for internal priming (enrichment of genomic As immediately downstream of PAS).
+
+#### Get a BED file of PATR cluster representative coordinates & extend intervals by a specified distance
+
+Simple script to swap the representative coordinates (position with most supporting reads) of PATR PAS clusters with the representative coordinates stored in the Name field. Requi
+
+Input: PATR BED file from KD samples - data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed
+
+```bash
+mkdir -p processed/curation/patr_internal_priming
+python scripts/patr_clusters_to_rep_bed.py -i data/bulk_polya_reads/tdp_ko_collection/pas_clusters/condition__TDP43KD/two_class_simple/polya_clusters.bed -o processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.bed
+```
+
+#### Get a hg38 BED file of PolyADB 3.0 PAS
+
+PATR nucleotide frequency was compared against the PolyADB 3.0 database (Refs [1](https://doi.org/10.1101/gr.237826.118), [2](https://doi.org/10.1093/nar/gkx1000)), which uses the internal-priming resistant 3'READS protocol to define PAS using 3'end-sequencing.
+
+1. Database TXT file was downloaded from [here](https://exon.apps.wistar.org/polya_db/v3/download/3.2/human_pas.zip]) on 8th November 2023 (PolyADB v3.2)
+2. After unzipping the archive and extracting the TXT file, `scripts/polyadb_to_bed.py` was used to convert the TXT file to a BED file, assuming the coordinate system followed the 'UCSC position format' (1 based coordinate, subtract 1 to get the start coordinate)
+  
+  ```bash
+  python scripts/polyadb_to_bed.py human.PAS.txt human.PAS.bed
+  ```
+
+3. Because the database was constructed using hg19 reference genome, I next uploaded the BED file to the [LiftOver web portal](https://genome.ucsc.edu/cgi-bin/hgLiftOver) to lift coordinates from hg19 to hg38. Default arguments were used. The resulting BED file was then downloaded to `data/human.PAS.liftover_hg38.bed`
+
+#### Extend intervals by 50nt either side of PAS
+
+```bash
+python scripts/extend_bed.py --length 50 --direction downstream processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.bed processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_downstream.bed
+python scripts/extend_bed.py --length 50 --direction both processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.bed processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.bed
+```
+
+for PolyADB 3.0:
+
+```bash
+python scripts/extend_bed.py --length 50 --direction both data/human.PAS.liftover_hg38.bed data/human.PAS.liftover_hg38.extend_50_both.bed
+```
+
+#### Compute nucleotide frequency at each position in intervals
+
+Note: In rare cases, the representative coordinates stored in PATR BED files are not single-nt coordinates (bug). There does not appear to be a strand, chromosome or length bias. In each case, since it's such a tiny proportion (~2k / ~250k intervals), I've removed these from the BED files prior to running this script ('expected_length.bed' suffixed files) 
+
+```bash
+python scripts/get_position_nucleotide_frequency.py --align start processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_downstream.expected_length.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_downstream.align_start.tsv
+python scripts/get_position_nucleotide_frequency.py --align center processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.expected_length.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_both.align_center.tsv
+python scripts/get_position_nucleotide_frequency.py --align center processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.expected_length.min_3_reads.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_both.min_3_reads.align_center.tsv
+python scripts/get_position_nucleotide_frequency.py --align center processed/curation/patr_internal_priming/condition__TDP43KD.two_class_simple.polya_clusters.extend_50_both.expected_length.min_5_reads.bed data/GRCh38.primary_assembly.genome.fa processed/curation/patr_internal_priming/nuc_freq.polya_clusters.extend_50_both.min_5_reads.align_center.tsv
+```
+
+For PolyADB 3.0, only a single window was computed:
+
+```bash
+python scripts/get_position_nucleotide_frequency.py --align center data/human.PAS.liftover_hg38.extend_50_both.bed processed/curation/patr_internal_priming/nuc_freq.polyadb_v3.extend_50_both.align_center.tsv
+```
+
+#### Plotting nucleotide frequency around PAS
+
+`scripts/plot_nucleotide_frequency.R` computes nucleotide proportions at each position and generates side by side plots of per-position nucleotide frequency centred on PATR and PolyADB 3.0 PAS.
+
 ## DaPars2 comparison
 
 ### Download RefSeq GTF
