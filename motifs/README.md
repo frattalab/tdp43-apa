@@ -38,6 +38,12 @@ cd data/iCLIP
 cat tardbp-shsy5y-1-20210701-mh_mapped_to_genome_single_peaks.bed tardbp-shsy5y-2-20210701-mh_mapped_to_genome_single_peaks.bed | sort -k1,1 -k2,2n | bedtools merge -s -c 5 -o sum > tardbp-shsy5y.concat.sort.chr.bed
 ```
 
+WARNING: The merge command above produces an unstranded BED file (not intended). Thanks to the `-s` option, the peaks will still have been merged in a strand-specific manner, but the strand field will have been dropped. All downstream analysis was therefore done with non-strand-specific iCLIP peaks. To make a BED that retains the strand column, perform the following command:
+
+```bash
+cat tardbp-shsy5y-1-20210701-mh_mapped_to_genome_single_peaks.bed tardbp-shsy5y-2-20210701-mh_mapped_to_genome_single_peaks.bed | sort -k1,1 -k2,2n | bedtools merge -s -c 5,6 -o sum,distinct > tardbp-shsy5y.concat.sort.chr.stranded.bed
+```
+
 ### Computing positional iCLIP coverage relative to landmarks
 
 scripts: `scripts/spliced_iclip_coverage.sh`, `scripts/bleedthrough_iclip_coverage.sh` and `scripts/d3utr_iclip_coverage.sh`
