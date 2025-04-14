@@ -1,5 +1,8 @@
 # Code for cryptic polydenylation manuscript
 
+[![DOI](https://zenodo.org/badge/648222353.svg)](https://doi.org/10.5281/zenodo.15210469)
+
+
 Analysis code for cryptic polyadenylation manuscript, currently on biorxiv:
 
 > **TDP-43 loss induces extensive cryptic polyadenylation in ALS/FTD**
